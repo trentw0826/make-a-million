@@ -47,9 +47,14 @@ export interface Observation {
  * (see "Table Visibility" in docs/game-rules.md). Completed tricks are face-down piles,
  * so only their counts remain.
  */
-export interface TableView extends Omit<Observation, 'tricks'> {
+export interface TableView extends Omit<Observation, 'tricks' | 'handHistory'> {
   readonly trickCounts: readonly [number, number];
+  /** Score-sheet lines only: the cards of past hands are gone from the table. */
+  readonly handHistory: readonly ScoreLine[];
 }
+
+/** One line of the paper score sheet: a HandResult without its tricks. */
+export type ScoreLine = Omit<HandResult, 'tricks'>;
 
 export function observe(state: GameState, seat: Seat): Observation {
   const hand = state.hand;
@@ -87,10 +92,13 @@ export function observe(state: GameState, seat: Seat): Observation {
 }
 
 export function tableView(obs: Observation): TableView {
-  const { tricks, ...rest } = obs;
+  const { tricks, handHistory, ...rest } = obs;
   const counts: [number, number] = [0, 0];
   for (const t of tricks) {
     if (t.winner !== null) counts[teamOf(t.winner)] += 1;
   }
-  return { ...rest, trickCounts: counts };
+  // The just-finished hand's tricks stay in `result` while it is being counted; once the
+  // next hand is dealt they are gone, as at a real table.
+  const sheet = handHistory.map(({ tricks: _cards, ...line }) => line);
+  return { ...rest, handHistory: sheet, trickCounts: counts };
 }

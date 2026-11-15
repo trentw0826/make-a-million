@@ -1,4 +1,11 @@
-import { type CardId, nextSeat, partnerOf, type TableView } from '@mam/engine';
+import {
+  type CardId,
+  cardById,
+  isNumberCard,
+  nextSeat,
+  partnerOf,
+  type TableView,
+} from '@mam/engine';
 import type { RoomView } from '@mam/protocol';
 import { useEffect, useState } from 'react';
 import { ActionBar } from '../components/ActionBar';
@@ -35,13 +42,20 @@ export function Table({ room, view }: { room: RoomView; view: TableView }) {
   const discarding = view.legal.kind === 'discard';
   const forbidden =
     view.legal.kind === 'discard' ? new Set(view.legal.forbiddenIds) : new Set<CardId>();
+  // Money may be discarded only once the number cards run out, so lock Money cards that
+  // could not legally complete the discard instead of letting the button silently refuse.
+  const isNumber = (id: CardId) => isNumberCard(cardById(id));
+  const moneyAllowed = Math.max(0, 3 - view.hand.filter(isNumber).length);
+  const moneySelected = [...selected].filter((id) => !isNumber(id)).length;
+  const canSelect = (id: CardId) =>
+    !forbidden.has(id) && (selected.has(id) || isNumber(id) || moneySelected < moneyAllowed);
 
   const onCard = (id: CardId) => {
     if (legalPlays) {
       if (legalPlays.has(id)) act({ type: 'playCard', cardId: id });
       return;
     }
-    if (discarding && !forbidden.has(id)) {
+    if (discarding && canSelect(id)) {
       setSelected((prev) => {
         const next = new Set(prev);
         if (next.has(id)) next.delete(id);
@@ -86,7 +100,7 @@ export function Table({ room, view }: { room: RoomView; view: TableView }) {
                 key={id}
                 id={id}
                 selected={selected.has(id)}
-                disabled={legalPlays ? !legalPlays.has(id) : discarding ? forbidden.has(id) : false}
+                disabled={legalPlays ? !legalPlays.has(id) : discarding ? !canSelect(id) : false}
                 onClick={legalPlays || discarding ? () => onCard(id) : undefined}
               />
             ))}

@@ -106,7 +106,10 @@ describe('tableView', () => {
 
   it('serialises without hidden information', () => {
     const { states } = playRandomGame('table-2', undefined, { keepStates: true });
-    const sample = states.filter((s) => s.hand?.phase === 'playing').slice(0, 20);
+    const playing = states.filter((s) => s.hand?.phase === 'playing');
+    // Sample across the whole game so later hands (with a score-sheet history) are covered.
+    const sample = playing.filter((_, i) => i % Math.max(1, Math.floor(playing.length / 40)) === 0);
+    expect(sample.some((s) => s.handHistory.length > 0)).toBe(true);
     for (const state of sample) {
       for (const seat of SEATS) {
         const json = JSON.stringify(tableView(observe(state, seat)));

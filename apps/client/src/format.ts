@@ -7,7 +7,8 @@ export function money(amount: number): string {
 }
 
 export function shortMoney(amount: number): string {
-  return `$${Math.round(amount / 1000)}k`;
+  const sign = amount < 0 ? '−' : '';
+  return `${sign}$${Math.round(Math.abs(amount) / 1000).toLocaleString('en-US')}k`;
 }
 
 export const SUIT_NAMES: Record<Suit, string> = {

@@ -52,10 +52,6 @@ describe('client reducer', () => {
       'Bot 2 bids $175,000.',
       'Cid passes.',
       'Bot 2 names Green as trump.',
-      'Bot 2 plays 4.',
-      'Cid plays $5k.',
-      'Bot 4 plays 7.',
-      'Ann plays $40k.',
       'Ann takes trick 1.',
     ]);
     expect(s.completedTrick).toEqual({
@@ -70,6 +66,30 @@ describe('client reducer', () => {
     expect(s.trickPlays).toEqual([]);
     s = reduce(s, { kind: 'clearCompletedTrick' });
     expect(s.completedTrick).toBeNull();
+  });
+
+  it('never keeps played cards in the log, and a new lead clears the finished trick', () => {
+    let s = reduce(initialState, { kind: 'server', message: { type: 'room', room } });
+    const play = (seat: 0 | 1 | 2 | 3, cardId: number) =>
+      ({ type: 'cardPlayed', seat, cardId }) as const;
+    s = reduce(s, {
+      kind: 'server',
+      message: {
+        type: 'events',
+        events: [
+          play(1, 3),
+          play(2, 4),
+          play(3, 5),
+          play(0, 12),
+          { type: 'trickWon', seat: 0, trickIndex: 0 },
+        ],
+      },
+    });
+    expect(s.completedTrick).not.toBeNull();
+    s = reduce(s, { kind: 'server', message: { type: 'events', events: [play(0, 20)] } });
+    expect(s.completedTrick).toBeNull();
+    expect(s.trickPlays).toEqual([{ seat: 0, cardId: 20 }]);
+    expect(s.log.some((e) => /plays/.test(e.text))).toBe(false);
   });
 
   it('clears the table when leaving and shows why', () => {

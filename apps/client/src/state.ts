@@ -1,5 +1,4 @@
 import type { GameEvent, Seat, TableView, TrickPlay } from '@mam/engine';
-import { cardById, cardLabel } from '@mam/engine';
 import type { RoomView, ServerMessage } from '@mam/protocol';
 import { money, nameOf, SUIT_NAMES } from './format';
 
@@ -148,13 +147,13 @@ function onEvent(state: ClientState, event: GameEvent): ClientState {
     case 'trumpNamed':
       return push(`${name(event.seat)} names ${SUIT_NAMES[event.suit]} as trump.`);
     case 'cardPlayed': {
+      // Plays are not written to the log: at a real table a played card is visible only
+      // while its trick is on the felt (see "Table Visibility" in game-rules.md).
       const plays = state.trickPlays.some((p) => p.cardId === event.cardId)
         ? state.trickPlays
         : [...state.trickPlays, { seat: event.seat, cardId: event.cardId }];
-      return {
-        ...push(`${name(event.seat)} plays ${cardLabel(cardById(event.cardId))}.`),
-        trickPlays: plays,
-      };
+      // A new lead sweeps the finished trick off the table so the lead is never hidden.
+      return { ...state, trickPlays: plays, completedTrick: null };
     }
     case 'trickWon':
       return {

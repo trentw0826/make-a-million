@@ -181,7 +181,7 @@ input {
 /* Table ------------------------------------------------------------------ */
 .table-screen {
   display: grid;
-  grid-template-columns: 300px 1fr;
+  grid-template-columns: 320px 1fr;
   min-height: 100vh;
 }
 .side {
@@ -244,6 +244,13 @@ input {
   text-align: left;
   padding: 2px 4px;
   border-bottom: 1px solid var(--line);
+}
+.sheet .num {
+  text-align: right;
+  white-space: nowrap;
+}
+.sheet .nowrap {
+  white-space: nowrap;
 }
 .sheet tr.set td {
   color: var(--danger);
@@ -324,8 +331,8 @@ input {
 }
 .card-back-count {
   position: absolute;
-  right: 0;
-  bottom: -4px;
+  left: calc(100% + 6px);
+  top: 12px;
   font-size: 0.8em;
 }
 

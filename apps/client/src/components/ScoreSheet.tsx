@@ -1,6 +1,6 @@
 import type { TableView } from '@mam/engine';
 import type { RoomView } from '@mam/protocol';
-import { money, nameOf, SUIT_NAMES, teamLabel } from '../format';
+import { money, nameOf, SUIT_NAMES, shortMoney, teamLabel } from '../format';
 
 /** The paper score sheet: cumulative totals and one line per completed hand. */
 export function ScoreSheet({ view, room }: { view: TableView; room: RoomView }) {
@@ -31,8 +31,8 @@ export function ScoreSheet({ view, room }: { view: TableView; room: RoomView }) 
               <th>Bidder</th>
               <th>Bid</th>
               <th>Trump</th>
-              <th>A</th>
-              <th>B</th>
+              <th className="num">A</th>
+              <th className="num">B</th>
             </tr>
           </thead>
           <tbody>
@@ -40,12 +40,12 @@ export function ScoreSheet({ view, room }: { view: TableView; room: RoomView }) 
               <tr key={h.handNumber} className={h.made ? '' : 'set'}>
                 <td>{h.handNumber}</td>
                 <td>{nameOf(room, h.bidder)}</td>
-                <td>
-                  {money(h.bid)} {h.made ? '✓' : 'set'}
+                <td className="nowrap">
+                  {shortMoney(h.bid)} {h.made ? '✓' : '✗'}
                 </td>
                 <td>{SUIT_NAMES[h.trump]}</td>
-                <td>{money(h.scoresAfter[0])}</td>
-                <td>{money(h.scoresAfter[1])}</td>
+                <td className="num">{shortMoney(h.scoresAfter[0])}</td>
+                <td className="num">{shortMoney(h.scoresAfter[1])}</td>
               </tr>
             ))}
           </tbody>
