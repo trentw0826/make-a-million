@@ -2,7 +2,7 @@
  * Registers every simulator-visible strategy beyond Easy and Normal. Imported for its side
  * effects by tasks.ts and the CLI, so worker threads see the same set.
  */
-import { HARD_DEFAULTS, HardBot, type HardOptions } from '@mam/bots';
+import { EXPERT_DEFAULTS, HARD_DEFAULTS, HardBot, type HardOptions } from '@mam/bots';
 import { OracleBot } from './oracle';
 import { registerStrategy } from './strategies';
 
@@ -26,4 +26,8 @@ export function parseOptions<T extends object>(
 }
 
 registerStrategy('hard', (o) => new HardBot(parseOptions<HardOptions>(HARD_DEFAULTS, o)));
+registerStrategy(
+  'expert',
+  (o) => new HardBot({ ...EXPERT_DEFAULTS, ...parseOptions<HardOptions>(EXPERT_DEFAULTS, o) }),
+);
 registerStrategy('oracle', (o) => new OracleBot(Number(o.exact ?? 7), Number(o.depth ?? 3)));

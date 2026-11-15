@@ -46,14 +46,18 @@ export const HARD_DEFAULTS: HardOptions = {
   throwOffs: false,
 };
 
-/** Expert: the same algorithms with about four times Hard's budget, spent on depth. */
+/**
+ * Expert: the same algorithms with about three times Hard's budget. Card play spends it on
+ * more worlds and exact solving from seven tricks out, not on depth: searching three tricks
+ * deep instead of two cost 2.3× the time for no measurable gain (docs/bot-ladder.md).
+ */
 export const EXPERT_DEFAULTS: HardOptions = {
   ...HARD_DEFAULTS,
   worlds: 60,
-  nodes: 16_000_000,
-  depth: 3,
+  nodes: 12_000_000,
+  depth: 2,
   exactTricks: 7,
-  worldNodes: 1_500_000,
+  worldNodes: 1_200_000,
   bidWorlds: 400,
   screenWorlds: 80,
   refineWorlds: 24,
