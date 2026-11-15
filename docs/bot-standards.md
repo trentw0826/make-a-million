@@ -7,6 +7,7 @@ Bots can fill any seat a human player could. These standards set out what inform
 - **Information parity:** A bot may use only information that a human in the same seat could legitimately know. A bot never sees another player's cards, including its partner's.
 - **Perfect memory is permitted:** A human could, in theory, memorize everything that has happened in a game. A bot may therefore keep and use the **full public history** of the game, plus anything its own seat has privately seen.
 - **Less is allowed, more is not:** A strategy may choose to use less information than it is allowed (for example, a lower‑difficulty bot that ignores trick history). It may never use more.
+- **Bots may remember more than the screen shows:** The human interface deliberately displays only what is visible at a physical table (see *Table Visibility* in `game-rules.md`): no played‑card history and no running totals. A bot may still keep that history, because a human could memorize it. This asymmetry is intentional, and it is bounded by what a human could in principle know.
 
 ## Permitted Information
 
@@ -55,6 +56,7 @@ A bot must never have access to:
 
 - **Common interface:** Every bot strategy uses the same interface. 
 - **Interchangeable strategies:** Each seat's strategy can be chosen separately. A difficulty level is a choice of strategy and its settings, so a more advanced strategy (such as a search‑based or trained one) can replace a simpler one without changes elsewhere.
+- **Labels:** A bot‑occupied seat is displayed as `Bot · <Difficulty>` (for example `Bot · Normal`), so humans always know who they are playing with and how strong that player is.
 - **Determinism:** Bots use only the random source they are given. The same observation and the same seed must always produce the same action, so games can be tested and replayed exactly.
 
 ## Verification

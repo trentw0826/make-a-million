@@ -44,7 +44,7 @@
 ## Special Cards
 
 - **Bull:** Can only be played if the trick suit hasn't been established or the player is out of the trick suit. If played, it *doubles* the total value of Money cards in that trick for the team that captures it. (Example: a trick with \$40k and a Bull yields \$80k.) 
-- **Bear:** Same play conditions as the Bull. When captured, it *nullifies* all Money in that trick (zero points). If both Bull and Bear are played in one trick, only the **last-played** one has effect. (E.g., Bear after Bull cancels instead of doubling.)  
+- **Bear:** Same play conditions as the Bull (only when the trick suit hasn't been established or the player is out of the trick suit). When captured, it *nullifies* all Money in that trick (zero points). If both Bull and Bear are played in one trick, only the **last-played** one has effect. (E.g., Bear after Bull cancels instead of doubling.)  
 - **Tiger:** The most powerful card, winning over all other cards. It is considered to be the same suit as trump, meaning if it's led, it compels others to follow with trump if possible; If trumps are led and the Tiger-holder has no other trumps, they must play the Tiger. The Tiger **cannot be played out of suit**; if a non-trump suit is led and the Tiger-holder is not void in that suit, they cannot play the Tiger.
 
 ## Scoring (Hand Result)
@@ -55,8 +55,22 @@
 - **If the bidders made their bid** (captured ≥ bid value), they **score** the full total they captured. If they **failed to make the bid**, they are “set back”: they score *nothing* and must subtract the bid amount from their cumulative score (including going negative if necessary). The opposing team (the setters) simply score what they captured.  
 - The game continues with cumulative totals. The **first team** to reach \$1,000,000 wins. If both teams reach  \$1,000,000 on the same hand, the **higher** score wins. (No extra tiebreaker hand is played.)
 
+## Table Visibility
+
+The application reproduces the **physical tabletop experience**. A player sees exactly what they would see sitting at a real table, and nothing more:
+
+- **Own hand.** Other players' hands are never shown, only how many cards each player holds.
+- **The trick in progress:** the cards played so far in the current trick, who played them, and the trick suit. Once a trick is taken, its cards are turned face‑down and are no longer visible.
+- **The auction:** bids and passes as they are spoken, and the resulting contract (bidder, amount) and named trump.
+- **Trick piles:** how many tricks each partnership has taken this hand (visible as face‑down piles). The money inside those piles is **not** shown.
+- **The score sheet:** cumulative scores, and for each completed hand the bidder, bid, trump, whether the bid was made or set, and each side's result.
+- **Hand result:** when the last trick is taken, both sides' captured Money is counted openly, so the hand total and the cards that produced it are shown at that point only.
+
+There is **no** record of cards played in earlier tricks and **no** running money total during a hand. Players who want that information must remember it, just as at the table. (Bots are held to the same information limits; see `bot-standards.md`.)
+
 ## Other Notes
 
+- **Misdeal window:** In the application, after each deal every player whose Money totals \$15,000 or less is asked whether to call a misdeal. Bidding begins once all eligible players have declined (or no player is eligible). Any call re‑deals immediately with the same dealer.
 - **Raise Increment ($5k vs $10k):** All official text uses \$10,000 steps. Any \$5k rule is a non‑standard but common variant.
 - **Simultaneous Win:** There are no official rules addressing the rare case in which both sides reach   \$1,000,000  *and* end up with the same score in one hand. In this case, let the bidding team win.
 - **Table talk:** Any verbal or non-verbal communication between partners that conveys information about a player's hand, strategy, or intent during active play is strictly forbidden. 
