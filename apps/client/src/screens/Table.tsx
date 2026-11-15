@@ -76,7 +76,6 @@ export function Table({ room, view }: { room: RoomView; view: TableView }) {
     }
   };
 
-  const seatedHuman = room.seats[me]?.kind === 'human';
   const myChip = seatChip(view, me);
 
   return (
@@ -130,7 +129,13 @@ export function Table({ room, view }: { room: RoomView; view: TableView }) {
       </section>
 
       {view.phase === 'hand-complete' && view.result && (
-        <HandResult result={view.result} room={room} team={view.team} canContinue={seatedHuman} />
+        <HandResult
+          result={view.result}
+          room={room}
+          team={view.team}
+          seat={me}
+          pending={view.continuePending}
+        />
       )}
       {view.phase === 'game-over' && <GameOver view={view} room={room} />}
     </main>

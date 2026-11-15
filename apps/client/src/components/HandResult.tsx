@@ -1,6 +1,8 @@
-import { otherTeam, type HandResult as Result, type Team } from '@mam/engine';
+import { otherTeam, type HandResult as Result, SEATS, type Seat, type Team } from '@mam/engine';
 import type { RoomView } from '@mam/protocol';
+import { useEffect, useState } from 'react';
 import { money, nameOf, SUIT_NAMES, teamLabel } from '../format';
+import type { ResultDeadline } from '../state';
 import { useGame } from '../store';
 import { CardFace } from './CardFace';
 import { Modal } from './Modal';
@@ -10,15 +12,18 @@ export function HandResult({
   result,
   room,
   team,
-  canContinue,
+  seat,
+  pending,
 }: {
   result: Result;
   room: RoomView;
   /** The viewer's side, listed first. */
   team: Team;
-  canContinue: boolean;
+  seat: Seat;
+  /** Seats still reading the result. */
+  pending: readonly Seat[];
 }) {
-  const { act } = useGame();
+  const { act, state } = useGame();
   const bt = result.biddingTeam;
   // Told from the viewer's side: their bid made is good news, the other side's is not.
   const ours = bt === team;
@@ -79,11 +84,74 @@ export function HandResult({
           </div>
         ))}
       </div>
-      {canContinue && (
-        <button type="button" className="primary" onClick={() => act({ type: 'continue' })}>
-          Next hand
-        </button>
-      )}
+      <div className="result-foot">
+        <Countdown deadline={state.resultDeadline} />
+        <ul className="ready-list" aria-label="Ready for the next hand">
+          {SEATS.map((s) => {
+            const ready = !pending.includes(s);
+            return (
+              <li key={s} className={ready ? 'is-ready' : 'is-reading'}>
+                <span className="ready-mark" aria-hidden="true">
+                  {ready ? '✓' : '…'}
+                </span>
+                {s === seat ? 'You' : nameOf(room, s)}
+                <span className="visually-hidden">{ready ? ': ready' : ': still reading'}</span>
+              </li>
+            );
+          })}
+        </ul>
+        {pending.includes(seat) ? (
+          <button type="button" className="primary" onClick={() => act({ type: 'continue' })}>
+            Ready
+          </button>
+        ) : (
+          <span className="muted small ready-wait">Waiting for the others…</span>
+        )}
+      </div>
     </Modal>
   );
+}
+
+const RING_R = 16;
+const RING_C = 2 * Math.PI * RING_R;
+
+/** A ring that drains as the time to read the result runs out, with the seconds left. */
+function Countdown({ deadline }: { deadline: ResultDeadline | null }) {
+  const now = useNow(deadline !== null);
+  if (!deadline) return null;
+  const left = Math.max(0, deadline.endsAt - now);
+  const fraction = deadline.totalMs > 0 ? left / deadline.totalMs : 0;
+  const seconds = Math.ceil(left / 1000);
+  return (
+    <div
+      className={`countdown${seconds <= 5 ? ' countdown-low' : ''}`}
+      role="timer"
+      aria-label={`Next hand in ${seconds} seconds`}
+    >
+      <svg viewBox="0 0 40 40" aria-hidden="true">
+        <circle className="countdown-track" cx="20" cy="20" r={RING_R} />
+        <circle
+          className="countdown-fill"
+          cx="20"
+          cy="20"
+          r={RING_R}
+          strokeDasharray={RING_C}
+          strokeDashoffset={RING_C * (1 - fraction)}
+        />
+      </svg>
+      <span aria-hidden="true">{seconds}</span>
+    </div>
+  );
+}
+
+/** `Date.now()`, refreshed several times a second while `running`. */
+function useNow(running: boolean): number {
+  const [now, setNow] = useState(Date.now);
+  useEffect(() => {
+    if (!running) return;
+    setNow(Date.now());
+    const id = window.setInterval(() => setNow(Date.now()), 100);
+    return () => window.clearInterval(id);
+  }, [running]);
+  return now;
 }

@@ -254,7 +254,13 @@ async function fullHand(browser: Browser, base: string): Promise<void> {
   check(!/takes trick|bids \$|passes\./.test(log), 'the log has no per-trick or per-bid lines');
   check(/(made|were set on) the \$\d+k bid/.test(log), 'the log records the result');
 
-  await page.getByRole('button', { name: 'Next hand' }).click();
+  check(await result.getByRole('timer').isVisible(), 'the result counts down to the next hand');
+  await until(
+    async () => (await result.locator('.ready-list .is-ready').count()) === 3,
+    'the bots ready up',
+  );
+  await shoot('6b-result-ready');
+  await page.getByRole('button', { name: 'Ready' }).click();
   await until(() => result.isHidden(), 'the next hand');
   await shoot('7-next-hand');
   check(

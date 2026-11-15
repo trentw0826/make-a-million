@@ -211,3 +211,58 @@ describe('hand', () => {
     ]);
   });
 });
+
+describe('Hand result', () => {
+  const scored: TableView = {
+    ...dealt,
+    phase: 'hand-complete',
+    turn: null,
+    legal: { kind: 'continue' },
+    continuePending: [0, 3],
+    result: {
+      handNumber: 1,
+      dealer: 0,
+      redeals: 0,
+      bidder: 1,
+      bid: 100_000,
+      trump: 'red',
+      biddingTeam: 1,
+      captured: [60_000, 120_000],
+      made: true,
+      delta: [60_000, 120_000],
+      scoresAfter: [60_000, 120_000],
+      tricks: [],
+    },
+  };
+
+  it('shows who is ready and how long is left, and readies this seat', () => {
+    renderWith([
+      welcome,
+      { type: 'room', room: room('playing') },
+      { type: 'view', view: scored, resultTimer: { remainingMs: 12_400, totalMs: 20_000 } },
+    ]);
+    const dialog = screen.getByRole('dialog', { name: 'Hand 1' });
+    expect(screen.getByRole('timer')).toHaveAccessibleName('Next hand in 13 seconds');
+    const list = screen.getByRole('list', { name: 'Ready for the next hand' });
+    expect(list).toHaveTextContent('You: still reading');
+    expect(list).toHaveTextContent('Bot 2: ready');
+    expect(list).toHaveTextContent('Bot 4: still reading');
+    fireEvent.click(screen.getByRole('button', { name: 'Ready' }));
+    expect(screen.getByText(NOT_CONNECTED)).toBeInTheDocument();
+    expect(dialog).toBeInTheDocument();
+  });
+
+  it('waits on the others once this seat is ready', () => {
+    renderWith([
+      welcome,
+      { type: 'room', room: room('playing') },
+      {
+        type: 'view',
+        view: { ...scored, legal: { kind: 'none' }, continuePending: [3] },
+        resultTimer: { remainingMs: 5_000, totalMs: 20_000 },
+      },
+    ]);
+    expect(screen.queryByRole('button', { name: 'Ready' })).toBeNull();
+    expect(screen.getByText('Waiting for the others…')).toBeInTheDocument();
+  });
+});

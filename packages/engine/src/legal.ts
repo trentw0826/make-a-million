@@ -103,7 +103,7 @@ export function legalMoves(state: GameState, seat: Seat): LegalMoves {
       };
 
     case 'hand-complete':
-      return { kind: 'continue' };
+      return hand.continuePending.includes(seat) ? { kind: 'continue' } : NONE;
   }
 }
 

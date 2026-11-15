@@ -10,8 +10,13 @@ export interface ServerConfig {
   readonly roomIdleMs: number;
   /** Fixed think time per difficulty; never depends on the decision (see bot-standards). */
   readonly botDelayMs: Readonly<Record<Difficulty, number>>;
-  /** Delay before a bot advances past the hand-result screen when no human is present. */
+  /** Delay before a bot confirms the hand result when no human is present. */
   readonly botContinueDelayMs: number;
+  /**
+   * How long the hand result stays up. The next hand is dealt when every seat has
+   * confirmed, or when this runs out, whichever comes first.
+   */
+  readonly handResultMs: number;
   /** Strategy used to play a human's seat while they are away. */
   readonly takeoverDifficulty: Difficulty;
   /** The one global ruleset (see docs/architecture.md). */
@@ -28,6 +33,7 @@ export const DEFAULT_CONFIG: ServerConfig = {
   roomIdleMs: Number(env.ROOM_IDLE_MS ?? 10 * 60_000),
   botDelayMs: { easy: 700, normal: 900 },
   botContinueDelayMs: 4_000,
+  handResultMs: 20_000,
   takeoverDifficulty: 'normal',
   ruleset: DEFAULT_RULESET,
   staticDir: env.STATIC_DIR ?? path.resolve(import.meta.dirname, '../../client/dist'),

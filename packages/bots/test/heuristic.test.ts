@@ -55,6 +55,7 @@ function obsFor(partial: Partial<Observation> & { hand: CardId[] }): Observation
     turn: 0,
     legal: { kind: 'play', cardIds: partial.hand },
     result: null,
+    continuePending: [],
     winner: null,
     ...partial,
   };

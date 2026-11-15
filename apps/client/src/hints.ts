@@ -29,7 +29,7 @@ export function listNames(names: readonly string[]): string {
   return `${names.slice(0, -1).join(', ')} and ${names.at(-1)}`;
 }
 
-/** True when the table is waiting on this seat. "Next hand" is anyone's, so it doesn't count. */
+/** True when the table is waiting on this seat. Confirming the hand result has its own countdown, so it doesn't count. */
 export function isMyTurn(view: TableView): boolean {
   return view.legal.kind !== 'none' && view.legal.kind !== 'continue';
 }

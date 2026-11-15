@@ -25,4 +25,5 @@ export type GameEvent =
   | { readonly type: 'cardPlayed'; readonly seat: Seat; readonly cardId: CardId }
   | { readonly type: 'trickWon'; readonly seat: Seat; readonly trickIndex: number }
   | { readonly type: 'handScored'; readonly result: HandResult }
+  | { readonly type: 'readyForNextHand'; readonly seat: Seat }
   | { readonly type: 'gameOver'; readonly winner: Team };
