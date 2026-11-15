@@ -12,6 +12,7 @@ export interface Observation {
   readonly seat: Seat;
   readonly team: Team;
   readonly ruleset: Ruleset;
+  /** The step under way: the hand's own phase (bidding, playing, …), or 'game-over'. */
   readonly phase: Phase;
   readonly handNumber: number;
   readonly dealer: Seat;
@@ -63,7 +64,9 @@ export function observe(state: GameState, seat: Seat): Observation {
     seat,
     team: teamOf(seat),
     ruleset: state.ruleset,
-    phase: state.phase,
+    // GameState.phase stays 'misdeal-window' for the whole of a hand; the hand tracks its
+    // own progress.
+    phase: state.phase === 'game-over' ? 'game-over' : (hand?.phase ?? state.phase),
     handNumber: hand?.handNumber ?? 0,
     dealer: state.dealer,
     redeals: hand?.redeals ?? 0,
