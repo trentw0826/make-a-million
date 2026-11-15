@@ -1,9 +1,8 @@
 ### TODO Updates
 A scratchpad for future fixes, features, and updates
 
-#### From the UI polish work (branch `worktree-ui-polish`)
+#### From the UI polish work
 
-- [ ] **Review and merge `worktree-ui-polish`.** It holds 8 commits: the app shell, the quieter log, status signals, hand order, animations, an engine phase fix, polish, and the e2e smoke test.
 - [ ] **"Next hand" closes the result for everyone.** The engine's `continue` takes the first click (`packages/engine/src/reducer.ts`), so one player can dismiss the hand result before the others have read it. Possible fixes: every seated human confirms, and the dialog shows who is still reading; or a short minimum display time. This needs engine and server changes.
 - [ ] **Finish the manual browser checks.** The e2e test does not cover these: run two windows (one private, joining by invite link) and check
   - the "● Your turn" tab title while the tab is in the background
