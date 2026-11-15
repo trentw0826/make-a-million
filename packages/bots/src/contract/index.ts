@@ -40,6 +40,11 @@ export interface ContractOptions {
   readonly refineWorlds: number;
   readonly refineTop: number;
   readonly refineDepth: number;
+  /**
+   * Total search nodes for the re-check; past it, the best fully re-checked candidate wins
+   * (as past the deadline). Bounds the discard and trump decisions' time.
+   */
+  readonly refineNodes: number;
   readonly utility: UtilityMode;
   /** Bid only when declaring beats passing by more than this (utility units). */
   readonly bidMargin: number;
@@ -68,6 +73,7 @@ export const CONTRACT_DEFAULTS: ContractOptions = {
   refineWorlds: 12,
   refineTop: 4,
   refineDepth: 1,
+  refineNodes: Number.POSITIVE_INFINITY,
   utility: 'equity',
   bidMargin: 0,
   raisePartner: false,
@@ -288,8 +294,8 @@ function bestCandidate(
   });
   const refineDeals = Array.from({ length: opts.refineWorlds }, () => belief.sample(rng));
   solver.deadline = deadline;
-  // Past the deadline, the best candidate among those fully re-checked wins (the screen's
-  // best is re-checked first).
+  // Past the deadline or node budget, the best candidate among those fully re-checked wins
+  // (the screen's best is re-checked first).
   let best = top[0] as (typeof top)[0];
   let bestValue = Number.NEGATIVE_INFINITY;
   refine: for (const t of top) {
@@ -303,14 +309,16 @@ function bestCandidate(
         currentTrick: null,
         turn: obs.seat,
       });
+      if (solver.nodes >= opts.refineNodes) break refine;
       solver.depthTricks = opts.refineDepth;
-      solver.nodeLimit = solver.nodes + 2_000_000;
+      solver.nodeLimit = Math.min(solver.nodes + 2_000_000, opts.refineNodes);
       let v0: number;
       try {
         v0 = solver.solve(state);
       } catch (e) {
         if (e instanceof DeadlineExceeded) break refine;
         if (!(e instanceof SearchAborted)) throw e;
+        if (solver.nodes >= opts.refineNodes) break refine;
         v0 = u0([0, 0]);
       }
       total += team === 0 ? v0 : opts.utility === 'equity' ? 1 - v0 : -v0;
