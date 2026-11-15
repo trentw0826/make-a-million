@@ -23,6 +23,8 @@ export interface HardOptions extends PimcOptions, ContractOptions {
   readonly searchTrump: boolean;
   /** What card play maximises: points, or the probability of winning the game. */
   readonly playUtility: UtilityMode;
+  /** With inference on, also weight worlds by players' throw-offs. */
+  readonly throwOffs: boolean;
 }
 
 export const HARD_DEFAULTS: HardOptions = {
@@ -33,6 +35,7 @@ export const HARD_DEFAULTS: HardOptions = {
   searchDiscard: true,
   searchTrump: true,
   playUtility: 'margin',
+  throwOffs: false,
 };
 
 /** Expert: the same algorithms with about four times Hard's budget, spent on depth. */
@@ -86,7 +89,10 @@ export class HardBot implements BotStrategy {
     const legal = obs.legal;
     if (legal.kind !== 'play') throw new Error('play outside playing');
     if (legal.cardIds.length === 1) return { type: 'playCard', cardId: legal.cardIds[0] as number };
-    const weight = this.options.inferencePool > 0 ? makeWorldWeight(obs) : undefined;
+    const weight =
+      this.options.inferencePool > 0
+        ? makeWorldWeight(obs, { throwOffs: this.options.throwOffs })
+        : undefined;
     const result = pimcValues(obs, rng, this.options, this.playLeafUtility(obs), weight);
     // Ties (common: many cards are worth the same) go to the heuristic's choice.
     const preferred = this.heuristic.decide(obs, rng);
