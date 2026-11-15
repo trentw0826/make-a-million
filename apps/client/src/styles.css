@@ -42,10 +42,11 @@ button {
   color: var(--ink);
   cursor: pointer;
 }
-button:hover:not(:disabled) {
+button:hover:not(:disabled, [aria-disabled="true"]) {
   filter: brightness(0.96);
 }
-button:disabled {
+button:disabled,
+button[aria-disabled="true"] {
   opacity: 0.5;
   cursor: default;
 }
@@ -661,7 +662,7 @@ input {
 button.card {
   cursor: pointer;
 }
-button.card:hover:not(:disabled) {
+button.card:hover:not(:disabled, [aria-disabled="true"]) {
   transform: translateY(-6px);
   filter: none;
 }
@@ -691,7 +692,8 @@ button.card:hover:not(:disabled) {
   outline: 3px solid var(--accent);
   transform: translateY(-10px);
 }
-.card-disabled {
+.card-disabled,
+button.card-disabled {
   opacity: 0.45;
 }
 .card-star {

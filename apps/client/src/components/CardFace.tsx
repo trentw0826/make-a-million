@@ -5,9 +5,14 @@ export interface CardFaceProps {
   readonly id: CardId;
   readonly size?: 'normal' | 'small';
   readonly selected?: boolean | undefined;
-  /** A card the player may not play right now. */
+  /**
+   * A card the player may not play right now. It stays focusable and hoverable (aria-disabled,
+   * not `disabled`) so its tooltip shows in every browser; clicks go to `onBlockedClick`.
+   */
   readonly disabled?: boolean | undefined;
   readonly onClick?: (() => void) | undefined;
+  /** A click on a disabled card, e.g. to say why it can't be played. */
+  readonly onBlockedClick?: (() => void) | undefined;
   /** A trump card (the trump color or the Tiger), marked once trump is named. */
   readonly trump?: boolean | undefined;
   /** Just picked up from the widow. */
@@ -32,6 +37,7 @@ export function CardFace({
   selected,
   disabled,
   onClick,
+  onBlockedClick,
   trump,
   fresh,
   winning,
@@ -79,8 +85,8 @@ export function CardFace({
     <button
       type="button"
       className={classes.join(' ')}
-      onClick={onClick}
-      disabled={disabled}
+      onClick={disabled ? onBlockedClick : onClick}
+      aria-disabled={disabled || undefined}
       aria-pressed={selected ?? false}
       aria-label={name}
       title={title}

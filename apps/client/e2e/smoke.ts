@@ -23,6 +23,8 @@ const HAND_TIMEOUT_MS = 4 * 60_000;
 const VIEWPORT = { width: 1280, height: 860 };
 
 const failures: string[] = [];
+/** Checked once, on the first turn that has an unplayable card. */
+let blockedCardChecked = false;
 function check(ok: boolean, what: string): void {
   console.log(`${ok ? '✓' : '✗'} ${what}`);
   if (!ok) failures.push(what);
@@ -125,7 +127,7 @@ async function act(page: Page, shoot: Shoot): Promise<boolean> {
       await shoot('4-discard');
       for (let i = 0; i < 3; i++) {
         await page
-          .locator('.hand button.card:not([disabled])[aria-pressed="false"]')
+          .locator('.hand button.card:not([aria-disabled])[aria-pressed="false"]')
           .first()
           .click(quick);
       }
@@ -137,8 +139,23 @@ async function act(page: Page, shoot: Shoot): Promise<boolean> {
       await suit.click(quick);
       return true;
     }
-    const card = page.locator('.hand button.card:not([disabled])').first();
+    const card = page.locator('.hand button.card:not([aria-disabled])').first();
     if (await card.isVisible()) {
+      const blocked = page.locator('.hand button.card[aria-disabled="true"]').first();
+      if (!blockedCardChecked && (await blocked.count()) > 0) {
+        const reason = await blocked.getAttribute('title', quick);
+        check(Boolean(reason), 'a greyed-out card carries a tooltip saying why');
+        // Playwright won't click an aria-disabled element unless forced; a person can.
+        await blocked.click({ ...quick, force: true });
+        check(
+          await page
+            .locator('.toast')
+            .getByText(reason ?? '')
+            .isVisible(),
+          'clicking a greyed-out card shows the reason',
+        );
+        blockedCardChecked = true;
+      }
       await card.click(quick);
       return true;
     }
@@ -244,6 +261,7 @@ async function fullHand(browser: Browser, base: string): Promise<void> {
     'the hand result shows a made/set banner',
   );
   check(orderChecked, 'trump was named during the hand');
+  check(blockedCardChecked, 'a greyed-out card was checked during the hand');
   const seen = await seenClasses(page);
   check(seen.includes('trick-enter'), 'played cards slide in');
   check(seen.includes('trick-sweep'), 'taken tricks sweep to the winner');
