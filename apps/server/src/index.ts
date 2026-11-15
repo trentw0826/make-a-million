@@ -1,14 +1,17 @@
-import { createServer } from 'node:http';
+import { createApp } from './app';
+import { DEFAULT_CONFIG } from './config';
+import { consoleLogger } from './log';
 
-export const PACKAGE_NAME = '@mam/server';
+const app = createApp(DEFAULT_CONFIG, consoleLogger);
 
-const port = Number(process.env.PORT ?? 3000);
+app.listen().catch((e) => {
+  consoleLogger('error', 'failed to start', { error: String(e) });
+  process.exit(1);
+});
 
-if (process.env.NODE_ENV !== 'test' && import.meta.url === `file://${process.argv[1]}`) {
-  createServer((_req, res) => {
-    res.writeHead(200, { 'content-type': 'text/plain' });
-    res.end(`${PACKAGE_NAME}\n`);
-  }).listen(port, () => {
-    console.log(`listening on http://localhost:${port}`);
+for (const signal of ['SIGINT', 'SIGTERM'] as const) {
+  process.on(signal, () => {
+    consoleLogger('info', `${signal} received, shutting down`);
+    app.close().then(() => process.exit(0));
   });
 }

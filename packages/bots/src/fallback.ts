@@ -4,7 +4,7 @@ import { type Action, cardById, isMoney, isNumberCard, type Observation } from '
  * The simplest legal action for the seat, or null when it has nothing to do. The server
  * uses this when a strategy misbehaves, so a game can never stall on a bot.
  */
-export function fallbackAction(obs: Observation): Action | null {
+export function fallbackAction(obs: Pick<Observation, 'legal' | 'hand'>): Action | null {
   const legal = obs.legal;
   switch (legal.kind) {
     case 'none':
