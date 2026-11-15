@@ -1,0 +1,41 @@
+import type { Seat, Suit } from '@mam/engine';
+import type { RoomView, SeatView } from '@mam/protocol';
+
+export function money(amount: number): string {
+  const sign = amount < 0 ? '−' : '';
+  return `${sign}$${Math.abs(amount).toLocaleString('en-US')}`;
+}
+
+export function shortMoney(amount: number): string {
+  return `$${Math.round(amount / 1000)}k`;
+}
+
+export const SUIT_NAMES: Record<Suit, string> = {
+  red: 'Red',
+  yellow: 'Yellow',
+  black: 'Black',
+  green: 'Green',
+};
+
+export const DIFFICULTY_LABELS: Record<'easy' | 'normal', string> = {
+  easy: 'Easy',
+  normal: 'Normal',
+};
+
+export function seatLabel(seat: SeatView): string {
+  if (!seat) return 'Empty seat';
+  if (seat.kind === 'bot') return `${seat.name} · ${DIFFICULTY_LABELS[seat.difficulty]}`;
+  return seat.name;
+}
+
+export function nameOf(room: RoomView | null, seat: Seat): string {
+  const s = room?.seats[seat];
+  if (!s) return `Seat ${seat + 1}`;
+  return s.kind === 'bot' ? s.name : s.name;
+}
+
+export function teamLabel(room: RoomView | null, team: 0 | 1): string {
+  const a = nameOf(room, team);
+  const b = nameOf(room, (team + 2) as Seat);
+  return `${a} & ${b}`;
+}
