@@ -11,6 +11,11 @@ export function shortMoney(amount: number): string {
   return `${sign}$${Math.round(Math.abs(amount) / 1000).toLocaleString('en-US')}k`;
 }
 
+/** "+$210k" for a gain, "−$185k" for a loss. */
+export function signedShortMoney(amount: number): string {
+  return amount > 0 ? `+${shortMoney(amount)}` : shortMoney(amount);
+}
+
 export const SUIT_NAMES: Record<Suit, string> = {
   red: 'Red',
   yellow: 'Yellow',

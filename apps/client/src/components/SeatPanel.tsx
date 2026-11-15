@@ -1,6 +1,7 @@
-import type { Seat, TableView } from '@mam/engine';
+import { partnerOf, type Seat, type TableView } from '@mam/engine';
 import type { RoomView } from '@mam/protocol';
 import { seatLabel } from '../format';
+import { seatChip } from '../hints';
 import { CardBack } from './CardFace';
 
 interface Props {
@@ -10,22 +11,35 @@ interface Props {
   position: 'top' | 'left' | 'right';
 }
 
-/** Another player's place at the table: name, status, face-down cards. */
+/** True when the table is waiting on `seat`. */
+export function isActing(view: TableView, seat: Seat): boolean {
+  return (
+    view.turn === seat || (view.phase === 'misdeal-window' && view.misdeal.pending.includes(seat))
+  );
+}
+
+/** Another player's place at the table: name, side, what they said, face-down cards. */
 export function SeatPanel({ seat, room, view, position }: Props) {
   const s = room.seats[seat];
-  const acting =
-    view.turn === seat || (view.phase === 'misdeal-window' && view.misdeal.pending.includes(seat));
-  const isDealer = view.dealer === seat;
-  const isBidder = view.contract?.bidder === seat;
+  const acting = isActing(view, seat);
+  const partner = seat === partnerOf(view.seat);
+  const chip = seatChip(view, seat);
+  const classes = ['seat-panel', `seat-${position}`, partner ? 'side-us' : 'side-them'];
+  if (acting) classes.push('seat-acting');
   return (
-    <div className={`seat-panel seat-${position} ${acting ? 'seat-acting' : ''}`}>
+    <div className={classes.join(' ')}>
       <div className="seat-name">
         {seatLabel(s)}
-        {isDealer && <span className="tag">dealer</span>}
-        {isBidder && <span className="tag">bidder</span>}
+        {view.dealer === seat && <span className="tag">dealer</span>}
+        {view.contract?.bidder === seat && <span className="tag">bidder</span>}
         {s?.kind === 'human' && !s.connected && (
           <span className="tag warn">{s.botControlled ? 'bot playing' : 'reconnecting…'}</span>
         )}
+      </div>
+      <div className="seat-role">
+        <span className="side-dot" aria-hidden="true" />
+        {partner ? 'Partner' : 'Opponent'}
+        {chip && <span className={`seat-chip chip-${chip.kind}`}>{chip.text}</span>}
       </div>
       <CardBack count={view.handSizes[seat]} />
     </div>
