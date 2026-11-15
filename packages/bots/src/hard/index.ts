@@ -1,5 +1,11 @@
 import type { Action, Observation, Rng } from '@mam/engine';
-import { captureUtility, type LeafUtility, ME_TABLE, type UtilityMode } from '@mam/search';
+import {
+  captureUtility,
+  type LeafUtility,
+  ME_TABLE,
+  type UtilityMode,
+  type World,
+} from '@mam/search';
 import {
   CONTRACT_DEFAULTS,
   type ContractOptions,
@@ -10,6 +16,7 @@ import {
 } from '../contract/index';
 import { HeuristicBot } from '../heuristic/index';
 import { makeWorldWeight } from '../inference/index';
+import { makeSpecialsWeight } from '../inference/specials';
 import type { BotStrategy, DecideContext } from '../strategy';
 import { PIMC_DEFAULTS, type PimcOptions, pimcValues } from './pimc';
 
@@ -36,8 +43,15 @@ export interface HardOptions extends PimcOptions, ContractOptions {
   readonly playUtility: 'linear' | UtilityMode;
   /** For 'margin'/'equity': apply it to each world's points values (cheap; see UtilityAt). */
   readonly fastUtility: boolean;
+  /** With inference on (inferencePool > 0), weight worlds by the auction and trump choice. */
+  readonly auctionInference: boolean;
   /** With inference on, also weight worlds by players' throw-offs. */
   readonly throwOffs: boolean;
+  /**
+   * With inference on, weight worlds by the Tiger, Bull and Bear evidence: players who could
+   * have played one and did not (inference/specials.ts).
+   */
+  readonly specialsInference: boolean;
 }
 
 export const HARD_DEFAULTS: HardOptions = {
@@ -49,7 +63,9 @@ export const HARD_DEFAULTS: HardOptions = {
   searchTrump: true,
   playUtility: 'linear',
   fastUtility: true,
+  auctionInference: true,
   throwOffs: false,
+  specialsInference: false,
 };
 
 /**
@@ -112,10 +128,7 @@ export class HardBot implements BotStrategy {
     const legal = obs.legal;
     if (legal.kind !== 'play') throw new Error('play outside playing');
     if (legal.cardIds.length === 1) return { type: 'playCard', cardId: legal.cardIds[0] as number };
-    const weight =
-      this.options.inferencePool > 0
-        ? makeWorldWeight(obs, { throwOffs: this.options.throwOffs })
-        : undefined;
+    const weight = this.worldWeight(obs);
     const utility = this.playLeafUtility(obs);
     const result = pimcValues(obs, rng, this.options, {
       ...(utility ? { utility } : {}),
@@ -136,6 +149,19 @@ export class HardBot implements BotStrategy {
       return { type: 'playCard', cardId: preferredCard };
     }
     return { type: 'playCard', cardId: result.moves[best] as number };
+  }
+
+  /** Soft-inference weight of a sampled world (undefined: all worlds equally likely). */
+  private worldWeight(obs: Observation): ((world: World) => number) | undefined {
+    const o = this.options;
+    if (o.inferencePool <= 0) return undefined;
+    const parts: ((world: World) => number)[] = [];
+    if (o.auctionInference) parts.push(makeWorldWeight(obs, { throwOffs: o.throwOffs }));
+    const specials = o.specialsInference ? makeSpecialsWeight(obs) : undefined;
+    if (specials) parts.push(specials);
+    if (parts.length === 0) return undefined;
+    if (parts.length === 1) return parts[0];
+    return (world) => parts.reduce((w, f) => w * f(world), 1);
   }
 
   /** Team 0's utility of final captures ($1000s); undefined = linear money difference. */

@@ -1,4 +1,4 @@
-import { playoutDeclare, playoutWith } from '@mam/bots';
+import { opportunity, playoutDeclare, playoutWith, SPECIALS } from '@mam/bots';
 import {
   type AuctionEntry,
   type CardId,
@@ -7,6 +7,8 @@ import {
   type Ruleset,
   type Seat,
   type Team,
+  TIGER_ID,
+  type Trick,
   teamOf,
 } from '@mam/engine';
 import './registry';
@@ -198,10 +200,53 @@ export async function timingTask(input: PlayInput): Promise<TimedDecision[]> {
   return out;
 }
 
+/** One chance to play a special: [fine cell, coarse cell, played it (1) or not (0)]. */
+export type SpecialsRow = readonly [number, number, 0 | 1];
+
+/**
+ * Plays (part of) a game and records every decision at which the player could have played
+ * the Tiger, Bull or Bear, and whether it did: data for the specials inference model.
+ */
+export async function specialsTask(input: PlayInput): Promise<SpecialsRow[]> {
+  const strategies = input.specs.map(makeStrategy) as unknown as Parameters<
+    typeof playGame
+  >[0]['strategies'];
+  const rows: SpecialsRow[] = [];
+  await playGame({
+    seed: input.seed,
+    dealer: input.dealer,
+    strategies,
+    ...(input.scores ? { scores: input.scores } : {}),
+    ...(input.hands !== undefined ? { hands: input.hands } : {}),
+    ...(input.ruleset ? { ruleset: input.ruleset } : {}),
+    onDecision: ({ seat, obs, action }) => {
+      if (obs.legal.kind !== 'play' || obs.trump === null) return;
+      const legal = obs.legal.cardIds;
+      if (legal.length < 2) return;
+      const trick: Trick = obs.currentTrick ?? {
+        leader: seat,
+        plays: [],
+        suit: null,
+        winner: null,
+      };
+      for (const special of SPECIALS) {
+        if (!legal.includes(special)) continue;
+        // The Bull and Bear may be led only as the last cards: no choice, no evidence.
+        if (trick.plays.length === 0 && special !== TIGER_ID) continue;
+        const cell = opportunity(special, trick, obs.trump, seat, obs.hand.length);
+        const played = action.type === 'playCard' && action.cardId === special ? 1 : 0;
+        rows.push([cell.fine, cell.coarse, played]);
+      }
+    },
+  });
+  return rows;
+}
+
 export const TASKS = {
   play: playTask,
   calibrate: calibrateTask,
   timing: timingTask,
+  specials: specialsTask,
 } as const;
 
 export type TaskName = keyof typeof TASKS;

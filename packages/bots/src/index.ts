@@ -18,6 +18,14 @@ export {
   pimcValues,
 } from './hard/index';
 export { HeuristicBot } from './heuristic/index';
+export {
+  COARSE_CELLS,
+  FINE_CELLS,
+  makeSpecialsWeight,
+  opportunity,
+  SPECIALS,
+  type SpecialsModel,
+} from './inference/specials';
 export { RandomBot } from './random';
 export {
   type BotStrategy,
