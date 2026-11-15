@@ -1,3 +1,4 @@
+export * from './belief/sampler';
 export * from './equity';
 export { ME_TABLE } from './generated/meTable';
 export * from './play/convert';

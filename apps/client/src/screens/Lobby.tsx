@@ -1,6 +1,6 @@
 import type { Seat } from '@mam/engine';
-import type { RoomView, SeatView } from '@mam/protocol';
-import { seatLabel } from '../format';
+import type { Difficulty, RoomView, SeatView } from '@mam/protocol';
+import { DIFFICULTY_LABELS, DIFFICULTY_ORDER, seatLabel } from '../format';
 import { useGame } from '../store';
 
 const SEAT_ORDER: readonly Seat[] = [0, 1, 2, 3];
@@ -74,7 +74,7 @@ interface SeatCardProps {
   isHost: boolean;
   onSit: () => void;
   onStand: () => void;
-  onAddBot: (difficulty: 'easy' | 'normal') => void;
+  onAddBot: (difficulty: Difficulty) => void;
   onRemoveBot: () => void;
 }
 
@@ -107,16 +107,13 @@ function SeatCard(p: SeatCardProps) {
             Sit here
           </button>
         )}
-        {p.canSit && p.isHost && (
-          <>
-            <button type="button" className="ghost" onClick={() => p.onAddBot('easy')}>
-              + Bot · Easy
+        {p.canSit &&
+          p.isHost &&
+          DIFFICULTY_ORDER.map((d) => (
+            <button key={d} type="button" className="ghost" onClick={() => p.onAddBot(d)}>
+              + Bot · {DIFFICULTY_LABELS[d]}
             </button>
-            <button type="button" className="ghost" onClick={() => p.onAddBot('normal')}>
-              + Bot · Normal
-            </button>
-          </>
-        )}
+          ))}
         {p.view?.kind === 'bot' && p.isHost && (
           <button type="button" className="ghost" onClick={p.onRemoveBot}>
             Remove bot

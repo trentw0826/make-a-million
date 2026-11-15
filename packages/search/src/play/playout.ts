@@ -5,10 +5,12 @@ import { BEAR, BULL, cardMoneyK, type PlayState, SPEC_BEAR, SPEC_BULL, TIGER } f
  * and returns the money each team captures from here, then restores the position.
  * Used to estimate positions too early in a hand to solve exactly.
  */
-export function greedyPlayout(s: PlayState, out: { d0: number; d1: number }): void {
+const PLAYOUT_BUF = new Int32Array(16);
+
+export function greedyPlayout(s: PlayState, out: { d0: number; d1: number }): number {
   const start0 = s.cap0;
   const start1 = s.cap1;
-  const buf = new Int32Array(16);
+  const buf = PLAYOUT_BUF;
   let plies = 0;
   while (!s.done) {
     const n = s.legalMoves(buf);
@@ -18,6 +20,7 @@ export function greedyPlayout(s: PlayState, out: { d0: number; d1: number }): vo
   out.d0 = s.cap0 - start0;
   out.d1 = s.cap1 - start1;
   for (let i = 0; i < plies; i++) s.undo();
+  return plies;
 }
 
 function liveTopRank(s: PlayState, suit: number): number {

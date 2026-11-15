@@ -13,7 +13,7 @@ export const WS_PATH = '/ws';
 export const SeatSchema = z.union([z.literal(0), z.literal(1), z.literal(2), z.literal(3)]);
 export const CardIdSchema = z.number().int().min(0).max(54);
 export const SuitSchema = z.enum(SUITS);
-export const DifficultySchema = z.enum(['easy', 'normal']);
+export const DifficultySchema = z.enum(['easy', 'normal', 'hard', 'expert']);
 export type Difficulty = z.infer<typeof DifficultySchema>;
 
 export const PlayerNameSchema = z

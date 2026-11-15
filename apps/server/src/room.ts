@@ -1,4 +1,4 @@
-import { createBot, fallbackAction } from '@mam/bots';
+import { fallbackAction } from '@mam/bots';
 import {
   type Action,
   applyAction,
@@ -20,6 +20,7 @@ import type {
   SeatView,
   ServerMessage,
 } from '@mam/protocol';
+import type { DecideBot } from './botPool';
 import type { ServerConfig } from './config';
 import { newGameSeed } from './ids';
 import type { Logger } from './log';
@@ -34,6 +35,8 @@ export interface RoomDeps {
   readonly log: Logger;
   send(playerId: string, message: ServerMessage): void;
   onClosed(room: Room): void;
+  /** Computes a bot decision (inline or on a worker thread). */
+  decideBot: DecideBot;
 }
 
 interface Member {
@@ -66,6 +69,7 @@ export class Room {
 
   private gamesStarted = 0;
   private botRng = Rng.fromSeed('room');
+  private botGeneration = 0;
   private readonly botTimers = new Map<Seat, NodeJS.Timeout>();
   private idleTimer: NodeJS.Timeout | null = null;
   private closed = false;
@@ -354,31 +358,53 @@ export class Room {
     }
   }
 
+  /**
+   * Starts the bot's decision at once and plays it exactly `delay` ms after it became the
+   * bot's turn (or as soon as it is ready, if thinking takes longer). The reply time then
+   * reveals nothing about the hand or the choice (see "Compute and Timing" in bot-standards).
+   */
   private scheduleBot(seat: Seat, delay: number): void {
-    this.botTimers.set(
-      seat,
-      setTimeout(() => {
-        this.botTimers.delete(seat);
-        void this.botAct(seat);
-      }, delay),
-    );
+    const game = this.game;
+    if (!game) return;
+    const generation = this.botGeneration;
+    const started = Date.now();
+    const seed = this.botRng.nextUint32();
+    void this.computeBotAction(seat, game, seed).then((action) => {
+      if (generation !== this.botGeneration || this.game !== game || this.closed) return;
+      const wait = Math.max(0, delay - (Date.now() - started));
+      this.botTimers.set(
+        seat,
+        setTimeout(() => {
+          this.botTimers.delete(seat);
+          this.applyBotAction(seat, game, action);
+        }, wait),
+      );
+    });
   }
 
-  private async botAct(seat: Seat): Promise<void> {
-    const game = this.game;
-    if (!game || this.closed || this.phase !== 'playing' || !this.isBotControlled(seat)) return;
+  private async computeBotAction(
+    seat: Seat,
+    game: GameState,
+    seed: number,
+  ): Promise<Action | null> {
+    if (this.closed || this.phase !== 'playing' || !this.isBotControlled(seat)) return null;
     const obs = observe(game, seat);
-    if (obs.legal.kind === 'none') return;
-
+    if (obs.legal.kind === 'none') return null;
     const difficulty = this.botDifficulty(seat);
-    let action: Action | null = null;
     try {
-      action = await createBot(difficulty).decide(obs, this.botRng);
+      return await this.deps.decideBot(difficulty, obs, seed);
     } catch (e) {
       this.deps.log('error', 'bot threw', { room: this.code, seat, difficulty, error: String(e) });
+      return null;
     }
+  }
+
+  private applyBotAction(seat: Seat, game: GameState, action: Action | null): void {
     // The game may have moved on while the bot was deciding.
-    if (this.game !== game || this.closed) return;
+    if (this.game !== game || this.closed || !this.isBotControlled(seat)) return;
+    const obs = observe(game, seat);
+    if (obs.legal.kind === 'none') return;
+    const difficulty = this.botDifficulty(seat);
 
     let result = action ? applyAction(game, seat, action) : null;
     if (!result?.ok) {
@@ -406,6 +432,8 @@ export class Room {
   private clearBotTimers(): void {
     for (const timer of this.botTimers.values()) clearTimeout(timer);
     this.botTimers.clear();
+    // Decisions still being computed for the old position are discarded when they arrive.
+    this.botGeneration += 1;
   }
 
   // ---------------------------------------------------------------------------

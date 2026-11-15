@@ -127,6 +127,11 @@ export async function duplicateCommand(args: string[]): Promise<number> {
     `  think time A: mean ${result.timingA.meanMs.toFixed(1)}ms max ${result.timingA.maxMs.toFixed(0)}ms · B: mean ${result.timingB.meanMs.toFixed(1)}ms max ${result.timingB.maxMs.toFixed(0)}ms`,
   );
   if (result.sprt) console.log(`  SPRT: ${result.sprt} (LLR ${result.llr?.toFixed(2)})`);
+  for (const s of result.slow) {
+    console.log(
+      `  slow: ${s.spec} ${s.phase} ${s.ms}ms (cards left ${s.cardsLeft}, trick ${s.trickCards}, legal ${s.legal})`,
+    );
+  }
   return 0;
 }
 

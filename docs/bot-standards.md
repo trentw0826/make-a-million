@@ -47,6 +47,18 @@ A bot must never have access to:
 - **All decisions:** Bots must be able to make every decision a human makes: whether to call a misdeal, bid or pass, which cards to discard, which trump to name, and which card to play.
 - **Pacing:** Bots wait briefly before acting, so humans can follow the play. The delay must **not** depend on the bot's hand or on the decision it made, so that timing gives away no information.
 
+## Compute and Timing
+
+- **Budgets, not clocks:** A search‑based bot limits its work by counts (search nodes, sampled deals), never by wall‑clock time, so the same observation and seed always give the same action.
+- **Fixed reply time:** The server replies for a bot at a fixed, per‑difficulty delay that is longer than the bot's worst‑case thinking time. How long a bot "thinks" therefore reveals nothing about its hand or its choice. A deadline is kept only as a safety net (the search returns its best move so far), and monitoring checks that it essentially never fires.
+- **Load:** When the server is busy it may give every bot a smaller budget. That depends on server load, never on any hand, so it leaks nothing.
+- **No shared state:** Each decision is computed from the observation alone. Nothing persists between decisions, and nothing is shared between bots, including partners.
+
+## Evaluation‑Only Oracles
+
+- **Purpose:** To measure how much a bot loses by not seeing the cards, the simulator may run an *oracle*: a strategy that sees the full game state.
+- **Never in play:** An oracle breaks every information rule above. It lives only in the simulator package, is never registered as a difficulty, and the server and the bot package cannot import it.
+
 ## Seat Substitution
 
 - **Takeover:** When a bot takes over the seat of a disconnected human, it receives that seat's observation: the seat's hand, any widow knowledge the seat has, and the full public history. It receives nothing else.

@@ -183,7 +183,8 @@ export class Solver {
       this.depthTricks !== Number.POSITIVE_INFINITY &&
       (this.rootLive - s.cardsInHands) / 4 >= this.depthTricks
     ) {
-      greedyPlayout(s, this.playout);
+      // Count the playout's plies as nodes so budgets track real cost.
+      this.nodes += greedyPlayout(s, this.playout);
       const { d0, d1 } = this.playout;
       return this.linear ? d0 - d1 : this.utility(s.cap0 + d0, s.cap1 + d1);
     }

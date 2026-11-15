@@ -12,7 +12,7 @@ import { lookupEquity, type MatchEquityTable } from '@mam/search';
 import { runParallel } from './parallel';
 import { RunningStats, Sprt, type SprtDecision, type SprtOptions } from './stats';
 import type { BotSpec } from './strategies';
-import type { HandLine, PlayInput, PlayOutput, TimingSummary } from './tasks';
+import type { HandLine, PlayInput, PlayOutput, SlowDecision, TimingSummary } from './tasks';
 
 /** A deal at a point in a game: replayed twice with the teams swapped. */
 export interface Board {
@@ -105,6 +105,7 @@ export interface DuplicateResult {
   readonly timingA: { decisions: number; meanMs: number; maxMs: number };
   readonly timingB: { decisions: number; meanMs: number; maxMs: number };
   readonly elapsedMs: number;
+  readonly slow: readonly SlowDecision[];
 }
 
 export interface DuplicateOptions {
@@ -147,6 +148,7 @@ export async function runDuplicate(opts: DuplicateOptions): Promise<DuplicateRes
   const tB = { decisions: 0, totalMs: 0, maxMs: 0 };
   let pending: PlayOutput | null = null;
   let boards = 0;
+  const slow: SlowDecision[] = [];
 
   const addTiming = (into: typeof tA, t: TimingSummary) => {
     into.decisions += t.decisions;
@@ -181,6 +183,7 @@ export async function runDuplicate(opts: DuplicateOptions): Promise<DuplicateRes
         stats.bidTotal += line.bid;
         if (line.made) stats.made += 1;
       }
+      for (const s of [...o0.slow, ...out.slow]) if (slow.length < 25) slow.push(s);
       opts.onBoard?.(boards - 1, result);
       if (sprt) {
         decision = sprt.push(result.me);
@@ -206,5 +209,6 @@ export async function runDuplicate(opts: DuplicateOptions): Promise<DuplicateRes
     timingA: summary(tA),
     timingB: summary(tB),
     elapsedMs: performance.now() - started,
+    slow,
   };
 }

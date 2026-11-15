@@ -2,6 +2,7 @@ import { fallbackAction } from '@mam/bots';
 import type { Action } from '@mam/engine';
 import type { ServerMessage } from '@mam/protocol';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { decideInline } from '../src/botPool';
 import { testConfig } from '../src/config';
 import { silentLogger } from '../src/log';
 import { Room } from '../src/room';
@@ -26,6 +27,7 @@ function harness(overrides = {}): Harness {
       sent.set(id, list);
     },
     onClosed: (r) => closed.push(r),
+    decideBot: decideInline,
   });
   return {
     room,

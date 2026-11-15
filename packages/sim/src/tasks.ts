@@ -37,13 +37,27 @@ export interface PlayOutput {
   readonly steps: number;
   /** Decision timing per seat. */
   readonly timing: readonly [TimingSummary, TimingSummary, TimingSummary, TimingSummary];
+  /** Decisions slower than SLOW_MS (default 5000), for diagnosing budget problems. */
+  readonly slow: readonly SlowDecision[];
 }
+
+export interface SlowDecision {
+  readonly spec: BotSpec;
+  readonly phase: string;
+  readonly ms: number;
+  readonly cardsLeft: number;
+  readonly trickCards: number;
+  readonly legal: number;
+}
+
+const SLOW_MS = Number(process.env.SLOW_MS ?? 5000);
 
 export async function playTask(input: PlayInput): Promise<PlayOutput> {
   const strategies = input.specs.map(makeStrategy) as unknown as Parameters<
     typeof playGame
   >[0]['strategies'];
   const timing = [0, 1, 2, 3].map(() => ({ decisions: 0, totalMs: 0, maxMs: 0 }));
+  const slow: SlowDecision[] = [];
   const outcome = await playGame({
     seed: input.seed,
     dealer: input.dealer,
@@ -51,11 +65,21 @@ export async function playTask(input: PlayInput): Promise<PlayOutput> {
     ...(input.scores ? { scores: input.scores } : {}),
     ...(input.hands !== undefined ? { hands: input.hands } : {}),
     ...(input.ruleset ? { ruleset: input.ruleset } : {}),
-    onDecision: ({ seat, ms }) => {
+    onDecision: ({ seat, ms, obs }) => {
       const t = timing[seat] as { decisions: number; totalMs: number; maxMs: number };
       t.decisions += 1;
       t.totalMs += ms;
       t.maxMs = Math.max(t.maxMs, ms);
+      if (ms >= SLOW_MS) {
+        slow.push({
+          spec: input.specs[seat],
+          phase: obs.phase,
+          ms: Math.round(ms),
+          cardsLeft: obs.handSizes.reduce((a, b) => a + b, 0),
+          trickCards: obs.currentTrick?.plays.length ?? 0,
+          legal: obs.legal.kind === 'play' ? obs.legal.cardIds.length : 0,
+        });
+      }
     },
   });
   const start = input.scores ?? [0, 0];
@@ -74,6 +98,7 @@ export async function playTask(input: PlayInput): Promise<PlayOutput> {
     hands,
     steps: outcome.steps,
     timing: timing as unknown as PlayOutput['timing'],
+    slow,
   };
 }
 

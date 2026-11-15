@@ -258,6 +258,9 @@ importers:
       '@mam/engine':
         specifier: workspace:*
         version: link:../engine
+      '@mam/search':
+        specifier: workspace:*
+        version: link:../search
 
   packages/engine:
     devDependencies:

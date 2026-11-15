@@ -1,5 +1,5 @@
 import type { Seat, Suit } from '@mam/engine';
-import type { RoomView, SeatView } from '@mam/protocol';
+import type { Difficulty, RoomView, SeatView } from '@mam/protocol';
 
 export function money(amount: number): string {
   const sign = amount < 0 ? '−' : '';
@@ -18,10 +18,14 @@ export const SUIT_NAMES: Record<Suit, string> = {
   green: 'Green',
 };
 
-export const DIFFICULTY_LABELS: Record<'easy' | 'normal', string> = {
+export const DIFFICULTY_LABELS: Record<Difficulty, string> = {
   easy: 'Easy',
   normal: 'Normal',
+  hard: 'Hard',
+  expert: 'Expert',
 };
+
+export const DIFFICULTY_ORDER: readonly Difficulty[] = ['easy', 'normal', 'hard', 'expert'];
 
 export function seatLabel(seat: SeatView): string {
   if (!seat) return 'Empty seat';
