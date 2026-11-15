@@ -32,7 +32,8 @@ pnpm e2e          # build, then play a hand against bots in headless Chromium
 ```
 
 `pnpm e2e` drives the system Chromium (`/usr/bin/chromium`, or set `CHROMIUM_PATH`) and saves
-screenshots of each stage to `apps/client/e2e/out/`. It takes about a minute and is not part of CI.
+screenshots of each stage to `apps/client/e2e/out/`. It takes about a minute. CI runs it as a
+separate job and keeps the screenshots as an artifact.
 
 ## Simulations
 
