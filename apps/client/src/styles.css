@@ -438,6 +438,15 @@ button.card:hover:not(:disabled) {
   transform: translateY(-6px);
   filter: none;
 }
+.card-label {
+  font-size: 1.3em;
+  font-weight: bold;
+}
+.card-sub {
+  font-size: 0.65em;
+  color: var(--muted);
+  margin-top: 2px;
+}
 .card-small {
   width: 48px;
   height: 68px;
@@ -447,15 +456,6 @@ button.card:hover:not(:disabled) {
 }
 .card-small .card-sub {
   display: none;
-}
-.card-label {
-  font-size: 1.3em;
-  font-weight: bold;
-}
-.card-sub {
-  font-size: 0.65em;
-  color: var(--muted);
-  margin-top: 2px;
 }
 .card-money .card-label {
   text-decoration: underline;
