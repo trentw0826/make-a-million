@@ -1,5 +1,5 @@
 // Runs a list of duplicate SPRT experiments in sequence and appends results as JSON lines.
-// Usage: tsx scripts/experiments.ts <out.jsonl> "A|B" ["A|B" ...]  (env BOARDS, DELTA, SEED)
+// Usage: tsx scripts/experiments.ts <out.jsonl> "A|B" ["A|B" ...]  (env BOARDS, DELTA, SEED, WORKERS)
 import { appendFileSync } from 'node:fs';
 import { ME_TABLE } from '@mam/search';
 import { handStarts, makeBoards, runDuplicate } from '../src/duplicate';
@@ -11,7 +11,7 @@ if (!out || pairs.length === 0) throw new Error('usage: experiments.ts out.jsonl
 const boardsN = Number(process.env.BOARDS ?? 600);
 const delta = Number(process.env.DELTA ?? 0.01);
 const seed = process.env.SEED ?? 'exp';
-const workers = defaultWorkers();
+const workers = Number(process.env.WORKERS ?? defaultWorkers());
 
 const pool = await runParallel(
   'play',

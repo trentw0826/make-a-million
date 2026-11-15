@@ -3,7 +3,7 @@
  * effects by tasks.ts and the CLI, so worker threads see the same set.
  */
 import { EXPERT_DEFAULTS, HARD_DEFAULTS, HardBot, type HardOptions } from '@mam/bots';
-import { OracleBot } from './oracle';
+import { OracleBot, PeekBot } from './oracle';
 import { registerStrategy } from './strategies';
 
 /**
@@ -42,5 +42,28 @@ registerStrategy('hybrid', (o) => {
     Number(depth ?? 3),
     new HardBot(parseOptions<HardOptions>(HARD_DEFAULTS, hard)),
     Number(last ?? 13),
+  );
+});
+
+/** Cards a "peek" spec can reveal, by name ("cards=bull+bear+tiger"). */
+const PEEK_CARDS: Readonly<Record<string, number>> = { tiger: 52, bull: 53, bear: 54 };
+
+/**
+ * Diagnostic: Hard whose sampled worlds must put the named cards where they really are, in
+ * card play with `last` or fewer tricks left. "peek:cards=bull+bear+tiger" vs "hard" is the
+ * most that inferring where the specials are could gain.
+ */
+registerStrategy('peek', (o) => {
+  const { cards = 'bull+bear+tiger', last, pool, ...hard } = o;
+  const ids = cards.split('+').map((name) => {
+    const id = PEEK_CARDS[name];
+    if (id === undefined) throw new Error(`unknown peek card "${name}"`);
+    return id;
+  });
+  return new PeekBot(
+    ids,
+    new HardBot(parseOptions<HardOptions>(HARD_DEFAULTS, hard)),
+    Number(last ?? 13),
+    Number(pool ?? 40),
   );
 });
