@@ -64,7 +64,8 @@ export function assertInvariants(state: GameState): void {
     }
   }
 
-  let expected: [number, number] = [0, 0];
+  const start = state.initialScores ?? [0, 0];
+  let expected: [number, number] = [start[0], start[1]];
   for (const r of state.handHistory) {
     expected = [expected[0] + r.delta[0], expected[1] + r.delta[1]];
     check(

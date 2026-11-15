@@ -1,4 +1,3 @@
-import type { BotStrategy } from '@mam/bots';
 import {
   type Action,
   applyAction,
@@ -13,6 +12,7 @@ import {
   SEATS,
   type Seat,
 } from '@mam/engine';
+import { isOracle, type SimStrategy } from './strategies';
 
 export class IllegalBotAction extends Error {
   constructor(
@@ -29,12 +29,25 @@ export class IllegalBotAction extends Error {
 
 export interface PlayGameOptions {
   readonly seed: string | number;
-  readonly strategies: readonly [BotStrategy, BotStrategy, BotStrategy, BotStrategy];
+  readonly strategies: readonly [SimStrategy, SimStrategy, SimStrategy, SimStrategy];
   readonly ruleset?: Ruleset;
   readonly dealer?: Seat;
+  /** Starting scores (default [0, 0]). */
+  readonly scores?: readonly [number, number];
+  /** Stop once this many hands have been scored (default: play to game over). */
+  readonly hands?: number;
   /** Check engine invariants after every action (slower). */
   readonly checkInvariants?: boolean;
   readonly maxSteps?: number;
+  /** Called before each decision with the acting seat; used for timing and data capture. */
+  readonly onDecision?: (info: DecisionInfo) => void;
+}
+
+export interface DecisionInfo {
+  readonly seat: Seat;
+  readonly obs: Observation;
+  readonly action: Action;
+  readonly ms: number;
 }
 
 export interface GameOutcome {
@@ -43,7 +56,7 @@ export interface GameOutcome {
   readonly recorder: Recorder;
 }
 
-/** Plays one game to completion with the given strategy in each seat. */
+/** Plays one game (or the first `hands` hands of one) with the given strategy in each seat. */
 export async function playGame(options: PlayGameOptions): Promise<GameOutcome> {
   const { seed, strategies } = options;
   const maxSteps = options.maxSteps ?? 100_000;
@@ -52,15 +65,22 @@ export async function playGame(options: PlayGameOptions): Promise<GameOutcome> {
     seed,
     ...(options.ruleset ? { ruleset: options.ruleset } : {}),
     ...(options.dealer !== undefined ? { dealer: options.dealer } : {}),
+    ...(options.scores ? { scores: options.scores } : {}),
   });
   const recorder = new Recorder(state);
   let steps = 0;
 
   while (state.phase !== 'game-over') {
+    if (options.hands !== undefined && state.handHistory.length >= options.hands) break;
     if (steps++ > maxSteps) throw new Error(`game did not finish within ${maxSteps} steps`);
     const { seat, obs } = nextActor(state);
     const strategy = strategies[seat];
-    const action = await strategy.decide(obs, rngs[seat] as Rng);
+    const rng = rngs[seat] as Rng;
+    const started = performance.now();
+    const action = isOracle(strategy)
+      ? await strategy.decideWithState(state, seat, obs, rng)
+      : await strategy.decide(obs, rng);
+    options.onDecision?.({ seat, obs, action, ms: performance.now() - started });
     const result = applyAction(state, seat, action);
     if (!result.ok) throw new IllegalBotAction(strategy.id, seat, action, result.error.code, obs);
     recorder.record(seat, action);

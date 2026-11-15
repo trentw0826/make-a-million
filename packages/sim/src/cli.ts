@@ -2,6 +2,8 @@ import { readFileSync } from 'node:fs';
 import { parseArgs } from 'node:util';
 import { createBot, DIFFICULTIES, type Difficulty, isDifficulty } from '@mam/bots';
 import { cardById, cardLabel, type GameRecord, replay } from '@mam/engine';
+import { duplicateCommand, matchCommand, meTableCommand } from './lab';
+import './registry';
 import { playGame } from './runner';
 import { runTournament } from './tournament';
 
@@ -10,6 +12,9 @@ const USAGE = `Usage:
   sim invariants [--games N] [--seed S]
   sim bench [--games N] [--seed S]
   sim replay <file.json>
+  sim me-table [--games N] [--spec S] [--workers W]
+  sim duplicate --a <spec> --b <spec> [--boards N] [--sprt] [--delta D] [--workers W]
+  sim match --a <spec> --b <spec> [--pairs N] [--sprt] [--workers W]
 
 Difficulties: ${DIFFICULTIES.join(', ')}`;
 
@@ -24,6 +29,12 @@ async function main(argv: string[]): Promise<number> {
       return bench(rest);
     case 'replay':
       return replayFile(rest);
+    case 'me-table':
+      return meTableCommand(rest);
+    case 'duplicate':
+      return duplicateCommand(rest);
+    case 'match':
+      return matchCommand(rest);
     default:
       console.error(USAGE);
       return command === undefined || command === '--help' ? 0 : 1;

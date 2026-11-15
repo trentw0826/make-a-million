@@ -15,11 +15,18 @@ export interface GameRecord {
   readonly seed: string;
   readonly ruleset: Ruleset;
   readonly dealer: Seat;
+  /** Starting scores, when the game did not start at [0, 0]. */
+  readonly scores?: readonly [number, number];
   readonly actions: readonly RecordedAction[];
 }
 
 export function replay(record: GameRecord): { state: GameState; events: readonly GameEvent[] } {
-  let state = createGame({ seed: record.seed, ruleset: record.ruleset, dealer: record.dealer });
+  let state = createGame({
+    seed: record.seed,
+    ruleset: record.ruleset,
+    dealer: record.dealer,
+    ...(record.scores ? { scores: record.scores } : {}),
+  });
   const events: GameEvent[] = [];
   for (const { seat, action } of record.actions) {
     const result = applyActionOrThrow(state, seat, action);
@@ -43,6 +50,7 @@ export class Recorder {
       seed: this.initial.seed,
       ruleset: this.initial.ruleset,
       dealer: this.initial.dealer,
+      ...(this.initial.initialScores ? { scores: this.initial.initialScores } : {}),
       actions: [...this.actions],
     };
   }
