@@ -50,7 +50,10 @@ A bot must never have access to:
 ## Compute and Timing
 
 - **Budgets, not clocks:** A search‑based bot limits its work by counts (search nodes, sampled deals), never by wall‑clock time, so the same observation and seed always give the same action.
-- **Fixed reply time:** The server replies for a bot at a fixed, per‑difficulty delay that is longer than the bot's worst‑case thinking time. How long a bot "thinks" therefore reveals nothing about its hand or its choice. A deadline is kept only as a safety net (the search returns its best move so far), and monitoring checks that it essentially never fires.
+- **Fixed reply time:** The server replies for a bot at a fixed, per‑difficulty delay that is longer than the bot's worst‑case thinking time. How long a bot "thinks" therefore reveals nothing about its hand or its choice. A deadline is kept only as a safety net, and monitoring checks that it essentially never fires:
+  - The server passes each decision the time its reply is due, minus `botDeadlineMarginMs` (200 ms), as `DecideContext.deadline`. Simulations pass none, so their results stay deterministic.
+  - Past the deadline, card play uses the deals solved so far (or one deal searched one trick deep, if none is finished), bidding and misdeal calls use the deals sampled so far (at least 16), and the discard and trump choice keeps the best candidate re‑checked so far.
+  - The server logs `bot answered after its deadline` (at `warn`) whenever an answer arrives late. `packages/sim/scripts/timing.ts` reports each level's decision times (p50, p90, p99, max) to size the budgets against the delays.
 - **Load:** When the server is busy it may give every bot a smaller budget. That depends on server load, never on any hand, so it leaks nothing.
 - **No shared state:** Each decision is computed from the observation alone. Nothing persists between decisions, and nothing is shared between bots, including partners.
 

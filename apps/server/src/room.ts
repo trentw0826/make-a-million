@@ -372,6 +372,16 @@ export class Room {
     const deadline = started + delay - this.deps.config.botDeadlineMarginMs;
     void this.computeBotAction(seat, game, seed, deadline).then((action) => {
       if (generation !== this.botGeneration || this.game !== game || this.closed) return;
+      // The deadline is a safety net: budgets are sized so that it should almost never fire.
+      const late = Date.now() - deadline;
+      if (late > 0 && deadline > started) {
+        this.deps.log('warn', 'bot answered after its deadline', {
+          room: this.code,
+          seat,
+          difficulty: this.botDifficulty(seat),
+          lateMs: late,
+        });
+      }
       const wait = Math.max(0, delay - (Date.now() - started));
       this.botTimers.set(
         seat,
