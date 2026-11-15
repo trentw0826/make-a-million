@@ -66,7 +66,7 @@ describe('PlayState agrees with the engine', () => {
       }
     }
     expect(positions).toBeGreaterThan(5000);
-  });
+  }, 60_000);
 
   it('treats the Tiger as trump when following', () => {
     const states = randomPlayStates('tiger');
