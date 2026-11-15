@@ -18,6 +18,11 @@ export interface PimcOptions {
   readonly nodes: number;
   /** Solve exactly when this many tricks or fewer remain (counting the one in progress). */
   readonly exactTricks: number;
+  /**
+   * Most worlds once solving is exact (late solves are cheap; more worlds cut sampling
+   * noise). Still capped by `nodes`. At most `worlds` when smaller.
+   */
+  readonly exactWorlds: number;
   /** Otherwise search this many tricks deep and estimate the rest. */
   readonly depth: number;
   /** Node cap for one world before retrying it one trick shallower. */
@@ -33,6 +38,7 @@ export const PIMC_DEFAULTS: PimcOptions = {
   worlds: 40,
   nodes: 4_000_000,
   exactTricks: 6,
+  exactWorlds: 40,
   depth: 2,
   worldNodes: 400_000,
   inferencePool: 0,
@@ -119,11 +125,14 @@ export function pimcValues(
   const { utility, weight, utilityAt = 'leaf', deadline = Number.POSITIVE_INFINITY } = call;
   const belief = call.belief ?? buildBelief(obs);
   const atRoot = utility !== undefined && utilityAt === 'root';
+  const live = obs.handSizes.reduce((a, b) => a + b, 0) + (obs.currentTrick?.plays.length ?? 0);
+  const exact = live <= opts.exactTricks * 4;
+  const maxWorlds = exact ? Math.max(opts.worlds, opts.exactWorlds) : opts.worlds;
   // Few enough arrangements left: list them all (exact expectation over the belief).
-  const all = belief.enumerate(opts.worlds);
+  const all = belief.enumerate(maxWorlds);
   const allWeights = all ? all.map((w) => (weight ? weight(w) : 1)) : null;
   if (allWeights && !(allWeights.reduce((a, b) => a + b, 0) > 0)) allWeights.fill(1);
-  const draw = all ? null : worldSource(belief, rng, opts.worlds, weight, opts.inferencePool);
+  const draw = all ? null : worldSource(belief, rng, maxWorlds, weight, opts.inferencePool);
   let enumIndex = 0;
   const next = (): { world: World; w: number } | null => {
     if (all && allWeights) {
@@ -143,15 +152,13 @@ export function pimcValues(
   );
   solver.deadline = deadline;
   let timedOut = false;
-  const live = obs.handSizes.reduce((a, b) => a + b, 0) + (obs.currentTrick?.plays.length ?? 0);
-  const exact = live <= opts.exactTricks * 4;
   let worlds = 0;
   let weightTotal = 0;
   // Depth for this decision. It only ever gets shallower: once one world has needed a
   // shallower search, the rest use it too, so every world is valued the same way.
   let depth = exact ? Number.POSITIVE_INFINITY : opts.depth;
 
-  outer: while ((all || worlds < opts.worlds) && solver.nodes < opts.nodes) {
+  outer: while ((all || worlds < maxWorlds) && solver.nodes < opts.nodes) {
     const item = next();
     if (!item) break;
     const { world, w } = item;
