@@ -70,7 +70,7 @@ There is **no** record of cards played in earlier tricks and **no** running mone
 
 ## Other Notes
 
-- **Misdeal window:** In the application, after each deal every player whose Money totals \$15,000 or less is asked whether to call a misdeal. Bidding begins once all eligible players have declined (or no player is eligible). Any call re‑deals immediately with the same dealer.
+- **Misdeal window:** In the application, after each deal **every** player confirms they are ready to bid; a player whose Money totals \$15,000 or less is additionally offered the option to call a misdeal. Bidding begins once all four players have confirmed. Any call re‑deals immediately with the same dealer. (Everyone confirms, not only eligible players, so that waiting on a player does not reveal that their hand is weak.)
 - **Raise Increment ($5k vs $10k):** All official text uses \$10,000 steps. Any \$5k rule is a non‑standard but common variant.
 - **Simultaneous Win:** There are no official rules addressing the rare case in which both sides reach   \$1,000,000  *and* end up with the same score in one hand. In this case, let the bidding team win.
 - **Table talk:** Any verbal or non-verbal communication between partners that conveys information about a player's hand, strategy, or intent during active play is strictly forbidden. 
