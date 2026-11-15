@@ -42,6 +42,7 @@ export function createGame(options: CreateGameOptions): GameState {
   };
   const draft = structuredClone(base) as Mutable<GameState>;
   startHand(draft, draft.dealer, 1, 0, []);
+  syncPhase(draft);
   return draft;
 }
 
@@ -109,6 +110,7 @@ export function applyAction(state: GameState, seat: Seat, action: Action): Apply
     }
   }
 
+  syncPhase(draft);
   return { ok: true, state: draft, events };
 }
 
@@ -126,6 +128,11 @@ export function applyActionOrThrow(
 // ---------------------------------------------------------------------------
 
 type Mutable<T> = { -readonly [K in keyof T]: T[K] };
+
+/** The game's phase follows the hand's, except once the game is over. */
+function syncPhase(draft: Mutable<GameState>): void {
+  if (draft.phase !== 'game-over' && draft.hand) draft.phase = draft.hand.phase;
+}
 
 function setHand(hand: Mutable<HandState>, seat: Seat, cards: readonly number[]): void {
   const hands = [...hand.hands] as [number[], number[], number[], number[]];
