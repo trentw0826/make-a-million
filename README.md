@@ -34,6 +34,9 @@ pnpm lint:fix     # Biome
 
 ```sh
 pnpm sim tournament --a normal --b easy --games 500   # win rates and margins
+pnpm sim duplicate --a hard --b normal --boards 300   # duplicate boards in match equity
+pnpm sim duplicate --a hard --b normal --sprt         # stop as soon as the result is clear
+pnpm sim me-table --games 20000                       # rebuild the match-equity table
 pnpm sim invariants --games 1000                      # engine invariants over bot games
 pnpm sim bench                                        # engine/bot throughput
 pnpm sim replay game.json                             # narrate a saved GameRecord
@@ -48,14 +51,16 @@ docker build -t make-a-million .
 docker run -p 3000:3000 make-a-million
 ```
 
-Environment: `PORT` (3000), `GRACE_MS` (60000), `ROOM_IDLE_MS` (600000), `STATIC_DIR`.
+Environment: `PORT` (3000), `GRACE_MS` (60000), `ROOM_IDLE_MS` (600000), `STATIC_DIR`,
+`BOT_WORKERS` (worker threads for Hard/Expert bots; default min(4, cores − 1)).
 Any host that supports long‑lived WebSocket connections will do.
 
 ## Layout
 
 ```
 packages/engine    pure rules engine (deterministic, no I/O)
-packages/bots      BotStrategy interface + easy/normal strategies
+packages/search    match equity, fast play state, open-hand solver, belief sampling
+packages/bots      BotStrategy interface + easy/normal/hard/expert strategies
 packages/sim       CLI: tournaments, invariant sweeps, benchmarks, replays
 packages/protocol  client/server message schemas (zod)
 apps/server        Node + ws: rooms, sessions, bot runner, static hosting

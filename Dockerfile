@@ -7,6 +7,7 @@ RUN corepack enable && corepack prepare pnpm@12.21.0 --activate
 # Manifests first so dependency installation is cached between source changes.
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY packages/engine/package.json packages/engine/
+COPY packages/search/package.json packages/search/
 COPY packages/bots/package.json packages/bots/
 COPY packages/sim/package.json packages/sim/
 COPY packages/protocol/package.json packages/protocol/
