@@ -61,6 +61,13 @@ export function Table({ room, view }: { room: RoomView; view: TableView }) {
   // The widow is in view only for the bidder; mark its cards while they choose discards.
   const widow = new Set(discarding ? (view.widow ?? []) : []);
 
+  // Tooltips need a hover, which touch screens don't have, so a click on a greyed-out card
+  // says why too.
+  const showBlocked = (id: CardId) => {
+    const reason = blockedReason(id, view);
+    if (reason) dispatch({ kind: 'toast', toast: { kind: 'info', text: reason } });
+  };
+
   const onCard = (id: CardId) => {
     if (legalPlays) {
       if (legalPlays.has(id)) act({ type: 'playCard', cardId: id });
@@ -113,6 +120,7 @@ export function Table({ room, view }: { room: RoomView; view: TableView }) {
                 selected: selected.has(id),
                 disabled,
                 onClick: legalPlays || discarding ? () => onCard(id) : undefined,
+                onBlockedClick: () => showBlocked(id),
                 fresh: widow.has(id),
                 title: disabled ? blockedReason(id, view) : undefined,
               };
