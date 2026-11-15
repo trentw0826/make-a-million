@@ -31,3 +31,16 @@ registerStrategy(
   (o) => new HardBot({ ...EXPERT_DEFAULTS, ...parseOptions<HardOptions>(EXPERT_DEFAULTS, o) }),
 );
 registerStrategy('oracle', (o) => new OracleBot(Number(o.exact ?? 7), Number(o.depth ?? 3)));
+/**
+ * Diagnostic: Hard, except that card play with `last` or fewer tricks left is by the
+ * all-seeing oracle. "hybrid:last=4" vs "hard" measures what Hard loses in the last 4 tricks.
+ */
+registerStrategy('hybrid', (o) => {
+  const { last, exact, depth, ...hard } = o;
+  return new OracleBot(
+    Number(exact ?? 7),
+    Number(depth ?? 3),
+    new HardBot(parseOptions<HardOptions>(HARD_DEFAULTS, hard)),
+    Number(last ?? 13),
+  );
+});
