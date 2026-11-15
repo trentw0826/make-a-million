@@ -1,0 +1,22 @@
+{
+  "name": "@mam/sim",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Command-line simulator: bot tournaments, invariant checks, replays.",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "scripts": {
+    "start": "tsx src/cli.ts",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "build": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "@mam/bots": "workspace:*",
+    "@mam/engine": "workspace:*"
+  }
+}

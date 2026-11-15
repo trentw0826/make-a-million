@@ -1,0 +1,20 @@
+{
+  "name": "@mam/bots",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Bot strategies for Make-a-Million; observation-only by construction.",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "build": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "@mam/engine": "workspace:*"
+  }
+}

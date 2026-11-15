@@ -1,0 +1,24 @@
+{
+  "name": "@mam/server",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Make-a-Million WebSocket game server.",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "start": "node dist/index.js",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "build": "tsup"
+  },
+  "dependencies": {
+    "@mam/bots": "workspace:*",
+    "@mam/engine": "workspace:*",
+    "@mam/protocol": "workspace:*",
+    "ws": "^8.23.0",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@types/ws": "^8.18.2",
+    "tsup": "^8.0.0"
+  }
+}

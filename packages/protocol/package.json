@@ -1,0 +1,21 @@
+{
+  "name": "@mam/protocol",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Client/server message schemas for Make-a-Million.",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "build": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "@mam/engine": "workspace:*",
+    "zod": "^4.6.7"
+  }
+}
