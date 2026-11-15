@@ -622,6 +622,7 @@ input {
   font-weight: bold;
 }
 .hand {
+  position: relative;
   display: flex;
   flex-wrap: wrap;
   gap: 8px 6px;
@@ -650,7 +651,9 @@ input {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
   padding: 4px;
   cursor: default;
-  transition: transform 0.12s;
+  transition:
+    transform 0.12s,
+    box-shadow 0.2s;
 }
 button.card {
   cursor: pointer;
@@ -923,5 +926,121 @@ button.modal-close {
   .topbar {
     gap: 8px;
     padding: 0 8px;
+  }
+}
+
+/* Motion ----------------------------------------------------------------- */
+/* Every animation here is switched off under prefers-reduced-motion (below), and the
+   FLIP slides in useFlip.ts check the same setting. */
+@keyframes deal-in {
+  from {
+    opacity: 0;
+    transform: translateY(28px) scale(0.94);
+  }
+}
+.hand-slot {
+  animation: deal-in 360ms cubic-bezier(0.2, 0.7, 0.3, 1) both;
+  animation-delay: calc(var(--i, 0) * 40ms);
+}
+
+/* A played card slides in from its player's side (--fx/--fy, set in TrickArea.tsx). */
+@keyframes trick-enter {
+  from {
+    opacity: 0;
+    transform: translate(var(--fx, 0), var(--fy, 0)) scale(0.9);
+  }
+}
+.trick-enter {
+  animation: trick-enter 260ms cubic-bezier(0.2, 0.7, 0.3, 1) both;
+}
+
+/* A taken trick slides to its winner (--dx/--dy); lasts TRICK_SWEEP_MS in Table.tsx. */
+@keyframes trick-sweep {
+  to {
+    opacity: 0;
+    transform: translate(var(--dx, 0), var(--dy, 0)) scale(0.7);
+  }
+}
+.trick-sweep {
+  animation: trick-sweep 350ms ease-in forwards;
+}
+
+@keyframes pulse-ring {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(184, 134, 11, 0.6);
+  }
+  50% {
+    box-shadow: 0 0 0 7px rgba(184, 134, 11, 0);
+  }
+}
+.seat-acting,
+.turn-pill {
+  animation: pulse-ring 1.8s ease-in-out infinite;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+  }
+}
+.modal-backdrop {
+  animation: fade-in 160ms ease-out;
+}
+.modal {
+  animation: rise-in 200ms cubic-bezier(0.2, 0.7, 0.3, 1);
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 16px);
+  }
+}
+.toast {
+  animation: toast-in 200ms ease-out;
+}
+
+/* Each side's change after a hand: rises, lingers, fades. */
+@keyframes float-away {
+  0% {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  15%,
+  75% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-12px);
+  }
+}
+.delta-float {
+  animation: float-away 2.6s ease-out forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hand-slot,
+  .trick-enter,
+  .trick-sweep,
+  .seat-acting,
+  .turn-pill,
+  .modal-backdrop,
+  .modal,
+  .toast,
+  .delta-float {
+    animation: none;
+  }
+  .card,
+  .progress span {
+    transition: none;
   }
 }

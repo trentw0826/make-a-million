@@ -101,6 +101,7 @@ export function Table({ room, view }: { room: RoomView; view: TableView }) {
             onClearSelection={() => setSelected(new Set())}
           />
           <Hand
+            key={`${view.handNumber}-${view.redeals}`}
             ids={view.hand}
             trump={view.trump}
             cardProps={(id) => {
