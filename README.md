@@ -25,7 +25,7 @@ Open a second browser (or a private window) and join with the room code to play 
 ## Checks
 
 ```sh
-pnpm check        # lint + typecheck + test
+pnpm check        # lint + typecheck + test + build: the same steps as CI
 pnpm test         # vitest across every package
 pnpm lint:fix     # Biome
 pnpm e2e          # build, then play a hand against bots in headless Chromium
