@@ -60,7 +60,6 @@ export interface GameOutcome {
 export async function playGame(options: PlayGameOptions): Promise<GameOutcome> {
   const { seed, strategies } = options;
   const maxSteps = options.maxSteps ?? 100_000;
-  const rngs = SEATS.map((seat) => Rng.fromSeed(`${seed}:seat:${seat}`));
   let state = createGame({
     seed,
     ...(options.ruleset ? { ruleset: options.ruleset } : {}),
@@ -75,7 +74,11 @@ export async function playGame(options: PlayGameOptions): Promise<GameOutcome> {
     if (steps++ > maxSteps) throw new Error(`game did not finish within ${maxSteps} steps`);
     const { seat, obs } = nextActor(state);
     const strategy = strategies[seat];
-    const rng = rngs[seat] as Rng;
+    // A fresh stream per decision, keyed by the seat and the game step: two bots reaching
+    // the same position get the same randomness however much each consumed before, so
+    // duplicate boards on which they decide alike play out identically (common random
+    // numbers), which cuts the noise in A-versus-B comparisons.
+    const rng = Rng.fromSeed(`${seed}:seat:${seat}:step:${steps}`);
     const started = performance.now();
     const action = isOracle(strategy)
       ? await strategy.decideWithState(state, seat, obs, rng)
