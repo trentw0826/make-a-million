@@ -59,8 +59,10 @@ export interface ContractOptions {
   /**
    * Calibration of the playout estimate in bidding and misdeal calls ($1000s): the
    * declaring team's capture is taken as Normal(calibA + calibB × estimate, calibSd²) and
-   * the utility averaged over it. (0, 1, 0), the default, uses the estimate as it is.
-   * Fit with scripts/calibrate.ts (actual capture regressed on the estimate).
+   * the utility averaged over it; (0, 1, 0) uses the estimate as it is. Fit with
+   * scripts/calibrate.ts (actual capture regressed on the estimate). The raw estimate badly
+   * understates weak hands; calibrating won +5.7% equity per board on fresh boards
+   * (docs/bot-ladder.md).
    */
   readonly calibA: number;
   readonly calibB: number;
@@ -78,9 +80,9 @@ export const CONTRACT_DEFAULTS: ContractOptions = {
   bidMargin: 0,
   raisePartner: false,
   auctionSigma: 20_000,
-  calibA: 0,
-  calibB: 1,
-  calibSd: 0,
+  calibA: 130,
+  calibB: 0.5,
+  calibSd: 58,
 };
 
 /**
