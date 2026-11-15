@@ -18,6 +18,7 @@ import {
   TOTAL_MONEY,
 } from '../src/cards';
 import type { GameEvent } from '../src/events';
+import { allCardsInPlay, assertInvariants } from '../src/invariants';
 import { type LegalMoves, legalMoves } from '../src/legal';
 import { applyActionOrThrow, createGame } from '../src/reducer';
 import { Recorder } from '../src/replay';
@@ -232,52 +233,9 @@ export function playRandomGame(
 // ---------------------------------------------------------------------------
 // Invariants that must hold in every reachable state.
 
-export function allCardsInPlay(state: GameState): CardId[] {
-  const hand = state.hand;
-  if (!hand) return [];
-  const widowStillAside = hand.phase === 'misdeal-window' || hand.phase === 'bidding';
-  return [
-    ...hand.hands.flat(),
-    ...(widowStillAside ? hand.widow : []),
-    ...hand.discards,
-    ...(hand.currentTrick?.plays.map((p) => p.cardId) ?? []),
-    ...hand.tricks.flatMap((t) => t.plays.map((p) => p.cardId)),
-  ];
-}
+export { allCardsInPlay };
 
+/** Fails the test if the engine's own invariants do not hold. */
 export function checkInvariants(state: GameState): void {
-  const hand = state.hand;
-  if (!hand) return;
-
-  const all = allCardsInPlay(state);
-  expect(all.length, 'every card is somewhere exactly once').toBe(DECK_SIZE);
-  expect(new Set(all).size, 'no card is duplicated').toBe(DECK_SIZE);
-  expect(sumMoney(all), 'money is conserved').toBe(TOTAL_MONEY);
-
-  for (const seat of SEATS) {
-    const own = hand.hands[seat];
-    expect(own, 'hands are kept sorted').toEqual(sortHand(own));
-  }
-
-  if (hand.phase === 'playing') {
-    expect(hand.trump, 'trump is named before play').not.toBeNull();
-    expect(hand.contract, 'a contract exists before play').not.toBeNull();
-    expect(hand.currentTrick, 'a trick is always in progress').not.toBeNull();
-    expect(hand.discards.length, 'exactly three discards').toBe(3);
-    expect(hand.turn, 'someone has the turn').not.toBeNull();
-  }
-
-  if (hand.result) {
-    const faceMoney = hand.result.tricks.reduce((sum, t) => sum + t.money, 0);
-    expect(faceMoney, 'money in tricks = deck money − discarded money').toBe(
-      TOTAL_MONEY - sumMoney(hand.discards),
-    );
-  }
-
-  let expected: [number, number] = [0, 0];
-  for (const r of state.handHistory) {
-    expected = [expected[0] + r.delta[0], expected[1] + r.delta[1]];
-    expect(r.scoresAfter).toEqual(expected);
-  }
-  expect(state.scores, 'scores equal the sum of hand deltas').toEqual(expected);
+  expect(() => assertInvariants(state)).not.toThrow();
 }

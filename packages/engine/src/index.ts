@@ -2,6 +2,7 @@ export * from './actions';
 export * from './cards';
 export * from './errors';
 export * from './events';
+export * from './invariants';
 export * from './legal';
 export * from './observe';
 export * from './reducer';

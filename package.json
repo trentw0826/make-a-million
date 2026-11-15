@@ -17,7 +17,7 @@
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
     "format": "biome format --write .",
-    "sim": "pnpm --filter @mam/sim start --",
+    "sim": "pnpm --filter @mam/sim start",
     "check": "pnpm lint && pnpm typecheck && pnpm test"
   },
   "devDependencies": {
