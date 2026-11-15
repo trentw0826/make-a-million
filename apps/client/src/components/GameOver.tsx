@@ -13,7 +13,7 @@ export function GameOver({ view, room }: { view: TableView; room: RoomView }) {
   return (
     <Modal title="Game over">
       {winner !== null && (
-        <p className={`result-banner ${winner === us ? 'made' : 'set'}`}>
+        <p className={`result-banner ${winner === us ? 'good' : 'bad'}`}>
           {winner === us
             ? 'Your side makes a million!'
             : `${teamLabel(room, winner)} make a million.`}

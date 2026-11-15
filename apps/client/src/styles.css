@@ -408,6 +408,9 @@ input {
   color: var(--danger);
 }
 
+.felt .muted {
+  color: rgba(255, 255, 255, 0.75);
+}
 .felt {
   background: radial-gradient(
     ellipse at center,
@@ -625,7 +628,7 @@ input {
   position: relative;
   display: flex;
   flex-wrap: wrap;
-  gap: 8px 6px;
+  gap: 8px 4px;
   justify-content: center;
   padding-top: 10px;
 }
@@ -633,7 +636,7 @@ input {
   display: flex;
 }
 .hand-slot.group-start {
-  margin-left: 12px;
+  margin-left: 10px;
 }
 
 /* Cards ------------------------------------------------------------------ */
@@ -643,8 +646,8 @@ input {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  width: 64px;
-  height: 92px;
+  width: 60px;
+  height: 90px;
   border-radius: 7px;
   background: white;
   border: 1px solid #c9c2b2;
@@ -829,11 +832,11 @@ button.modal-close {
   font-weight: bold;
   font-size: 1.15em;
 }
-.result-banner.made {
+.result-banner.good {
   background: #e8f5e9;
   color: #1b5e20;
 }
-.result-banner.set {
+.result-banner.bad {
   background: #fdecea;
   color: var(--danger);
 }

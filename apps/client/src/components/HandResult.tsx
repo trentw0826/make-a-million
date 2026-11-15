@@ -20,16 +20,22 @@ export function HandResult({
 }) {
   const { act } = useGame();
   const bt = result.biddingTeam;
+  // Told from the viewer's side: their bid made is good news, the other side's is not.
+  const ours = bt === team;
+  const banner = ours
+    ? result.made
+      ? 'Your side made its bid'
+      : 'Your side was set'
+    : result.made
+      ? 'They made their bid'
+      : 'They were set';
   const sides = [
     { side: team, name: 'Us', key: 'us' },
     { side: otherTeam(team), name: 'Them', key: 'them' },
   ] as const;
   return (
     <Modal title={`Hand ${result.handNumber}`}>
-      <p className={`result-banner ${result.made ? 'made' : 'set'}`}>
-        {result.made ? 'Bid made' : 'Bid set'}
-        {bt === team ? ' (your side)' : ''}
-      </p>
+      <p className={`result-banner ${ours === result.made ? 'good' : 'bad'}`}>{banner}</p>
       <p>
         {nameOf(room, result.bidder)} bid {money(result.bid)} in {SUIT_NAMES[result.trump]} and{' '}
         <strong>{result.made ? 'made it' : 'was set'}</strong>.
