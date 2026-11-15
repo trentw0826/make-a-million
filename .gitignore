@@ -5,3 +5,4 @@ coverage/
 .vite/
 .DS_Store
 *.log
+apps/client/e2e/out/
