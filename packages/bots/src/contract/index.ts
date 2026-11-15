@@ -6,6 +6,7 @@ import {
   type Seat,
   SUITS,
   type Suit,
+  type Team,
   teamOf,
 } from '@mam/engine';
 import {
@@ -50,6 +51,15 @@ export interface ContractOptions {
   readonly raisePartner: boolean;
   /** Scale ($) of the auction likelihood: larger trusts the bidding model less. */
   readonly auctionSigma: number;
+  /**
+   * Calibration of the playout estimate in bidding and misdeal calls ($1000s): the
+   * declaring team's capture is taken as Normal(calibA + calibB × estimate, calibSd²) and
+   * the utility averaged over it. (0, 1, 0), the default, uses the estimate as it is.
+   * Fit with scripts/calibrate.ts (actual capture regressed on the estimate).
+   */
+  readonly calibA: number;
+  readonly calibB: number;
+  readonly calibSd: number;
 }
 
 export const CONTRACT_DEFAULTS: ContractOptions = {
@@ -62,7 +72,44 @@ export const CONTRACT_DEFAULTS: ContractOptions = {
   bidMargin: 0,
   raisePartner: false,
   auctionSigma: 20_000,
+  calibA: 0,
+  calibB: 1,
+  calibSd: 0,
 };
+
+/**
+ * Twelve equally likely points of Normal(0, 1): the medians of twelve equal-probability
+ * bins, scaled to unit variance. Unlike Gauss–Hermite nodes they treat a step in the
+ * utility (made or set) fairly: P(Z ≥ 0) is exactly one half.
+ */
+const NORMAL_POINTS: readonly number[] = [
+  0.110344, 0.33603, 0.57846, 0.856548, 1.213134, 1.826177,
+].flatMap((z) => [z, -z]);
+
+/**
+ * The utility of a playout estimate after calibration (see ContractOptions.calibA): money
+ * the calibration moves to or from the declaring team `team` comes from or goes to the other.
+ */
+export function calibrated(
+  u: (capK: readonly [number, number]) => number,
+  team: Team,
+  opts: Pick<ContractOptions, 'calibA' | 'calibB' | 'calibSd'>,
+): (capK: readonly [number, number]) => number {
+  const { calibA: a, calibB: b, calibSd: sd } = opts;
+  if (a === 0 && b === 1 && sd === 0) return u;
+  return (capK) => {
+    const x = capK[team];
+    const other = capK[team === 0 ? 1 : 0];
+    const mean = a + b * x;
+    let total = 0;
+    for (const z of NORMAL_POINTS) {
+      const y = Math.max(0, mean + sd * z);
+      const o = Math.max(0, other - (y - x));
+      total += u(team === 0 ? [y, o] : [o, y]);
+    }
+    return total / NORMAL_POINTS.length;
+  };
+}
 
 function toDeal(obs: Observation, world: World): Deal {
   return {
@@ -116,11 +163,10 @@ export function decideBid(
     const deal = toDeal(obs, belief.sample(rng));
     const w = auctionLikelihood(deal, obs, step, opts.auctionSigma);
     if (w < 1e-9) continue;
-    const mine = utilityFor(
-      obs,
-      obs.seat,
-      legal.minBid,
-      opts.utility,
+    const mine = calibrated(
+      utilityFor(obs, obs.seat, legal.minBid, opts.utility),
+      teamOf(obs.seat),
+      opts,
     )(playoutDeclare(deal, obs.seat));
     // If we pass: the others (still in) finish the auction by the model.
     const ceilings = new Map<Seat, number>();
@@ -137,11 +183,10 @@ export function decideBid(
       seat: obs.seat,
       price: legal.minBid,
     };
-    const theirs = utilityFor(
-      obs,
-      outcome.seat,
-      outcome.price,
-      opts.utility,
+    const theirs = calibrated(
+      utilityFor(obs, outcome.seat, outcome.price, opts.utility),
+      teamOf(outcome.seat),
+      opts,
     )(playoutDeclare(deal, outcome.seat));
     wSum += w;
     declare += w * mine;
@@ -177,11 +222,10 @@ export function decideMisdeal(
       seat: opener,
       price: minOpeningBid,
     };
-    keep += utilityFor(
-      obs,
-      outcome.seat,
-      outcome.price,
-      opts.utility,
+    keep += calibrated(
+      utilityFor(obs, outcome.seat, outcome.price, opts.utility),
+      teamOf(outcome.seat),
+      opts,
     )(playoutDeclare(deal, outcome.seat));
   }
   keep /= n;
