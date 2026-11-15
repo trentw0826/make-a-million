@@ -1,4 +1,14 @@
-import type { Ruleset, Seat, Team } from '@mam/engine';
+import { playoutDeclare, playoutWith } from '@mam/bots';
+import {
+  type AuctionEntry,
+  type CardId,
+  createGame,
+  nextSeat,
+  type Ruleset,
+  type Seat,
+  type Team,
+  teamOf,
+} from '@mam/engine';
 import './registry';
 import { playGame } from './runner';
 import { type BotSpec, makeStrategy } from './strategies';
@@ -102,8 +112,70 @@ export async function playTask(input: PlayInput): Promise<PlayOutput> {
   };
 }
 
+/** One contract, with what the bidding's playout estimate predicted for it. */
+export interface CalibrationLine {
+  readonly bidder: Seat;
+  readonly bid: number;
+  readonly made: boolean;
+  /** Money the bidding team actually captured. */
+  readonly actual: number;
+  /**
+   * The bidding's estimate (greedy open-hand playout, heuristic discards and trump) on the
+   * true deal, and the same playout with the discards and trump actually chosen.
+   */
+  readonly estimate: number;
+  readonly estimateChosen: number;
+  readonly auction: readonly AuctionEntry[];
+}
+
+/**
+ * Plays one hand and compares the bidder's capture with the contract estimator's
+ * prediction (null when there was no contract or the hand was redealt).
+ */
+export async function calibrateTask(input: PlayInput): Promise<CalibrationLine | null> {
+  const first = createGame({
+    seed: input.seed,
+    dealer: input.dealer,
+    ...(input.scores ? { scores: input.scores } : {}),
+    ...(input.ruleset ? { ruleset: input.ruleset } : {}),
+  }).hand;
+  const strategies = input.specs.map(makeStrategy) as unknown as Parameters<
+    typeof playGame
+  >[0]['strategies'];
+  const { state } = await playGame({
+    seed: input.seed,
+    dealer: input.dealer,
+    strategies,
+    hands: 1,
+    ...(input.scores ? { scores: input.scores } : {}),
+    ...(input.ruleset ? { ruleset: input.ruleset } : {}),
+  });
+  const r = state.handHistory[0];
+  if (!first || !r || r.redeals > 0) return null;
+  const kept: CardId[] = [];
+  for (const t of r.tricks) {
+    let seat = t.leader;
+    for (const c of t.cardIds) {
+      if (seat === r.bidder) kept.push(c);
+      seat = nextSeat(seat);
+    }
+  }
+  const team = teamOf(r.bidder);
+  const deal = { hands: first.hands, widow: first.widow };
+  return {
+    bidder: r.bidder,
+    bid: r.bid,
+    made: r.made,
+    actual: r.captured[team],
+    estimate: (playoutDeclare(deal, r.bidder)[team] as number) * 1000,
+    estimateChosen: (playoutWith(first.hands, r.bidder, kept, r.trump)[team] as number) * 1000,
+    auction: state.hand?.auction.entries ?? [],
+  };
+}
+
 export const TASKS = {
   play: playTask,
+  calibrate: calibrateTask,
 } as const;
 
 export type TaskName = keyof typeof TASKS;

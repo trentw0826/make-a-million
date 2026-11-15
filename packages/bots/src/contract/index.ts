@@ -39,6 +39,12 @@ export interface ContractOptions {
   readonly refineTop: number;
   readonly refineDepth: number;
   readonly utility: UtilityMode;
+  /** Bid only when declaring beats passing by more than this (utility units). */
+  readonly bidMargin: number;
+  /** May raise over the partner's standing bid (false: pass and let the partner have it). */
+  readonly raisePartner: boolean;
+  /** Scale ($) of the auction likelihood: larger trusts the bidding model less. */
+  readonly auctionSigma: number;
 }
 
 export const CONTRACT_DEFAULTS: ContractOptions = {
@@ -48,6 +54,9 @@ export const CONTRACT_DEFAULTS: ContractOptions = {
   refineTop: 4,
   refineDepth: 1,
   utility: 'equity',
+  bidMargin: 0,
+  raisePartner: true,
+  auctionSigma: 20_000,
 };
 
 function toDeal(obs: Observation, world: World): Deal {
@@ -84,13 +93,14 @@ export function decideBid(obs: Observation, rng: Rng, opts: ContractOptions): Ac
   const lastBid = [...obs.auction].reverse().find((e) => e.kind === 'bid');
   const high =
     lastBid && lastBid.kind === 'bid' ? { seat: lastBid.seat, amount: lastBid.amount } : null;
+  if (!opts.raisePartner && high && teamOf(high.seat) === teamOf(obs.seat)) return { type: 'pass' };
   const belief = buildBelief(obs);
   let wSum = 0;
   let declare = 0;
   let pass = 0;
   for (let i = 0; i < opts.bidWorlds; i++) {
     const deal = toDeal(obs, belief.sample(rng));
-    const w = auctionLikelihood(deal, obs, step);
+    const w = auctionLikelihood(deal, obs, step, opts.auctionSigma);
     if (w < 1e-9) continue;
     const mine = utilityFor(
       obs,
@@ -124,7 +134,9 @@ export function decideBid(obs: Observation, rng: Rng, opts: ContractOptions): Ac
     pass += w * theirs;
   }
   if (wSum === 0) return { type: 'pass' };
-  return declare >= pass ? { type: 'bid', amount: legal.minBid } : { type: 'pass' };
+  return declare - pass >= opts.bidMargin * wSum
+    ? { type: 'bid', amount: legal.minBid }
+    : { type: 'pass' };
 }
 
 /** Call a misdeal when this hand is worth less than an average fresh deal. */

@@ -4,6 +4,7 @@ import { RandomBot } from './random';
 import type { BotStrategy, Difficulty } from './strategy';
 
 export { CONTRACT_DEFAULTS, type ContractOptions } from './contract/index';
+export { type Deal, playoutDeclare, playoutWith } from './contract/simulate';
 export { fallbackAction } from './fallback';
 export {
   EXPERT_DEFAULTS,
