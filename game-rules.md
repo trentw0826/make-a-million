@@ -16,12 +16,12 @@
 
 - **Partnerships:** 4 players form two fixed teams of two (partners sit opposite each other). 
 - **Dealer:** Passes clockwise each hand. The dealer shuffles and deals **all** cards, one by one. After dealing, 3 cards remain – these form the hidden **widow** (also called the nest).  
-- **Misdeal:** Any player receiving a sum of money cards totaling \$15,000 or less in their hand is considered a misdeal, and that player may call for a re-deal. The re-deal must be requested before bidding begins. Having special cards does not bar a player from calling a misdeal.
+- **Misdeal:** Any player dealt money totalling \$15,000 or less is may call for a re-deal (called a "misdeal"). A misdeal must be called out before bidding begins, and the same dealer repeats the deal. The only condition for calling a misdeal is the \$15,000 condition (having special cards or having already called multiple other misdeals does not matter)
 
 ## Bidding (Auction)
 
 - **Purpose:** Players bid for the privilege of choosing trumps and taking the widow.  
-- **Opening Bid:** Typically starts around \$175,000 (spoken “one-seventy-five”). Bids between \$175,000 and \$200,000 are common opening bids. 
+- **Opening Bid:** Minimum bid is  \$175,000 (spoken “one-seventy-five”). Bids between \$175,000 and \$200,000 are common opening bids. 
 - **Turn Order:** Bidding begins with the player to the **left of the dealer**, who **must give an opening bid**, and proceeds clockwise. Each player thereafter (including the opening player once the turn comes back to him) will either **bid** or **pass**. (If a player passes, they cannot bid again this hand.) 
 - **Increments:** Each new bid must exceed the previous by at least \$10,000. Some common house rules dictate \$5,000 as the bid increment. There is **no maximum bid**.
 - **Ending the Auction:** Continue until all but one player have passed. The remaining player is the *highest bidder*. That bid amount becomes the team’s contract; The team that took the bid aims to earn at least that much, and the opposing team aims to "set" them.
@@ -37,14 +37,14 @@
 
 - **Lead:** The highest bidder leads the first trick by playing any card from hand (face-up). Play proceeds clockwise.  
 - **Following suit:** Each player must **follow the lead color** if able. If a player has no card of the led color, they may play any card in their hand.
-- **Restrictions on Leads:** A player **cannot lead** with the Bull or Bear if they hold any other card (number, Money, or Tiger). Bulls and Bears may only be led when they are the player’s last card(s). The first card of the trick that isn't the Bull or Bear determines the suit to be followed by the remaining players.
+- **Restrictions on Leads:** A player **cannot lead** with the Bull or Bear if they hold any other card (number, Money, or Tiger). Bulls and Bears may only be led when they are the player’s last card(s). The first card of the trick that isn't the Bull or Bear determines the suit to be followed by the remaining players. Until a colored card is played, the trick has no suit and any card may be played.
 - **Winning the trick:** The trick is won by the **highest card of the suit led**, unless one or more trumps were played. If trumps appear, the highest trump wins. (The Tiger ranks above all trumps.)
 - **Collecting tricks:** The winner of the trick takes the cards and places them face-down in front of them (or their team). Partners’ tricks are kept together. Conventionally, tricks containing a Bull or Bear are kept separate or marked, since their scoring effect differs. The winner of each trick leads the next.
 
 ## Special Cards
 
-- **Bull:** Can only be played when **void in lead suit**. If played, it *doubles* the total value of Money cards in that trick for the team that captures it. (Example: a trick with \$40k and a Bull yields \$80k.) 
-- **Bear:** Same play conditions as the Bull (only when void or last card). When captured, it *nullifies* all Money in that trick (zero points). If both Bull and Bear are played in one trick, only the **last-played** one has effect. (E.g., Bear after Bull cancels instead of doubling.)  
+- **Bull:** Can only be played if the trick suit hasn't been established or the player is out of the trick suit. If played, it *doubles* the total value of Money cards in that trick for the team that captures it. (Example: a trick with \$40k and a Bull yields \$80k.) 
+- **Bear:** Same play conditions as the Bull. When captured, it *nullifies* all Money in that trick (zero points). If both Bull and Bear are played in one trick, only the **last-played** one has effect. (E.g., Bear after Bull cancels instead of doubling.)  
 - **Tiger:** The most powerful card, winning over all other cards. It is considered to be the same suit as trump, meaning if it's led, it compels others to follow with trump if possible; If trumps are led and the Tiger-holder has no other trumps, they must play the Tiger. The Tiger **cannot be played out of suit**; if a non-trump suit is led and the Tiger-holder is not void in that suit, they cannot play the Tiger.
 
 ## Scoring (Hand Result)
