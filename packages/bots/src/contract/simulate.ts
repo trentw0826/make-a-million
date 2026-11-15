@@ -109,9 +109,18 @@ export function modelCeiling(
 export interface CeilingModel {
   readonly ceilingShift: number;
   readonly ceilingScale: number;
+  /**
+   * Whether a pass while the partner holds the high bid says the hand is weak (false for
+   * players who never raise over their partner, like the bots).
+   */
+  readonly partnerPassInformative: boolean;
 }
 
-export const HEURISTIC_CEILINGS: CeilingModel = { ceilingShift: 0, ceilingScale: 1 };
+export const HEURISTIC_CEILINGS: CeilingModel = {
+  ceilingShift: 0,
+  ceilingScale: 1,
+  partnerPassInformative: true,
+};
 
 /** Likelihood of the auction so far under the ceiling model (logistic, scale σ). */
 export function auctionLikelihood(
@@ -123,6 +132,7 @@ export function auctionLikelihood(
 ): number {
   let w = 1;
   let high = 0;
+  let highSeat: Seat | null = null;
   const minOpen = obs.ruleset.bidding.minOpeningBid;
   const raise = obs.ruleset.bidding.raiseIncrement;
   for (const e of obs.auction) {
@@ -133,11 +143,18 @@ export function auctionLikelihood(
         // Forced opening bids carry no information.
         if (!(high === 0 && obs.ruleset.bidding.openerMustBid))
           w *= logistic((c - e.amount) / sigma);
-      } else {
+      } else if (
+        model.partnerPassInformative ||
+        highSeat === null ||
+        teamOf(highSeat) !== teamOf(e.seat)
+      ) {
         w *= logistic((needed - c) / sigma);
       }
     }
-    if (e.kind === 'bid') high = e.amount;
+    if (e.kind === 'bid') {
+      high = e.amount;
+      highSeat = e.seat;
+    }
   }
   return w;
 }

@@ -62,6 +62,8 @@ export interface ContractOptions {
    */
   readonly ceilingShift: number;
   readonly ceilingScale: number;
+  /** Whether a pass while partner holds the high bid counts as showing a weak hand. */
+  readonly partnerPassInformative: boolean;
   /**
    * Calibration of the playout estimate in bidding and misdeal calls ($1000s): the
    * declaring team's capture is taken as Normal(calibA + calibB × estimate, calibSd²) and
@@ -88,6 +90,7 @@ export const CONTRACT_DEFAULTS: ContractOptions = {
   auctionSigma: 20_000,
   ceilingShift: 0,
   ceilingScale: 1,
+  partnerPassInformative: true,
   calibA: 130,
   calibB: 0.5,
   calibSd: 58,
