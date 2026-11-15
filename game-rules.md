@@ -55,8 +55,9 @@
 - **If the bidders made their bid** (captured ≥ bid value), they **score** the full total they captured. If they **failed to make the bid**, they are “set back”: they score *nothing* and must subtract the bid amount from their cumulative score (including going negative if necessary). The opposing team (the setters) simply score what they captured.  
 - The game continues with cumulative totals. The **first team** to reach \$1,000,000 wins. If both teams reach  \$1,000,000 on the same hand, the **higher** score wins. (No extra tiebreaker hand is played.)
 
-## Implementation Decisions
+## Other Notes
 
 - **Raise Increment ($5k vs $10k):** All official text uses \$10,000 steps. Any \$5k rule is a non‑standard but common variant.
 - **Simultaneous Win:** There are no official rules addressing the rare case in which both sides reach   \$1,000,000  *and* end up with the same score in one hand. In this case, let the bidding team win.
+- **Table talk:** Any verbal or non-verbal communication between partners that conveys information about a player's hand, strategy, or intent during active play is strictly forbidden. 
 
