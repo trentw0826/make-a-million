@@ -9,6 +9,5 @@ A scratchpad for future fixes, features, and updates
   - the "Invite link copied" toast, and the fallback dialog on plain http over a LAN IP
   - the layout at 900px, and with a 16-card hand while discarding
 - [ ] **Tooltips on greyed-out cards.** These cards use `disabled`, and some browsers don't show a `title` tooltip on disabled buttons. Consider `aria-disabled` with click guarding, so the reason always shows.
-- [ ] **Run `pnpm e2e` in CI.** It needs Chromium on the runner (for example `apt-get install chromium` and setting `CHROMIUM_PATH`), and takes about a minute.
 - [ ] **Small screens.** The client is desktop-first; phones get a wrapped hand and a long page. Possible fixes: an overlapping fan of cards, and the score sheet and log in a drawer.
 

@@ -12,8 +12,8 @@ the spec.
 ## Before merging
 
 - `pnpm check` must pass. It runs lint, typecheck, test and build, the same steps as CI.
-- If the change touches the client or the client–server protocol, also run `pnpm e2e`. It is
-  not in CI yet. Look at the screenshots in `apps/client/e2e/out/`, because passing checks do not
+- If the change touches the client or the client–server protocol, also run `pnpm e2e` (CI
+  runs it as a separate job). Look at the screenshots in `apps/client/e2e/out/`, because passing checks do not
   prove the layout is right.
 - Tests that use timers (server tests run on fake timers) must pass several runs in a row
   before they count as done.
