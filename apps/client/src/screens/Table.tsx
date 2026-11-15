@@ -2,7 +2,6 @@ import {
   type CardId,
   cardById,
   isNumberCard,
-  isTrump,
   nextSeat,
   partnerOf,
   type TableView,
@@ -10,10 +9,10 @@ import {
 import type { RoomView } from '@mam/protocol';
 import { useEffect, useState } from 'react';
 import { ActionBar } from '../components/ActionBar';
-import { CardFace } from '../components/CardFace';
 import { ContractBar } from '../components/ContractBar';
 import { EventLog } from '../components/EventLog';
 import { GameOver } from '../components/GameOver';
+import { Hand } from '../components/Hand';
 import { HandResult } from '../components/HandResult';
 import { ScoreSheet } from '../components/ScoreSheet';
 import { SeatPanel } from '../components/SeatPanel';
@@ -61,7 +60,6 @@ export function Table({ room, view }: { room: RoomView; view: TableView }) {
     !forbidden.has(id) && (selected.has(id) || isNumber(id) || moneySelected < moneyAllowed);
   // The widow is in view only for the bidder; mark its cards while they choose discards.
   const widow = new Set(discarding ? (view.widow ?? []) : []);
-  const trump = view.trump;
 
   const onCard = (id: CardId) => {
     if (legalPlays) {
@@ -102,27 +100,24 @@ export function Table({ room, view }: { room: RoomView; view: TableView }) {
             selected={selected}
             onClearSelection={() => setSelected(new Set())}
           />
-          <section className="hand" aria-label="Your hand">
-            {view.hand.map((id) => {
+          <Hand
+            ids={view.hand}
+            trump={view.trump}
+            cardProps={(id) => {
               const disabled = legalPlays
                 ? !legalPlays.has(id)
                 : discarding
                   ? !canSelect(id)
                   : false;
-              return (
-                <CardFace
-                  key={id}
-                  id={id}
-                  selected={selected.has(id)}
-                  disabled={disabled}
-                  onClick={legalPlays || discarding ? () => onCard(id) : undefined}
-                  trump={trump !== null && isTrump(cardById(id), trump)}
-                  fresh={widow.has(id)}
-                  title={disabled ? blockedReason(id, view) : undefined}
-                />
-              );
-            })}
-          </section>
+              return {
+                selected: selected.has(id),
+                disabled,
+                onClick: legalPlays || discarding ? () => onCard(id) : undefined,
+                fresh: widow.has(id),
+                title: disabled ? blockedReason(id, view) : undefined,
+              };
+            }}
+          />
           <div className="me-line side-us">
             <span className="side-dot" aria-hidden="true" />
             You

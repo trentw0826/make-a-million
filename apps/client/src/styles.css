@@ -624,8 +624,15 @@ input {
 .hand {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 8px 6px;
   justify-content: center;
+  padding-top: 10px;
+}
+.hand-slot {
+  display: flex;
+}
+.hand-slot.group-start {
+  margin-left: 12px;
 }
 
 /* Cards ------------------------------------------------------------------ */

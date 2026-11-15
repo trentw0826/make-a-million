@@ -6,6 +6,7 @@ import { describe, expect, it } from 'vitest';
 import { Shell } from '../src/App';
 import { ContractBar } from '../src/components/ContractBar';
 import { EventLog } from '../src/components/EventLog';
+import { Hand } from '../src/components/Hand';
 import { GameProvider, useGame } from '../src/store';
 
 /** Nothing listens here, so every send fails and shows the "Not connected" toast. */
@@ -184,5 +185,29 @@ describe('table status', () => {
     renderWith(atTable);
     expect(document.querySelector('.me')).toHaveClass('me-turn');
     expect(screen.getByText('Your turn')).toBeInTheDocument();
+  });
+});
+
+describe('hand', () => {
+  it('lays the trump group out first, marked, with a gap after it', () => {
+    // Red 1, Tiger, Green $40k, Bull, Green 1.
+    render(<Hand ids={[0, 52, 51, 53, 39]} trump="green" cardProps={() => ({})} />);
+    const cards = [...document.querySelectorAll('.hand [data-card-id]')];
+    expect(cards.map((c) => c.getAttribute('data-card-id'))).toEqual(['52', '51', '39', '0', '53']);
+    expect(cards.map((c) => c.hasAttribute('data-trump'))).toEqual([
+      true,
+      true,
+      true,
+      false,
+      false,
+    ]);
+    const slots = [...document.querySelectorAll('.hand-slot')];
+    expect(slots.map((s) => s.classList.contains('group-start'))).toEqual([
+      false,
+      false,
+      false,
+      true,
+      true,
+    ]);
   });
 });
