@@ -238,6 +238,16 @@ export class PlayState {
     return modifier === 1 ? money * 2 : modifier === 2 ? 0 : money;
   }
 
+  /**
+   * Money still to be won, counting the Bull/Bear rule for the trick in progress (but not
+   * for specials still in hands), in $1000s.
+   */
+  moneyOutK(): number {
+    let face = 0;
+    for (let i = 0; i < this.trickCount; i++) face += cardMoneyK(this.trickCards[i] as number);
+    return this.remainingMoneyK() - face + this.trickValueK();
+  }
+
   /** Money still to be won: cards in hands plus the trick in progress, in $1000s. */
   remainingMoneyK(): number {
     let money = 0;

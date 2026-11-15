@@ -6,6 +6,7 @@ import {
   playStateFromWorld,
   SearchAborted,
   Solver,
+  splitRest,
   type World,
 } from '@mam/search';
 
@@ -76,6 +77,16 @@ export interface PimcResult {
 }
 
 /**
+ * Where a non-linear utility is applied. 'leaf': inside the search, exactly (but solved
+ * positions are tied to the money already won, so search costs about 3× more). 'root': each
+ * world is solved in points and the utility is applied to every root move's value, splitting
+ * the money still out between the teams accordingly (splitRest). Exact once no Bull or Bear
+ * can affect the rest (the money still out is then fixed), an estimate before; no extra
+ * search cost.
+ */
+export type UtilityAt = 'leaf' | 'root';
+
+/**
  * Perfect-information Monte Carlo: sample arrangements of the unseen cards consistent with
  * the observation, solve each with all hands open, and average each legal card's value.
  * `utility` (team 0's value of final captures) switches the solver from points to e.g.
@@ -88,7 +99,9 @@ export function pimcValues(
   utility?: LeafUtility,
   weight?: (world: World) => number,
   belief: Belief = buildBelief(obs),
+  utilityAt: UtilityAt = 'leaf',
 ): PimcResult {
+  const atRoot = utility !== undefined && utilityAt === 'root';
   // Few enough arrangements left: list them all (exact expectation over the belief).
   const all = belief.enumerate(opts.worlds);
   const allWeights = all ? all.map((w) => (weight ? weight(w) : 1)) : null;
@@ -107,7 +120,7 @@ export function pimcValues(
   const sums = new Map<CardId, number>(legal.map((c) => [c, 0]));
   const sign = teamOf(obs.seat) === 0 ? 1 : -1;
   const solver = new Solver(
-    utility
+    utility && !atRoot
       ? { mode: 'utility', utility, maxEntries: 400_000 }
       : { mode: 'linear', maxEntries: 400_000 },
   );
@@ -124,8 +137,10 @@ export function pimcValues(
     if (!item) break;
     const { world, w } = item;
     let result: { moves: readonly number[]; values: readonly number[] } | null = null;
+    let root = { cap0: 0, cap1: 0, rest: 0 };
     while (!result) {
       const state = playStateFromWorld(obs, world.hands);
+      root = { cap0: state.cap0, cap1: state.cap1, rest: state.moneyOutK() };
       solver.depthTricks = depth;
       const left = opts.nodes - solver.nodes;
       solver.nodeLimit =
@@ -150,7 +165,12 @@ export function pimcValues(
       }
     }
     result.moves.forEach((m, i) => {
-      sums.set(m, (sums.get(m) ?? 0) + w * sign * (result.values[i] as number));
+      let v = result.values[i] as number;
+      if (atRoot && utility) {
+        const [f0, f1] = splitRest(root.cap0, root.cap1, root.rest, v);
+        v = utility(f0, f1);
+      }
+      sums.set(m, (sums.get(m) ?? 0) + w * sign * v);
     });
     worlds += 1;
     weightTotal += w;

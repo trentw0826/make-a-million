@@ -115,6 +115,23 @@ export function captureUtility(
   };
 }
 
+/**
+ * Final captures ($1000s) implied by a points value: from captures `cap0`/`cap1`, team 0
+ * goes on to win `v` more than team 1 out of the `rest` still to be won. Exact when no Bull
+ * or Bear is in a hand or in the trick in progress (the rest is then fixed). Otherwise it
+ * is an estimate: they can even make |v| exceed `rest`, and the loser is then taken to win
+ * nothing.
+ */
+export function splitRest(cap0: number, cap1: number, rest: number, v: number): [number, number] {
+  let f1 = Math.max(0, (rest - v) / 2);
+  let f0 = f1 + v;
+  if (f0 < 0) {
+    f0 = 0;
+    f1 = -v;
+  }
+  return [cap0 + f0, cap1 + f1];
+}
+
 /** Equity of a position at the start of a hand, before anything is known. */
 export function startEquity(
   table: MatchEquityTable,

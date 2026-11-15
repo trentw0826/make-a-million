@@ -21,8 +21,15 @@ export interface HardOptions extends PimcOptions, ContractOptions {
   readonly searchBid: boolean;
   readonly searchDiscard: boolean;
   readonly searchTrump: boolean;
-  /** What card play maximises: points, or the probability of winning the game. */
-  readonly playUtility: UtilityMode;
+  /**
+   * What card play maximises. 'linear': money won from here on minus the opponents'
+   * (cheapest: solved positions are reusable whatever was captured before). 'margin': the
+   * hand's score change minus the opponents', so making or setting the contract counts.
+   * 'equity': the probability of winning the game.
+   */
+  readonly playUtility: 'linear' | UtilityMode;
+  /** For 'margin'/'equity': apply it to each world's points values (cheap; see UtilityAt). */
+  readonly fastUtility: boolean;
   /** With inference on, also weight worlds by players' throw-offs. */
   readonly throwOffs: boolean;
 }
@@ -34,7 +41,8 @@ export const HARD_DEFAULTS: HardOptions = {
   searchBid: true,
   searchDiscard: true,
   searchTrump: true,
-  playUtility: 'margin',
+  playUtility: 'linear',
+  fastUtility: true,
   throwOffs: false,
 };
 
@@ -93,7 +101,15 @@ export class HardBot implements BotStrategy {
       this.options.inferencePool > 0
         ? makeWorldWeight(obs, { throwOffs: this.options.throwOffs })
         : undefined;
-    const result = pimcValues(obs, rng, this.options, this.playLeafUtility(obs), weight);
+    const result = pimcValues(
+      obs,
+      rng,
+      this.options,
+      this.playLeafUtility(obs),
+      weight,
+      undefined,
+      this.options.fastUtility ? 'root' : 'leaf',
+    );
     // Ties (common: many cards are worth the same) go to the heuristic's choice.
     const preferred = this.heuristic.decide(obs, rng);
     const preferredCard = preferred.type === 'playCard' ? preferred.cardId : -1;
@@ -109,9 +125,10 @@ export class HardBot implements BotStrategy {
     return { type: 'playCard', cardId: result.moves[best] as number };
   }
 
-  /** Team 0's utility of final captures ($1000s) for match-equity play; undefined = points. */
+  /** Team 0's utility of final captures ($1000s); undefined = linear money difference. */
   private playLeafUtility(obs: Observation): LeafUtility | undefined {
-    if (this.options.playUtility !== 'equity' || !obs.contract) return undefined;
+    const mode = this.options.playUtility;
+    if (mode === 'linear' || !obs.contract) return undefined;
     const u = captureUtility(
       {
         ruleset: obs.ruleset,
@@ -121,7 +138,7 @@ export class HardBot implements BotStrategy {
         bid: obs.contract.amount,
       },
       0,
-      'equity',
+      mode,
       ME_TABLE,
     );
     return (c0, c1) => u([c0 * 1000, c1 * 1000]);
