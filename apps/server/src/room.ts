@@ -369,7 +369,8 @@ export class Room {
     const generation = this.botGeneration;
     const started = Date.now();
     const seed = this.botRng.nextUint32();
-    void this.computeBotAction(seat, game, seed).then((action) => {
+    const deadline = started + delay - this.deps.config.botDeadlineMarginMs;
+    void this.computeBotAction(seat, game, seed, deadline).then((action) => {
       if (generation !== this.botGeneration || this.game !== game || this.closed) return;
       const wait = Math.max(0, delay - (Date.now() - started));
       this.botTimers.set(
@@ -386,13 +387,14 @@ export class Room {
     seat: Seat,
     game: GameState,
     seed: number,
+    deadline: number,
   ): Promise<Action | null> {
     if (this.closed || this.phase !== 'playing' || !this.isBotControlled(seat)) return null;
     const obs = observe(game, seat);
     if (obs.legal.kind === 'none') return null;
     const difficulty = this.botDifficulty(seat);
     try {
-      return await this.deps.decideBot(difficulty, obs, seed);
+      return await this.deps.decideBot(difficulty, obs, seed, deadline);
     } catch (e) {
       this.deps.log('error', 'bot threw', { room: this.code, seat, difficulty, error: String(e) });
       return null;

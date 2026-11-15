@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { splitRest } from '../src/equity';
 import { playStateFromGame } from '../src/play/convert';
-import { type LeafUtility, Solver } from '../src/play/solver';
+import { DeadlineExceeded, type LeafUtility, SearchAborted, Solver } from '../src/play/solver';
 import { BEAR, BULL, SPEC_BEAR, SPEC_BULL } from '../src/play/state';
 import { bruteForce, randomPlayStates } from './helpers';
 
@@ -118,5 +118,33 @@ describe('utility applied at the root (splitRest)', () => {
     // A Bull can make the margin exceed the money out: the loser wins nothing.
     expect(splitRest(10, 20, 50, 80)).toEqual([90, 20]);
     expect(splitRest(10, 20, 50, -100)).toEqual([10, 120]);
+  });
+});
+
+describe('Solver deadline', () => {
+  const opening = () => {
+    const states = randomPlayStates('deadline').map(playStateFromGame);
+    return states.reduce((a, b) => (b.cardsInHands > a.cardsInHands ? b : a));
+  };
+
+  it('stops a long search once the clock passes its deadline', () => {
+    const solver = new Solver({ mode: 'linear' });
+    solver.deadline = Date.now() - 1;
+    let thrown: unknown;
+    try {
+      solver.solve(opening());
+    } catch (e) {
+      thrown = e;
+    }
+    expect(thrown).toBeInstanceOf(DeadlineExceeded);
+    // Callers that only know node budgets still see an aborted search.
+    expect(thrown).toBeInstanceOf(SearchAborted);
+    expect(solver.nodes).toBeLessThan(5000);
+  });
+
+  it('never fires without a deadline', () => {
+    const solver = new Solver({ mode: 'linear' });
+    solver.depthTricks = 1;
+    expect(() => solver.rootValues(opening())).not.toThrow();
   });
 });

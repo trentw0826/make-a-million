@@ -7,9 +7,19 @@ const port = parentPort;
 
 port.on(
   'message',
-  async (msg: { id: number; difficulty: Difficulty; obs: Observation; seed: number }) => {
+  async (msg: {
+    id: number;
+    difficulty: Difficulty;
+    obs: Observation;
+    seed: number;
+    deadline?: number;
+  }) => {
     try {
-      const action = await createBot(msg.difficulty).decide(msg.obs, Rng.fromSeed(msg.seed));
+      const action = await createBot(msg.difficulty).decide(
+        msg.obs,
+        Rng.fromSeed(msg.seed),
+        msg.deadline !== undefined ? { deadline: msg.deadline } : {},
+      );
       port.postMessage({ id: msg.id, action });
     } catch (e) {
       port.postMessage({ id: msg.id, error: e instanceof Error ? e.stack : String(e) });

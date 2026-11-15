@@ -12,6 +12,7 @@ export {
   HardBot,
   type HardOptions,
   PIMC_DEFAULTS,
+  type PimcCall,
   type PimcOptions,
   type PimcResult,
   pimcValues,
@@ -21,6 +22,7 @@ export { RandomBot } from './random';
 export {
   type BotStrategy,
   CHEAP_DIFFICULTIES,
+  type DecideContext,
   DIFFICULTIES,
   DIFFICULTY_LABELS,
   type Difficulty,

@@ -2,6 +2,7 @@ import { type CardId, type Observation, type Rng, teamOf } from '@mam/engine';
 import {
   type Belief,
   buildBelief,
+  DeadlineExceeded,
   type LeafUtility,
   playStateFromWorld,
   SearchAborted,
@@ -74,6 +75,8 @@ export interface PimcResult {
   readonly means: readonly number[];
   readonly worlds: number;
   readonly nodes: number;
+  /** The deadline cut the search short (values come from fewer worlds or less depth). */
+  readonly timedOut: boolean;
 }
 
 /**
@@ -86,6 +89,21 @@ export interface PimcResult {
  */
 export type UtilityAt = 'leaf' | 'root';
 
+/** Per-decision inputs of pimcValues besides the observation and budget. */
+export interface PimcCall {
+  /** Team 0's value of final captures; omitted, values are points (see pimcValues). */
+  readonly utility?: LeafUtility;
+  readonly utilityAt?: UtilityAt;
+  /** Inference weight of a world (omitted: worlds are equally likely). */
+  readonly weight?: (world: World) => number;
+  readonly belief?: Belief;
+  /**
+   * Wall-clock deadline (Date.now() ms). Past it, the worlds solved so far decide; if none
+   * is, one world is valued one trick deep. A live-play safety net; omit in simulations.
+   */
+  readonly deadline?: number;
+}
+
 /**
  * Perfect-information Monte Carlo: sample arrangements of the unseen cards consistent with
  * the observation, solve each with all hands open, and average each legal card's value.
@@ -96,11 +114,10 @@ export function pimcValues(
   obs: Observation,
   rng: Rng,
   opts: PimcOptions,
-  utility?: LeafUtility,
-  weight?: (world: World) => number,
-  belief: Belief = buildBelief(obs),
-  utilityAt: UtilityAt = 'leaf',
+  call: PimcCall = {},
 ): PimcResult {
+  const { utility, weight, utilityAt = 'leaf', deadline = Number.POSITIVE_INFINITY } = call;
+  const belief = call.belief ?? buildBelief(obs);
   const atRoot = utility !== undefined && utilityAt === 'root';
   // Few enough arrangements left: list them all (exact expectation over the belief).
   const all = belief.enumerate(opts.worlds);
@@ -124,6 +141,8 @@ export function pimcValues(
       ? { mode: 'utility', utility, maxEntries: 400_000 }
       : { mode: 'linear', maxEntries: 400_000 },
   );
+  solver.deadline = deadline;
+  let timedOut = false;
   const live = obs.handSizes.reduce((a, b) => a + b, 0) + (obs.currentTrick?.plays.length ?? 0);
   const exact = live <= opts.exactTricks * 4;
   let worlds = 0;
@@ -149,6 +168,14 @@ export function pimcValues(
         result = solver.rootValues(state);
       } catch (e) {
         if (!(e instanceof SearchAborted)) throw e;
+        if (e instanceof DeadlineExceeded) {
+          timedOut = true;
+          if (worlds > 0) break outer;
+          // Nothing solved yet: value this world one trick deep (fast), off the clock.
+          solver.deadline = Number.POSITIVE_INFINITY;
+          depth = 1;
+          continue;
+        }
         // Out of total budget with some worlds done: stop. Otherwise go shallower.
         if (worlds > 0 && solver.nodes >= opts.nodes) break outer;
         depth = depth === Number.POSITIVE_INFINITY ? Math.max(1, opts.depth) : depth - 1;
@@ -174,6 +201,7 @@ export function pimcValues(
     });
     worlds += 1;
     weightTotal += w;
+    if (timedOut) break;
   }
   const moves = [...sums.keys()];
   return {
@@ -181,5 +209,6 @@ export function pimcValues(
     means: moves.map((m) => (sums.get(m) as number) / (weightTotal > 0 ? weightTotal : 1)),
     worlds,
     nodes: solver.nodes,
+    timedOut,
   };
 }

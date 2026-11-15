@@ -3,8 +3,16 @@ import { createBot, type Difficulty } from '@mam/bots';
 import { type Action, type Observation, Rng } from '@mam/engine';
 import type { Logger } from './log';
 
-/** Computes one bot decision. Inline for cheap bots, on a worker thread for searching ones. */
-export type DecideBot = (difficulty: Difficulty, obs: Observation, seed: number) => Promise<Action>;
+/**
+ * Computes one bot decision. Inline for cheap bots, on a worker thread for searching ones.
+ * `deadline` (Date.now() ms) is when the answer is due; searching bots cut short past it.
+ */
+export type DecideBot = (
+  difficulty: Difficulty,
+  obs: Observation,
+  seed: number,
+  deadline?: number,
+) => Promise<Action>;
 
 /** Bots that search run off the main thread so they never freeze other rooms. */
 const SEARCHING: ReadonlySet<Difficulty> = new Set(['hard', 'expert']);
@@ -13,8 +21,15 @@ export function decideInline(
   difficulty: Difficulty,
   obs: Observation,
   seed: number,
+  deadline?: number,
 ): Promise<Action> {
-  return Promise.resolve(createBot(difficulty).decide(obs, Rng.fromSeed(seed)));
+  return Promise.resolve(
+    createBot(difficulty).decide(
+      obs,
+      Rng.fromSeed(seed),
+      deadline !== undefined ? { deadline } : {},
+    ),
+  );
 }
 
 interface Job {
@@ -22,6 +37,7 @@ interface Job {
   readonly difficulty: Difficulty;
   readonly obs: Observation;
   readonly seed: number;
+  readonly deadline: number | undefined;
   resolve(action: Action): void;
   reject(err: Error): void;
 }
@@ -44,10 +60,12 @@ export class BotPool {
     for (let i = 0; i < size; i++) this.spawn();
   }
 
-  readonly decide: DecideBot = (difficulty, obs, seed) => {
-    if (this.size === 0 || !SEARCHING.has(difficulty)) return decideInline(difficulty, obs, seed);
+  readonly decide: DecideBot = (difficulty, obs, seed, deadline) => {
+    if (this.size === 0 || !SEARCHING.has(difficulty)) {
+      return decideInline(difficulty, obs, seed, deadline);
+    }
     return new Promise<Action>((resolve, reject) => {
-      this.queue.push({ id: this.nextId++, difficulty, obs, seed, resolve, reject });
+      this.queue.push({ id: this.nextId++, difficulty, obs, seed, deadline, resolve, reject });
       this.pump();
     });
   };
@@ -94,7 +112,13 @@ export class BotPool {
       const worker = this.idle.pop() as Worker;
       const job = this.queue.shift() as Job;
       this.busy.set(worker, job);
-      worker.postMessage({ id: job.id, difficulty: job.difficulty, obs: job.obs, seed: job.seed });
+      worker.postMessage({
+        id: job.id,
+        difficulty: job.difficulty,
+        obs: job.obs,
+        seed: job.seed,
+        deadline: job.deadline,
+      });
     }
   }
 }

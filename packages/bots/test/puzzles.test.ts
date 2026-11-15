@@ -127,14 +127,9 @@ function puzzleBelief(state: GameState, seat: Seat): Belief {
 
 function hardChoice(state: GameState, seat: Seat): CardId {
   const obs = observe(state, seat);
-  const r = pimcValues(
-    obs,
-    Rng.fromSeed('puzzle'),
-    HARD_DEFAULTS,
-    undefined,
-    undefined,
-    puzzleBelief(state, seat),
-  );
+  const r = pimcValues(obs, Rng.fromSeed('puzzle'), HARD_DEFAULTS, {
+    belief: puzzleBelief(state, seat),
+  });
   let best = 0;
   for (let i = 1; i < r.moves.length; i++) {
     if ((r.means[i] as number) > (r.means[best] as number)) best = i;

@@ -11,6 +11,11 @@ export interface ServerConfig {
   readonly roomIdleMs: number;
   /** Fixed think time per difficulty; never depends on the decision (see bot-standards). */
   readonly botDelayMs: Readonly<Record<Difficulty, number>>;
+  /**
+   * A searching bot's answer is due this long before its reply time, which leaves room to
+   * deliver it on time; past that it stops searching and plays its best move so far.
+   */
+  readonly botDeadlineMarginMs: number;
   /** Delay before a bot advances past the hand-result screen when no human is present. */
   readonly botContinueDelayMs: number;
   /** Strategy used to play a human's seat while they are away. */
@@ -30,6 +35,7 @@ export const DEFAULT_CONFIG: ServerConfig = {
   graceMs: Number(env.GRACE_MS ?? 60_000),
   roomIdleMs: Number(env.ROOM_IDLE_MS ?? 10 * 60_000),
   botDelayMs: { easy: 700, normal: 900, hard: 1500, expert: 5000 },
+  botDeadlineMarginMs: 200,
   botContinueDelayMs: 4_000,
   takeoverDifficulty: 'normal',
   botWorkers: Number(env.BOT_WORKERS ?? Math.max(1, Math.min(4, availableParallelism() - 1))),

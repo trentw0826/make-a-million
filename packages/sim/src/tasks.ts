@@ -173,9 +173,35 @@ export async function calibrateTask(input: PlayInput): Promise<CalibrationLine |
   };
 }
 
+/** One timed decision: [seat, phase, cards still in hands and trick, legal moves, ms]. */
+export type TimedDecision = readonly [Seat, string, number, number, number];
+
+/** Plays (part of) a game and returns every decision's compute time. */
+export async function timingTask(input: PlayInput): Promise<TimedDecision[]> {
+  const strategies = input.specs.map(makeStrategy) as unknown as Parameters<
+    typeof playGame
+  >[0]['strategies'];
+  const out: TimedDecision[] = [];
+  await playGame({
+    seed: input.seed,
+    dealer: input.dealer,
+    strategies,
+    ...(input.scores ? { scores: input.scores } : {}),
+    ...(input.hands !== undefined ? { hands: input.hands } : {}),
+    ...(input.ruleset ? { ruleset: input.ruleset } : {}),
+    onDecision: ({ seat, ms, obs }) => {
+      const live = obs.handSizes.reduce((a, b) => a + b, 0) + (obs.currentTrick?.plays.length ?? 0);
+      const legal = obs.legal.kind === 'play' ? obs.legal.cardIds.length : 0;
+      out.push([seat, obs.legal.kind, live, legal, Math.round(ms * 10) / 10]);
+    },
+  });
+  return out;
+}
+
 export const TASKS = {
   play: playTask,
   calibrate: calibrateTask,
+  timing: timingTask,
 } as const;
 
 export type TaskName = keyof typeof TASKS;

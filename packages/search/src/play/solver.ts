@@ -28,11 +28,22 @@ const MOVES_PER_PLY = 16;
 
 /** Thrown when a search exceeds its node budget. The solver's cache stays valid. */
 export class SearchAborted extends Error {
-  constructor() {
-    super('search node budget exceeded');
+  constructor(message = 'search node budget exceeded') {
+    super(message);
     this.name = 'SearchAborted';
   }
 }
+
+/** Thrown when a search runs past its wall-clock deadline (see Solver.deadline). */
+export class DeadlineExceeded extends SearchAborted {
+  constructor() {
+    super('search deadline passed');
+    this.name = 'DeadlineExceeded';
+  }
+}
+
+/** Nodes searched between clock checks (about a millisecond). */
+const CLOCK_EVERY = 2048;
 
 /** Money class (0–5) of each rank, for cache keys. */
 const MONEY_CLASS = [0, 0, 0, 0, 1, 0, 0, 0, 2, 0, 3, 4, 5] as const;
@@ -172,11 +183,21 @@ export class Solver {
 
   /** Abort with SearchAborted once `nodes` passes this (set per call by the caller). */
   nodeLimit = Number.POSITIVE_INFINITY;
+  /**
+   * Abort with DeadlineExceeded once the clock (Date.now()) passes this. A safety net for
+   * live play only: unlike node limits, it makes results depend on machine speed.
+   */
+  deadline = Number.POSITIVE_INFINITY;
+  private clockAt = CLOCK_EVERY;
 
   private search(ply: number, alphaIn: number, betaIn: number): number {
     const s = this.s;
     this.nodes += 1;
     if (this.nodes > this.nodeLimit) throw new SearchAborted();
+    if (this.nodes >= this.clockAt) {
+      this.clockAt = this.nodes + CLOCK_EVERY;
+      if (Date.now() > this.deadline) throw new DeadlineExceeded();
+    }
     if (s.done) return this.linear ? 0 : this.utility(s.cap0, s.cap1);
     if (
       s.trickCount === 0 &&

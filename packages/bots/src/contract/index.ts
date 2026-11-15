@@ -12,6 +12,7 @@ import {
   buildBelief,
   buildPlayState,
   captureUtility,
+  DeadlineExceeded,
   ME_TABLE,
   SearchAborted,
   Solver,
@@ -86,8 +87,16 @@ function predictAuction(
   return { seat: top[0], price };
 }
 
+/** Fewest sampled deals a contract decision uses, even past its deadline. */
+const MIN_WORLDS = 16;
+
 /** Bid the minimum now, or pass, whichever has the higher expected value. */
-export function decideBid(obs: Observation, rng: Rng, opts: ContractOptions): Action {
+export function decideBid(
+  obs: Observation,
+  rng: Rng,
+  opts: ContractOptions,
+  deadline = Number.POSITIVE_INFINITY,
+): Action {
   const legal = obs.legal;
   if (legal.kind !== 'bid') throw new Error('decideBid outside bidding');
   if (!legal.canPass) return { type: 'bid', amount: legal.minBid };
@@ -103,6 +112,7 @@ export function decideBid(obs: Observation, rng: Rng, opts: ContractOptions): Ac
   let declare = 0;
   let pass = 0;
   for (let i = 0; i < opts.bidWorlds; i++) {
+    if (i >= MIN_WORLDS && Date.now() > deadline) break;
     const deal = toDeal(obs, belief.sample(rng));
     const w = auctionLikelihood(deal, obs, step, opts.auctionSigma);
     if (w < 1e-9) continue;
@@ -144,14 +154,22 @@ export function decideBid(obs: Observation, rng: Rng, opts: ContractOptions): Ac
 }
 
 /** Call a misdeal when this hand is worth less than an average fresh deal. */
-export function decideMisdeal(obs: Observation, rng: Rng, opts: ContractOptions): Action {
+export function decideMisdeal(
+  obs: Observation,
+  rng: Rng,
+  opts: ContractOptions,
+  deadline = Number.POSITIVE_INFINITY,
+): Action {
   const legal = obs.legal;
   if (legal.kind !== 'misdeal' || !legal.canCall) return { type: 'declineMisdeal' };
   const { minOpeningBid, raiseIncrement, bidStep } = obs.ruleset.bidding;
   const opener = ((obs.dealer + 1) % 4) as Seat;
   const belief = buildBelief(obs);
   let keep = 0;
+  let n = 0;
   for (let i = 0; i < opts.bidWorlds; i++) {
+    if (i >= MIN_WORLDS && Date.now() > deadline) break;
+    n += 1;
     const deal = toDeal(obs, belief.sample(rng));
     const ceilings = new Map<Seat, number>();
     for (const s of [0, 1, 2, 3] as Seat[]) ceilings.set(s, modelCeiling(deal, s, obs, bidStep));
@@ -166,7 +184,7 @@ export function decideMisdeal(obs: Observation, rng: Rng, opts: ContractOptions)
       opts.utility,
     )(playoutDeclare(deal, outcome.seat));
   }
-  keep /= opts.bidWorlds;
+  keep /= n;
   const redeal =
     opts.utility === 'equity' ? startEquity(ME_TABLE, obs.scores, teamOf(obs.seat), obs.dealer) : 0;
   return keep < redeal ? { type: 'callMisdeal' } : { type: 'declineMisdeal' };
@@ -187,6 +205,7 @@ function bestCandidate(
   rng: Rng,
   candidates: readonly Candidate[],
   opts: ContractOptions,
+  deadline: number,
 ): Candidate {
   const contract = obs.contract;
   if (!contract) throw new Error('no contract');
@@ -224,9 +243,12 @@ function bestCandidate(
     maxEntries: 200_000,
   });
   const refineDeals = Array.from({ length: opts.refineWorlds }, () => belief.sample(rng));
+  solver.deadline = deadline;
+  // Past the deadline, the best candidate among those fully re-checked wins (the screen's
+  // best is re-checked first).
   let best = top[0] as (typeof top)[0];
   let bestValue = Number.NEGATIVE_INFINITY;
-  for (const t of top) {
+  refine: for (const t of top) {
     let total = 0;
     for (const world of refineDeals) {
       const hands = [0, 1, 2, 3].map((s) => (s === obs.seat ? t.c.keep : (world.hands[s] ?? [])));
@@ -243,6 +265,7 @@ function bestCandidate(
       try {
         v0 = solver.solve(state);
       } catch (e) {
+        if (e instanceof DeadlineExceeded) break refine;
         if (!(e instanceof SearchAborted)) throw e;
         v0 = u0([0, 0]);
       }
@@ -257,7 +280,12 @@ function bestCandidate(
   return best.c;
 }
 
-export function decideDiscard(obs: Observation, rng: Rng, opts: ContractOptions): Action {
+export function decideDiscard(
+  obs: Observation,
+  rng: Rng,
+  opts: ContractOptions,
+  deadline = Number.POSITIVE_INFINITY,
+): Action {
   const legal = obs.legal;
   if (legal.kind !== 'discard') throw new Error('decideDiscard outside discarding');
   const seen = new Set<string>();
@@ -270,13 +298,21 @@ export function decideDiscard(obs: Observation, rng: Rng, opts: ContractOptions)
       candidates.push({ discard, trump, keep: obs.hand.filter((c) => !discard.includes(c)) });
     }
   }
-  const best = bestCandidate(obs, rng, candidates, opts);
+  const best = bestCandidate(obs, rng, candidates, opts, deadline);
   return { type: 'discard', cardIds: [...best.discard] };
 }
 
-export function decideTrump(obs: Observation, rng: Rng, opts: ContractOptions): Action {
+export function decideTrump(
+  obs: Observation,
+  rng: Rng,
+  opts: ContractOptions,
+  deadline = Number.POSITIVE_INFINITY,
+): Action {
   const legal = obs.legal;
   if (legal.kind !== 'trump') throw new Error('decideTrump outside naming trump');
   const candidates = legal.suits.map((trump) => ({ trump, keep: obs.hand, discard: [] }));
-  return { type: 'nameTrump', suit: bestCandidate(obs, rng, candidates, opts).trump };
+  return {
+    type: 'nameTrump',
+    suit: bestCandidate(obs, rng, candidates, opts, deadline).trump,
+  };
 }

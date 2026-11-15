@@ -10,10 +10,16 @@ import {
 } from '../contract/index';
 import { HeuristicBot } from '../heuristic/index';
 import { makeWorldWeight } from '../inference/index';
-import type { BotStrategy } from '../strategy';
+import type { BotStrategy, DecideContext } from '../strategy';
 import { PIMC_DEFAULTS, type PimcOptions, pimcValues } from './pimc';
 
-export { PIMC_DEFAULTS, type PimcOptions, type PimcResult, pimcValues } from './pimc';
+export {
+  PIMC_DEFAULTS,
+  type PimcCall,
+  type PimcOptions,
+  type PimcResult,
+  pimcValues,
+} from './pimc';
 
 export interface HardOptions extends PimcOptions, ContractOptions {
   /** Use search for each contract decision (false: the heuristic bot's choice). */
@@ -78,26 +84,31 @@ export class HardBot implements BotStrategy {
     this.options = { ...HARD_DEFAULTS, ...options };
   }
 
-  decide(obs: Observation, rng: Rng): Action {
+  decide(obs: Observation, rng: Rng, ctx: DecideContext = {}): Action {
     const o = this.options;
     const legal = obs.legal;
+    const deadline = ctx.deadline ?? Number.POSITIVE_INFINITY;
     switch (legal.kind) {
       case 'misdeal':
-        return o.searchMisdeal ? decideMisdeal(obs, rng, o) : this.heuristic.decide(obs, rng);
+        return o.searchMisdeal
+          ? decideMisdeal(obs, rng, o, deadline)
+          : this.heuristic.decide(obs, rng);
       case 'bid':
-        return o.searchBid ? decideBid(obs, rng, o) : this.heuristic.decide(obs, rng);
+        return o.searchBid ? decideBid(obs, rng, o, deadline) : this.heuristic.decide(obs, rng);
       case 'discard':
-        return o.searchDiscard ? decideDiscard(obs, rng, o) : this.heuristic.decide(obs, rng);
+        return o.searchDiscard
+          ? decideDiscard(obs, rng, o, deadline)
+          : this.heuristic.decide(obs, rng);
       case 'trump':
-        return o.searchTrump ? decideTrump(obs, rng, o) : this.heuristic.decide(obs, rng);
+        return o.searchTrump ? decideTrump(obs, rng, o, deadline) : this.heuristic.decide(obs, rng);
       case 'play':
-        return this.play(obs, rng);
+        return this.play(obs, rng, deadline);
       default:
         return this.heuristic.decide(obs, rng);
     }
   }
 
-  private play(obs: Observation, rng: Rng): Action {
+  private play(obs: Observation, rng: Rng, deadline: number): Action {
     const legal = obs.legal;
     if (legal.kind !== 'play') throw new Error('play outside playing');
     if (legal.cardIds.length === 1) return { type: 'playCard', cardId: legal.cardIds[0] as number };
@@ -105,15 +116,13 @@ export class HardBot implements BotStrategy {
       this.options.inferencePool > 0
         ? makeWorldWeight(obs, { throwOffs: this.options.throwOffs })
         : undefined;
-    const result = pimcValues(
-      obs,
-      rng,
-      this.options,
-      this.playLeafUtility(obs),
-      weight,
-      undefined,
-      this.options.fastUtility ? 'root' : 'leaf',
-    );
+    const utility = this.playLeafUtility(obs);
+    const result = pimcValues(obs, rng, this.options, {
+      ...(utility ? { utility } : {}),
+      ...(weight ? { weight } : {}),
+      utilityAt: this.options.fastUtility ? 'root' : 'leaf',
+      deadline,
+    });
     // Ties (common: many cards are worth the same) go to the heuristic's choice.
     const preferred = this.heuristic.decide(obs, rng);
     const preferredCard = preferred.type === 'playCard' ? preferred.cardId : -1;

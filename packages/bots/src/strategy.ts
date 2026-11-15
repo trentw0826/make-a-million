@@ -7,7 +7,16 @@ import type { Action, Observation, Rng } from '@mam/engine';
 export interface BotStrategy {
   /** Stable identifier, e.g. the difficulty it is registered under. */
   readonly id: string;
-  decide(obs: Observation, rng: Rng): Action | Promise<Action>;
+  decide(obs: Observation, rng: Rng, ctx?: DecideContext): Action | Promise<Action>;
+}
+
+/** Live-play conditions of one decision (simulations pass none). */
+export interface DecideContext {
+  /**
+   * Wall-clock time (Date.now() ms) by which the answer is due. Searching bots stop early
+   * and play their best move so far; budgets are normally sized so this never happens.
+   */
+  readonly deadline?: number;
 }
 
 export type Difficulty = 'easy' | 'normal' | 'hard' | 'expert';
