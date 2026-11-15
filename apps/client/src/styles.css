@@ -327,6 +327,31 @@ input {
 .event-log li {
   margin: 2px 0;
 }
+.event-log h3 {
+  margin: 8px 0 2px;
+  font-size: 0.8em;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+.log-hand summary {
+  cursor: pointer;
+  padding: 2px 0;
+  color: var(--muted);
+}
+.log-hand-title {
+  font-weight: bold;
+  color: var(--ink);
+}
+.log-hand[open] summary {
+  margin-bottom: 2px;
+}
+.tone-good {
+  color: var(--green);
+}
+.tone-bad {
+  color: var(--danger);
+}
 
 .felt {
   background: radial-gradient(
@@ -404,7 +429,6 @@ input {
 }
 .trick-card {
   position: absolute;
-  transition: transform 0.2s;
 }
 .trick-bottom {
   left: 50%;
@@ -425,9 +449,6 @@ input {
   right: 24px;
   top: 50%;
   transform: translateY(-50%);
-}
-.trick-complete .trick-card {
-  opacity: 0.85;
 }
 .trick-caption {
   position: absolute;

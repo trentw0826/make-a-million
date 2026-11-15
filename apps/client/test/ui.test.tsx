@@ -4,6 +4,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { useEffect } from 'react';
 import { describe, expect, it } from 'vitest';
 import { Shell } from '../src/App';
+import { EventLog } from '../src/components/EventLog';
 import { GameProvider, useGame } from '../src/store';
 
 /** Nothing listens here, so every send fails and shows the "Not connected" toast. */
@@ -126,5 +127,24 @@ describe('keyboard', () => {
     fireEvent.click(screen.getByRole('button', { name: 'How to play' }));
     fireEvent.keyDown(document.body, { key: 'Enter' });
     expect(screen.queryByText(NOT_CONNECTED)).toBeNull();
+  });
+});
+
+describe('table log', () => {
+  it('folds earlier hands under their result and keeps the current hand open', () => {
+    render(
+      <EventLog
+        entries={[
+          { id: 1, hand: 1, text: 'Ann deals.', tone: 'info' },
+          { id: 2, hand: 1, text: 'Ann & Cid made the $185k bid (+$210k).', tone: 'good' },
+          { id: 3, hand: 2, text: 'Bot 2 deals.', tone: 'info' },
+        ]}
+      />,
+    );
+    const earlier = screen.getByText('Hand 1').closest('details');
+    expect(earlier).not.toHaveAttribute('open');
+    expect(earlier?.querySelector('summary')).toHaveTextContent('made the $185k bid');
+    expect(screen.getByRole('heading', { name: 'Hand 2' })).toBeInTheDocument();
+    expect(screen.getByText('Bot 2 deals.')).toBeVisible();
   });
 });
