@@ -41,7 +41,11 @@ export interface ContractOptions {
   readonly utility: UtilityMode;
   /** Bid only when declaring beats passing by more than this (utility units). */
   readonly bidMargin: number;
-  /** May raise over the partner's standing bid (false: pass and let the partner have it). */
+  /**
+   * May raise over the partner's standing bid (false: pass and let the partner have it).
+   * Off by default: auctions with a partner raise were made only 66% of the time, and
+   * never raising won +5.7k points per hand on fresh boards (docs/bot-ladder.md).
+   */
   readonly raisePartner: boolean;
   /** Scale ($) of the auction likelihood: larger trusts the bidding model less. */
   readonly auctionSigma: number;
@@ -55,7 +59,7 @@ export const CONTRACT_DEFAULTS: ContractOptions = {
   refineDepth: 1,
   utility: 'equity',
   bidMargin: 0,
-  raisePartner: true,
+  raisePartner: false,
   auctionSigma: 20_000,
 };
 
