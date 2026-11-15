@@ -35,7 +35,7 @@
 
 ## Trick-Taking Play
 
-- **Lead:** The highest bidder leads the first trick by playing any card from hand (face-up). Play proceeds clockwise.  
+- **Lead:** The **player to the left** of highest bidder leads the first trick by playing any card from hand. Play proceeds clockwise.  
 - **Following suit:** Each player must **follow the lead color** if able. If a player has no card of the led color, they may play any card in their hand.
 - **Restrictions on Leads:** A player **cannot lead** with the Bull or Bear if they hold any other card (number, Money, or Tiger). Bulls and Bears may only be led when they are the player’s last card(s). The first card of the trick that isn't the Bull or Bear determines the suit to be followed by the remaining players. Until a colored card is played, the trick has no suit and any card may be played.
 - **Winning the trick:** The trick is won by the **highest card of the suit led**, unless one or more trumps were played. If trumps appear, the highest trump wins. (The Tiger ranks above all trumps.)
