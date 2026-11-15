@@ -1,4 +1,4 @@
-import { opportunity, playoutDeclare, playoutWith, SPECIALS } from '@mam/bots';
+import { ceilingForHand, opportunity, playoutDeclare, playoutWith, SPECIALS } from '@mam/bots';
 import {
   type AuctionEntry,
   type CardId,
@@ -128,6 +128,8 @@ export interface CalibrationLine {
   readonly estimate: number;
   readonly estimateChosen: number;
   readonly auction: readonly AuctionEntry[];
+  /** Each seat's heuristic bidding ceiling ($): [without, with] the partner-bid bonus. */
+  readonly ceilings: readonly (readonly [number, number])[];
 }
 
 /**
@@ -172,6 +174,10 @@ export async function calibrateTask(input: PlayInput): Promise<CalibrationLine |
     estimate: (playoutDeclare(deal, r.bidder)[team] as number) * 1000,
     estimateChosen: (playoutWith(first.hands, r.bidder, kept, r.trump)[team] as number) * 1000,
     auction: state.hand?.auction.entries ?? [],
+    ceilings: first.hands.map((h) => {
+      const step = state.ruleset.bidding.bidStep;
+      return [ceilingForHand(h, false, step), ceilingForHand(h, true, step)] as const;
+    }),
   };
 }
 

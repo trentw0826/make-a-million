@@ -17,6 +17,7 @@ export {
   type PimcResult,
   pimcValues,
 } from './hard/index';
+export { ceilingForHand } from './heuristic/bidding';
 export { HeuristicBot } from './heuristic/index';
 export {
   COARSE_CELLS,
