@@ -57,6 +57,12 @@ export interface ContractOptions {
   /** Scale ($) of the auction likelihood: larger trusts the bidding model less. */
   readonly auctionSigma: number;
   /**
+   * The other players' bidding ceilings, as shift ($) + scale × the heuristic's ceiling:
+   * for predicting the rest of the auction and weighting deals by the bids so far.
+   */
+  readonly ceilingShift: number;
+  readonly ceilingScale: number;
+  /**
    * Calibration of the playout estimate in bidding and misdeal calls ($1000s): the
    * declaring team's capture is taken as Normal(calibA + calibB × estimate, calibSd²) and
    * the utility averaged over it; (0, 1, 0) uses the estimate as it is. Fit with
@@ -80,6 +86,8 @@ export const CONTRACT_DEFAULTS: ContractOptions = {
   bidMargin: 0,
   raisePartner: false,
   auctionSigma: 20_000,
+  ceilingShift: 0,
+  ceilingScale: 1,
   calibA: 130,
   calibB: 0.5,
   calibSd: 58,
@@ -169,7 +177,7 @@ export function decideBid(
   for (let i = 0; i < opts.bidWorlds; i++) {
     if (i >= MIN_WORLDS && Date.now() > deadline) break;
     const deal = toDeal(obs, belief.sample(rng));
-    const w = auctionLikelihood(deal, obs, step, opts.auctionSigma);
+    const w = auctionLikelihood(deal, obs, step, opts.auctionSigma, opts);
     if (w < 1e-9) continue;
     const mine = calibrated(
       utilityFor(obs, obs.seat, legal.minBid, opts.utility),
@@ -183,8 +191,8 @@ export function decideBid(
       ceilings.set(
         s,
         s === high?.seat
-          ? Math.max(high.amount, modelCeiling(deal, s, obs, step))
-          : modelCeiling(deal, s, obs, step),
+          ? Math.max(high.amount, modelCeiling(deal, s, obs, step, opts))
+          : modelCeiling(deal, s, obs, step, opts),
       );
     }
     const outcome = predictAuction(ceilings, high, legal.minBid, raise, step) ?? {
@@ -225,7 +233,8 @@ export function decideMisdeal(
     n += 1;
     const deal = toDeal(obs, belief.sample(rng));
     const ceilings = new Map<Seat, number>();
-    for (const s of [0, 1, 2, 3] as Seat[]) ceilings.set(s, modelCeiling(deal, s, obs, bidStep));
+    for (const s of [0, 1, 2, 3] as Seat[])
+      ceilings.set(s, modelCeiling(deal, s, obs, bidStep, opts));
     const outcome = predictAuction(ceilings, null, minOpeningBid, raiseIncrement, bidStep) ?? {
       seat: opener,
       price: minOpeningBid,

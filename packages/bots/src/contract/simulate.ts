@@ -89,10 +89,29 @@ export function utilityFor(
  * deal. Used both to predict the rest of the auction and to weight deals by how well they
  * explain the bids and passes already made (soft inference).
  */
-export function modelCeiling(deal: Deal, seat: Seat, obs: Observation, step: number): number {
+export function modelCeiling(
+  deal: Deal,
+  seat: Seat,
+  obs: Observation,
+  step: number,
+  model: CeilingModel = HEURISTIC_CEILINGS,
+): number {
   const partnerBid = obs.auction.some((e) => e.kind === 'bid' && e.seat === partnerOf(seat));
-  return ceilingForHand(deal.hands[seat] ?? [], partnerBid, step);
+  const c = ceilingForHand(deal.hands[seat] ?? [], partnerBid, step);
+  if (model.ceilingShift === 0 && model.ceilingScale === 1) return c;
+  return Math.floor((model.ceilingShift + model.ceilingScale * c) / step) * step;
 }
+
+/**
+ * How the other players' ceilings relate to the heuristic's: shift + scale × heuristic
+ * ceiling ($). Identity models players who bid like the heuristic bot.
+ */
+export interface CeilingModel {
+  readonly ceilingShift: number;
+  readonly ceilingScale: number;
+}
+
+export const HEURISTIC_CEILINGS: CeilingModel = { ceilingShift: 0, ceilingScale: 1 };
 
 /** Likelihood of the auction so far under the ceiling model (logistic, scale σ). */
 export function auctionLikelihood(
@@ -100,6 +119,7 @@ export function auctionLikelihood(
   obs: Observation,
   step: number,
   sigma = 20_000,
+  model: CeilingModel = HEURISTIC_CEILINGS,
 ): number {
   let w = 1;
   let high = 0;
@@ -108,7 +128,7 @@ export function auctionLikelihood(
   for (const e of obs.auction) {
     const needed = high === 0 ? minOpen : high + raise;
     if (e.seat !== obs.seat) {
-      const c = modelCeiling(deal, e.seat, obs, step);
+      const c = modelCeiling(deal, e.seat, obs, step, model);
       if (e.kind === 'bid') {
         // Forced opening bids carry no information.
         if (!(high === 0 && obs.ruleset.bidding.openerMustBid))
