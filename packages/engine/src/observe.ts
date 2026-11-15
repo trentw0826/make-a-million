@@ -40,6 +40,8 @@ export interface Observation {
   readonly turn: Seat | null;
   readonly legal: LegalMoves;
   readonly result: HandResult | null;
+  /** Seats that have not yet confirmed the hand result. Public. */
+  readonly continuePending: readonly Seat[];
   readonly winner: Team | null;
 }
 
@@ -90,6 +92,7 @@ export function observe(state: GameState, seat: Seat): Observation {
     turn: hand?.turn ?? null,
     legal: legalMoves(state, seat),
     result: hand?.result ?? null,
+    continuePending: hand?.continuePending ?? [],
     winner: state.winner,
   };
 }

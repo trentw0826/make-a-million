@@ -102,6 +102,11 @@ export interface RoomView {
   readonly yourSeat: Seat | null;
 }
 
+export interface ResultTimer {
+  readonly remainingMs: number;
+  readonly totalMs: number;
+}
+
 export type ErrorCode =
   | 'BAD_MESSAGE'
   | 'NOT_IDENTIFIED'
@@ -125,7 +130,12 @@ export type ServerMessage =
   | { readonly type: 'room'; readonly room: RoomView }
   /** The player is no longer in a room (left, or the room closed). */
   | { readonly type: 'left'; readonly reason: 'left' | 'closed' | 'kicked' }
-  | { readonly type: 'view'; readonly view: TableView }
+  | {
+      readonly type: 'view';
+      readonly view: TableView;
+      /** While the hand result is up: time left before the next hand is dealt regardless. */
+      readonly resultTimer?: ResultTimer;
+    }
   | { readonly type: 'events'; readonly events: readonly GameEvent[] }
   | {
       readonly type: 'error';

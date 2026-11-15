@@ -42,6 +42,14 @@ export interface ClientState {
   readonly toast: Toast | null;
   /** The How to play dialog. */
   readonly helpOpen: boolean;
+  /** While the hand result is up: when, on this clock, the next hand is dealt regardless. */
+  readonly resultDeadline: ResultDeadline | null;
+}
+
+export interface ResultDeadline {
+  /** `Date.now()` time at which the countdown reaches zero. */
+  readonly endsAt: number;
+  readonly totalMs: number;
 }
 
 export const initialState: ClientState = {
@@ -55,6 +63,7 @@ export const initialState: ClientState = {
   completedTrick: null,
   toast: null,
   helpOpen: false,
+  resultDeadline: null,
 };
 
 export type Msg =
@@ -125,7 +134,12 @@ function onServer(state: ClientState, message: ServerMessage): ClientState {
       // reconnect) is adopted as it is.
       const live = message.view.currentTrick?.plays ?? [];
       const trickPlays = live.length >= state.trickPlays.length ? live : state.trickPlays;
-      return { ...state, view: message.view, trickPlays };
+      // The server sends time left rather than a clock time, so skew between clocks is moot.
+      const timer = message.resultTimer;
+      const resultDeadline = timer
+        ? { endsAt: Date.now() + timer.remainingMs, totalMs: timer.totalMs }
+        : null;
+      return { ...state, view: message.view, trickPlays, resultDeadline };
     }
     case 'events':
       return message.events.reduce(onEvent, state);
@@ -166,6 +180,7 @@ function onEvent(state: ClientState, event: GameEvent): ClientState {
     case 'misdealCalled':
       return push(`${name(event.seat)} calls a misdeal.`);
     case 'readyToBid':
+    case 'readyForNextHand':
     case 'biddingStarted':
     case 'discarded':
       // Shown live on the table (seat chips, waiting text); not worth a log line.

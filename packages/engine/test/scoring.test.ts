@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { decideWinner } from '../src/reducer';
+import { legalMoves } from '../src/legal';
+import { observe } from '../src/observe';
+import { applyAction, decideWinner } from '../src/reducer';
 import { DEFAULT_RULESET, makeRuleset } from '../src/ruleset';
 import type { Trick } from '../src/state';
 import { summarizeTrick, trickModifier } from '../src/tricks';
@@ -129,10 +131,27 @@ describe('hand result', () => {
     expect(state.hand?.result).toMatchObject({ captured: [80_000, 0], made: true });
   });
 
+  it('waits for every seat to confirm the result before dealing again', () => {
+    const done = oneTrickHand(40_000);
+    expect(done.hand?.continuePending).toEqual([0, 1, 2, 3]);
+    const one = applyAction(done, 2, { type: 'continue' });
+    expect(one.ok && one.events).toEqual([{ type: 'readyForNextHand', seat: 2 }]);
+    const after = one.ok ? one.state : done;
+    expect(after.phase).toBe('hand-complete');
+    expect(after.hand?.continuePending).toEqual([0, 1, 3]);
+    expect(legalMoves(after, 2).kind).toBe('none');
+    expect(legalMoves(after, 0).kind).toBe('continue');
+    expect(observe(after, 1).continuePending).toEqual([0, 1, 3]);
+    const again = applyAction(after, 2, { type: 'continue' });
+    expect(again.ok).toBe(false);
+  });
+
   it('continues to the next hand with the deal passing clockwise', () => {
     const done = oneTrickHand(40_000);
     expect(done.hand?.dealer).toBe(0);
-    const next = act(done, 2, { type: 'continue' });
+    let next = done;
+    for (const seat of [2, 0, 3, 1] as const) next = act(next, seat, { type: 'continue' });
+    expect(next.hand?.continuePending).toEqual([]);
     expect(next.hand?.handNumber).toBe(2);
     expect(next.hand?.dealer).toBe(1);
     expect(next.hand?.phase).toBe('misdeal-window');

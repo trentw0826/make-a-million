@@ -109,6 +109,11 @@ export interface HandState {
   /** The seat that must act next; null when several seats act (misdeal window, hand-complete). */
   readonly turn: Seat | null;
   readonly result: HandResult | null;
+  /**
+   * Seats that have not yet confirmed the hand result. Filled when the hand is scored; the
+   * next hand is dealt once it is empty.
+   */
+  readonly continuePending: readonly Seat[];
 }
 
 export interface GameState {
