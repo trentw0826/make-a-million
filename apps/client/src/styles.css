@@ -14,6 +14,8 @@
   --bull: #5d4037;
   --bear: #37474f;
   --danger: #b00020;
+  --topbar-h: 48px;
+  --bar: #123822;
   font-family: Georgia, "Times New Roman", serif;
   color: var(--ink);
 }
@@ -63,6 +65,22 @@ button.small {
   padding: 2px 8px;
   font-size: 0.85em;
 }
+button.link {
+  background: none;
+  border: none;
+  padding: 0;
+  color: inherit;
+  text-decoration: underline;
+}
+kbd {
+  font-family: ui-monospace, monospace;
+  font-size: 0.85em;
+  padding: 1px 6px;
+  border: 1px solid var(--line);
+  border-bottom-width: 2px;
+  border-radius: 4px;
+  background: white;
+}
 input {
   font: inherit;
   padding: 8px 10px;
@@ -105,6 +123,57 @@ input {
 }
 .neg {
   color: var(--danger);
+}
+
+/* App shell -------------------------------------------------------------- */
+.app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 6;
+  height: var(--topbar-h);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 0 16px;
+  background: var(--bar);
+  color: var(--paper);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+.brand {
+  font-weight: bold;
+  letter-spacing: 0.02em;
+}
+.topbar-room {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.room-code {
+  font-family: ui-monospace, monospace;
+  letter-spacing: 0.15em;
+}
+.topbar-actions {
+  display: flex;
+  gap: 8px;
+  margin-left: auto;
+}
+.topbar .ghost {
+  border-color: rgba(255, 255, 255, 0.35);
+}
+.conn-banner {
+  position: sticky;
+  top: var(--topbar-h);
+  z-index: 6;
+  padding: 6px 16px;
+  text-align: center;
+  font-size: 0.9em;
+  background: #ffe0b2;
+  color: #7a3e00;
 }
 
 /* Home ------------------------------------------------------------------- */
@@ -172,6 +241,15 @@ input {
   border-color: var(--line);
   color: var(--ink);
 }
+.lobby-share {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+.lobby-share button {
+  font-size: 0.9em;
+}
 .lobby-actions {
   display: flex;
   gap: 14px;
@@ -182,7 +260,7 @@ input {
 .table-screen {
   display: grid;
   grid-template-columns: 320px 1fr;
-  min-height: 100vh;
+  flex: 1;
 }
 .side {
   background: var(--paper);
@@ -191,29 +269,10 @@ input {
   flex-direction: column;
   gap: 14px;
   overflow-y: auto;
-  max-height: 100vh;
-}
-.room-line {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  justify-content: space-between;
-}
-.room-line .ghost {
-  border-color: var(--line);
-}
-.conn {
-  font-size: 0.75em;
-  padding: 1px 6px;
-  border-radius: 10px;
-  background: #e0e0e0;
-}
-.conn-open {
-  background: #c8e6c9;
-}
-.conn-reconnecting,
-.conn-connecting {
-  background: #ffe0b2;
+  position: sticky;
+  top: var(--topbar-h);
+  align-self: start;
+  height: calc(100vh - var(--topbar-h));
 }
 .score-sheet h2,
 .event-log h2 {
@@ -286,7 +345,7 @@ input {
     "me me me";
   padding: 16px;
   gap: 12px;
-  min-height: 100vh;
+  min-height: calc(100vh - var(--topbar-h));
 }
 .seat-panel {
   padding: 10px;
@@ -523,6 +582,55 @@ button.card:hover:not(:disabled) {
   max-height: 90vh;
   overflow: auto;
 }
+.modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+.modal-head h2 {
+  margin: 0;
+}
+button.modal-close {
+  border: none;
+  background: transparent;
+  font-size: 1.6em;
+  line-height: 1;
+  padding: 0 6px;
+}
+.help {
+  max-width: 680px;
+}
+.help h3 {
+  margin: 16px 0 4px;
+  font-size: 1em;
+}
+.help p,
+.help li {
+  line-height: 1.45;
+  margin: 4px 0;
+}
+.help ul {
+  padding-left: 20px;
+}
+.rank-order {
+  font-family: ui-monospace, monospace;
+  font-size: 0.9em;
+}
+.keys {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+}
+.keys div {
+  display: grid;
+  grid-template-columns: 70px 1fr;
+  align-items: center;
+}
+.keys dd {
+  margin: 0;
+}
 .result-teams {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -583,7 +691,8 @@ button.card:hover:not(:disabled) {
     grid-template-columns: 1fr;
   }
   .side {
-    max-height: none;
+    position: static;
+    height: auto;
     order: 2;
   }
   .felt {
@@ -597,5 +706,15 @@ button.card:hover:not(:disabled) {
   }
   .seats-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 600px) {
+  .brand {
+    display: none;
+  }
+  .topbar {
+    gap: 8px;
+    padding: 0 8px;
   }
 }

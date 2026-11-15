@@ -21,7 +21,7 @@ import { useGame } from '../store';
 const TRICK_LINGER_MS = 1800;
 
 export function Table({ room, view }: { room: RoomView; view: TableView }) {
-  const { state, act, send, dispatch } = useGame();
+  const { state, act, dispatch } = useGame();
   const me = view.seat;
   const [selected, setSelected] = useState<ReadonlySet<CardId>>(new Set());
 
@@ -66,18 +66,10 @@ export function Table({ room, view }: { room: RoomView; view: TableView }) {
   };
 
   const seatedHuman = room.seats[me]?.kind === 'human';
-  const connection = state.connection;
 
   return (
     <main className="table-screen">
       <aside className="side">
-        <div className="room-line">
-          <strong>Room {room.code}</strong>
-          <span className={`conn conn-${connection}`}>{connection}</span>
-          <button type="button" className="ghost small" onClick={() => send({ type: 'leaveRoom' })}>
-            Leave
-          </button>
-        </div>
         <ScoreSheet view={view} room={room} />
         <EventLog entries={state.log} />
       </aside>

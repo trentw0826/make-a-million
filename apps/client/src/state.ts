@@ -30,6 +30,8 @@ export interface ClientState {
   readonly trickPlays: readonly TrickPlay[];
   readonly completedTrick: CompletedTrick | null;
   readonly toast: Toast | null;
+  /** The How to play dialog. */
+  readonly helpOpen: boolean;
 }
 
 export const initialState: ClientState = {
@@ -41,13 +43,15 @@ export const initialState: ClientState = {
   trickPlays: [],
   completedTrick: null,
   toast: null,
+  helpOpen: false,
 };
 
 export type Msg =
   | { readonly kind: 'status'; readonly status: Connection }
   | { readonly kind: 'server'; readonly message: ServerMessage }
   | { readonly kind: 'toast'; readonly toast: Omit<Toast, 'id'> | null }
-  | { readonly kind: 'clearCompletedTrick' };
+  | { readonly kind: 'clearCompletedTrick' }
+  | { readonly kind: 'help'; readonly open: boolean };
 
 let nextId = 1;
 const MAX_LOG = 40;
@@ -60,6 +64,8 @@ export function reduce(state: ClientState, msg: Msg): ClientState {
       return { ...state, toast: msg.toast ? { ...msg.toast, id: nextId++ } : null };
     case 'clearCompletedTrick':
       return { ...state, completedTrick: null };
+    case 'help':
+      return { ...state, helpOpen: msg.open };
     case 'server':
       return onServer(state, msg.message);
   }

@@ -3,7 +3,7 @@ import { storage } from '../storage';
 import { codeFromHash, useGame } from '../store';
 
 export function Home() {
-  const { state, enter } = useGame();
+  const { state, enter, dispatch } = useGame();
   const [name, setName] = useState(storage.name() ?? '');
   const [code, setCode] = useState(codeFromHash() ?? '');
   const busy = state.connection === 'connecting';
@@ -60,9 +60,20 @@ export function Home() {
       </form>
 
       <p className="muted small">
-        Connection: {state.connection}
-        {state.me ? ` · signed in as ${state.me.name}` : ''}
+        New to the game?{' '}
+        <button
+          type="button"
+          className="link"
+          onClick={() => dispatch({ kind: 'help', open: true })}
+        >
+          Read how to play
+        </button>
       </p>
+      {busy && (
+        <p className="muted small" role="status">
+          Connecting…
+        </p>
+      )}
     </main>
   );
 }
