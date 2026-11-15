@@ -15,6 +15,9 @@
   --bear: #37474f;
   --danger: #b00020;
   --topbar-h: 48px;
+  --team-us: #e0a526;
+  --team-them: #6fa8dc;
+  --good: #2e7d32;
   --bar: #123822;
   font-family: Georgia, "Times New Roman", serif;
   color: var(--ink);
@@ -123,6 +126,21 @@ input {
 }
 .neg {
   color: var(--danger);
+}
+.side-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 5px;
+  vertical-align: 1px;
+  background: currentColor;
+}
+.side-us .side-dot {
+  background: var(--team-us);
+}
+.side-them .side-dot {
+  background: var(--team-them);
 }
 
 /* App shell -------------------------------------------------------------- */
@@ -286,12 +304,49 @@ input {
   gap: 8px;
 }
 .total {
-  padding: 6px;
+  padding: 6px 8px;
   border-radius: 6px;
   background: rgba(0, 0, 0, 0.04);
+  border-top: 3px solid var(--team-them);
 }
-.total-mine {
-  outline: 2px solid var(--accent);
+.total.side-us {
+  border-top-color: var(--team-us);
+}
+.total-head {
+  font-size: 0.9em;
+}
+.total-head .muted {
+  display: block;
+  margin-left: 13px;
+}
+.total-score {
+  position: relative;
+  margin: 2px 0 4px;
+}
+.delta-float {
+  position: absolute;
+  right: 0;
+  top: -2px;
+  font-size: 0.85em;
+  font-weight: bold;
+}
+.delta-float.pos {
+  color: var(--good);
+}
+.progress {
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+}
+.progress span {
+  display: block;
+  height: 100%;
+  background: var(--team-them);
+  transition: width 0.6s ease;
+}
+.side-us .progress span {
+  background: var(--team-us);
 }
 .sheet {
   width: 100%;
@@ -363,8 +418,9 @@ input {
   color: var(--paper);
   display: grid;
   grid-template-columns: 1fr minmax(320px, 2fr) 1fr;
-  grid-template-rows: auto 1fr auto;
+  grid-template-rows: auto auto 1fr auto;
   grid-template-areas:
+    "bar bar bar"
     "left top right"
     "left trick right"
     "me me me";
@@ -395,7 +451,61 @@ input {
   background: rgba(0, 0, 0, 0.15);
 }
 .seat-name {
-  margin-bottom: 8px;
+  margin-bottom: 4px;
+}
+.seat-role {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-height: 24px;
+  margin-bottom: 6px;
+  font-size: 0.8em;
+  opacity: 0.85;
+}
+.seat-chip {
+  margin-left: 8px;
+  padding: 1px 8px;
+  border-radius: 10px;
+  font-size: 1.05em;
+  font-weight: bold;
+  background: var(--paper);
+  color: var(--ink);
+}
+.chip-high {
+  background: var(--accent);
+  color: white;
+}
+.chip-pass {
+  background: rgba(255, 255, 255, 0.2);
+  color: inherit;
+  font-weight: normal;
+}
+.chip-ready {
+  background: #c8e6c9;
+  color: #1b5e20;
+  font-weight: normal;
+}
+.contract-bar {
+  grid-area: bar;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 6px 22px;
+  min-height: 34px;
+  padding: 4px 14px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.22);
+  font-size: 0.95em;
+}
+.contract-hand {
+  opacity: 0.7;
+}
+.suit-chip {
+  padding: 1px 10px;
+  border-radius: 10px;
+  background: var(--paper);
 }
 
 .card-backs {
@@ -460,18 +570,34 @@ input {
   gap: 4px;
   pointer-events: none;
 }
-.trump-badge {
-  background: var(--paper);
-  border-radius: 10px;
-  padding: 1px 8px;
-  font-size: 0.85em;
-  font-weight: bold;
-}
 
 .me {
   grid-area: me;
   display: grid;
   gap: 10px;
+  padding: 8px;
+  border-radius: 12px;
+  border: 2px solid transparent;
+}
+.me-turn {
+  border-color: var(--accent);
+  background: rgba(0, 0, 0, 0.1);
+}
+.me-line {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-height: 24px;
+  font-size: 0.85em;
+}
+.turn-pill {
+  padding: 2px 10px;
+  border-radius: 10px;
+  background: var(--accent);
+  color: white;
+  font-weight: bold;
+  font-size: 0.9em;
 }
 .action-bar {
   display: flex;
@@ -504,6 +630,7 @@ input {
 
 /* Cards ------------------------------------------------------------------ */
 .card {
+  position: relative;
   display: inline-flex;
   flex-direction: column;
   align-items: center;
@@ -553,6 +680,39 @@ button.card:hover:not(:disabled) {
 }
 .card-disabled {
   opacity: 0.45;
+}
+.card-star {
+  position: absolute;
+  top: 2px;
+  right: 4px;
+  font-size: 0.75em;
+  color: var(--accent);
+}
+.card-small .card-star {
+  top: 1px;
+  right: 3px;
+}
+.card-tag {
+  position: absolute;
+  top: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 0 6px;
+  border-radius: 8px;
+  font-size: 0.6em;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background: var(--accent);
+  color: white;
+}
+.card-fresh {
+  border-color: var(--accent);
+}
+.card-winning {
+  box-shadow:
+    0 0 0 3px var(--accent),
+    0 2px 10px rgba(0, 0, 0, 0.45);
 }
 .card-red .card-label,
 .suit-red {
@@ -652,6 +812,24 @@ button.modal-close {
 .keys dd {
   margin: 0;
 }
+.result-banner {
+  margin: 0 0 8px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-weight: bold;
+  font-size: 1.15em;
+}
+.result-banner.made {
+  background: #e8f5e9;
+  color: #1b5e20;
+}
+.result-banner.set {
+  background: #fdecea;
+  color: var(--danger);
+}
+.result-team h3 .muted {
+  font-weight: normal;
+}
 .result-teams {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -720,6 +898,7 @@ button.modal-close {
     min-height: auto;
     grid-template-columns: 1fr 1fr;
     grid-template-areas:
+      "bar bar"
       "top top"
       "left right"
       "trick trick"

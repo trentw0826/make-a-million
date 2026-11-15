@@ -1,4 +1,4 @@
-import type { TableView } from '@mam/engine';
+import { otherTeam, type TableView } from '@mam/engine';
 import type { RoomView } from '@mam/protocol';
 import { money, teamLabel } from '../format';
 import { useGame } from '../store';
@@ -8,17 +8,20 @@ export function GameOver({ view, room }: { view: TableView; room: RoomView }) {
   const { state, send } = useGame();
   const isHost = state.me?.playerId === room.hostId;
   const winner = view.winner;
+  const us = view.team;
+  const them = otherTeam(us);
   return (
     <Modal title="Game over">
       {winner !== null && (
-        <p>
-          <strong>{teamLabel(room, winner)}</strong> {winner === view.team ? '(your side) ' : ''}
-          make a million!
+        <p className={`result-banner ${winner === us ? 'made' : 'set'}`}>
+          {winner === us
+            ? 'Your side makes a million!'
+            : `${teamLabel(room, winner)} make a million.`}
         </p>
       )}
       <p>
-        {teamLabel(room, 0)}: {money(view.scores[0])} · {teamLabel(room, 1)}:{' '}
-        {money(view.scores[1])}
+        Us ({teamLabel(room, us)}): <strong>{money(view.scores[us])}</strong> · Them (
+        {teamLabel(room, them)}): <strong>{money(view.scores[them])}</strong>
       </p>
       <div className="row">
         {isHost ? (

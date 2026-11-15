@@ -1,9 +1,10 @@
-import { createGame, observe, tableView } from '@mam/engine';
+import { createGame, observe, type TableView, tableView } from '@mam/engine';
 import type { RoomView, ServerMessage } from '@mam/protocol';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { useEffect } from 'react';
 import { describe, expect, it } from 'vitest';
 import { Shell } from '../src/App';
+import { ContractBar } from '../src/components/ContractBar';
 import { EventLog } from '../src/components/EventLog';
 import { GameProvider, useGame } from '../src/store';
 
@@ -146,5 +147,42 @@ describe('table log', () => {
     expect(earlier?.querySelector('summary')).toHaveTextContent('made the $185k bid');
     expect(screen.getByRole('heading', { name: 'Hand 2' })).toBeInTheDocument();
     expect(screen.getByText('Bot 2 deals.')).toBeVisible();
+  });
+});
+
+describe('contract bar', () => {
+  it('shows the contract, trump and tricks taken, our side first', () => {
+    const playing: TableView = {
+      ...dealt,
+      phase: 'playing',
+      contract: { bidder: 1, amount: 185_000 },
+      trump: 'green',
+      trickCounts: [3, 2],
+    };
+    render(<ContractBar view={playing} room={room('playing')} />);
+    const bar = screen.getByRole('region', { name: 'Hand status' });
+    expect(bar).toHaveTextContent('Bot 2 bid $185k');
+    expect(bar).toHaveTextContent('Trump Green');
+    expect(bar).toHaveTextContent('Tricks Us 3 – Them 2');
+  });
+
+  it('shows the high bid during the auction', () => {
+    const bidding: TableView = {
+      ...dealt,
+      phase: 'bidding',
+      auction: [{ seat: 3, kind: 'bid', amount: 180_000 }],
+    };
+    render(<ContractBar view={bidding} room={room('playing')} />);
+    expect(screen.getByRole('region', { name: 'Hand status' })).toHaveTextContent(
+      'High bid $180k: Bot 4',
+    );
+  });
+});
+
+describe('table status', () => {
+  it('marks the turn and names who else must still confirm', () => {
+    renderWith(atTable);
+    expect(document.querySelector('.me')).toHaveClass('me-turn');
+    expect(screen.getByText('Your turn')).toBeInTheDocument();
   });
 });

@@ -2,6 +2,7 @@ import {
   type CardId,
   cardById,
   isNumberCard,
+  isTrump,
   nextSeat,
   partnerOf,
   type TableView,
@@ -10,13 +11,16 @@ import type { RoomView } from '@mam/protocol';
 import { useEffect, useState } from 'react';
 import { ActionBar } from '../components/ActionBar';
 import { CardFace } from '../components/CardFace';
+import { ContractBar } from '../components/ContractBar';
 import { EventLog } from '../components/EventLog';
 import { GameOver } from '../components/GameOver';
 import { HandResult } from '../components/HandResult';
 import { ScoreSheet } from '../components/ScoreSheet';
 import { SeatPanel } from '../components/SeatPanel';
 import { TrickArea } from '../components/TrickArea';
+import { blockedReason, isMyTurn, seatChip } from '../hints';
 import { useGame } from '../store';
+import { useTurnTitle } from '../useTurnTitle';
 
 /** How long a finished trick lies on the felt before it is gathered (a new lead cuts it short). */
 const TRICK_HOLD_MS = 1100;
@@ -27,6 +31,8 @@ export function Table({ room, view }: { room: RoomView; view: TableView }) {
   const { state, act, dispatch } = useGame();
   const me = view.seat;
   const [selected, setSelected] = useState<ReadonlySet<CardId>>(new Set());
+  const myTurn = isMyTurn(view);
+  useTurnTitle(myTurn);
 
   // The finished trick lies on the table for a moment, then slides to its winner.
   const completed = state.completedTrick;
@@ -53,6 +59,9 @@ export function Table({ room, view }: { room: RoomView; view: TableView }) {
   const moneySelected = [...selected].filter((id) => !isNumber(id)).length;
   const canSelect = (id: CardId) =>
     !forbidden.has(id) && (selected.has(id) || isNumber(id) || moneySelected < moneyAllowed);
+  // The widow is in view only for the bidder; mark its cards while they choose discards.
+  const widow = new Set(discarding ? (view.widow ?? []) : []);
+  const trump = view.trump;
 
   const onCard = (id: CardId) => {
     if (legalPlays) {
@@ -70,6 +79,7 @@ export function Table({ room, view }: { room: RoomView; view: TableView }) {
   };
 
   const seatedHuman = room.seats[me]?.kind === 'human';
+  const myChip = seatChip(view, me);
 
   return (
     <main className="table-screen">
@@ -79,38 +89,52 @@ export function Table({ room, view }: { room: RoomView; view: TableView }) {
       </aside>
 
       <section className="felt">
+        <ContractBar view={view} room={room} />
         <SeatPanel seat={partnerOf(me)} room={room} view={view} position="top" />
         <SeatPanel seat={nextSeat(me)} room={room} view={view} position="left" />
         <SeatPanel seat={nextSeat(partnerOf(me))} room={room} view={view} position="right" />
         <TrickArea me={me} room={room} view={view} plays={state.trickPlays} completed={completed} />
 
-        <div className="me">
+        <div className={myTurn ? 'me me-turn' : 'me'}>
           <ActionBar
             view={view}
+            room={room}
             selected={selected}
             onClearSelection={() => setSelected(new Set())}
           />
           <section className="hand" aria-label="Your hand">
-            {view.hand.map((id) => (
-              <CardFace
-                key={id}
-                id={id}
-                selected={selected.has(id)}
-                disabled={legalPlays ? !legalPlays.has(id) : discarding ? !canSelect(id) : false}
-                onClick={legalPlays || discarding ? () => onCard(id) : undefined}
-              />
-            ))}
+            {view.hand.map((id) => {
+              const disabled = legalPlays
+                ? !legalPlays.has(id)
+                : discarding
+                  ? !canSelect(id)
+                  : false;
+              return (
+                <CardFace
+                  key={id}
+                  id={id}
+                  selected={selected.has(id)}
+                  disabled={disabled}
+                  onClick={legalPlays || discarding ? () => onCard(id) : undefined}
+                  trump={trump !== null && isTrump(cardById(id), trump)}
+                  fresh={widow.has(id)}
+                  title={disabled ? blockedReason(id, view) : undefined}
+                />
+              );
+            })}
           </section>
-          <div className="me-line muted small">
-            You are seat {me + 1}
-            {view.dealer === me ? ' · dealer' : ''}
-            {view.contract?.bidder === me ? ' · bidder' : ''}
+          <div className="me-line side-us">
+            <span className="side-dot" aria-hidden="true" />
+            You
+            {view.dealer === me && <span className="tag">dealer</span>}
+            {view.contract?.bidder === me && <span className="tag">bidder</span>}
+            {myChip && <span className={`seat-chip chip-${myChip.kind}`}>{myChip.text}</span>}
           </div>
         </div>
       </section>
 
       {view.phase === 'hand-complete' && view.result && (
-        <HandResult result={view.result} room={room} canContinue={seatedHuman} />
+        <HandResult result={view.result} room={room} team={view.team} canContinue={seatedHuman} />
       )}
       {view.phase === 'game-over' && <GameOver view={view} room={room} />}
     </main>
