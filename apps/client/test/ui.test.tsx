@@ -7,6 +7,8 @@ import { Shell } from '../src/App';
 import { ContractBar } from '../src/components/ContractBar';
 import { EventLog } from '../src/components/EventLog';
 import { Hand, partOffset } from '../src/components/Hand';
+import { Scoreboard } from '../src/components/Scoreboard';
+import { TableDrawer } from '../src/components/TableDrawer';
 import { GameProvider, useGame } from '../src/store';
 
 /** Nothing listens here, so every send fails and shows the "Not connected" toast. */
@@ -160,6 +162,42 @@ describe('table log', () => {
     expect(earlier?.querySelector('summary')).toHaveTextContent('made the $185k bid');
     expect(screen.getByRole('heading', { name: 'Hand 2' })).toBeInTheDocument();
     expect(screen.getByText('Bot 2 deals.')).toBeVisible();
+  });
+});
+
+describe('scoreboard', () => {
+  it("shows each side's total on the felt, our side first", () => {
+    const view: TableView = { ...dealt, team: 1, scores: [-40_000, 250_000] };
+    render(<Scoreboard view={view} room={room('playing')} />);
+    const totals = [...document.querySelectorAll('.scoreboard .total')].map((t) => t.textContent);
+    expect(totals[0]).toMatch(/^Us\$250,000/);
+    expect(totals[1]).toMatch(/^Them−\$40,000/);
+    expect(screen.getByText('to $1,000,000')).toBeInTheDocument();
+  });
+});
+
+describe('score sheet and log drawer', () => {
+  const entries = [{ id: 1, hand: 1, text: 'Ann deals.', tone: 'info' as const }];
+
+  it('opens from its button and puts itself away on Esc or its close button', () => {
+    render(<TableDrawer view={dealt} room={room('playing')} log={entries} />);
+    const toggle = screen.getByRole('button', { name: 'Score sheet & log' });
+    expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    expect(screen.queryByRole('complementary')).toBeNull();
+
+    fireEvent.click(toggle);
+    expect(toggle).toHaveAttribute('aria-expanded', 'true');
+    const drawer = screen.getByRole('complementary', { name: 'Score sheet and table log' });
+    expect(drawer).toHaveTextContent('No hands scored yet.');
+    expect(drawer).toHaveTextContent('Ann deals.');
+
+    fireEvent.keyDown(window, { key: 'Escape' });
+    expect(screen.queryByRole('complementary')).toBeNull();
+    expect(toggle).toHaveFocus();
+
+    fireEvent.click(toggle);
+    fireEvent.click(screen.getByRole('button', { name: 'Close the score sheet and log' }));
+    expect(screen.queryByRole('complementary')).toBeNull();
   });
 });
 

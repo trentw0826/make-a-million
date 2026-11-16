@@ -109,8 +109,11 @@ const seenClasses = (page: Page) =>
 const cardMoves = (page: Page) =>
   page.evaluate(
     () =>
-      (window as unknown as { __moves: { deal: boolean[]; trick: boolean[]; mine: boolean[] } })
-        .__moves,
+      (
+        window as unknown as {
+          __moves: { deal: boolean[]; trick: boolean[]; mine: boolean[] };
+        }
+      ).__moves,
   );
 
 /**
@@ -310,11 +313,6 @@ async function fullHand(browser: Browser, base: string): Promise<void> {
   check(moves.trick.some(Boolean), "the others' cards fly onto the felt");
   check(moves.mine.some(Boolean), 'your card flies from your hand to the felt');
 
-  const log = (await page.locator('.event-log').textContent()) ?? '';
-  check((log.match(/Auction:/g) ?? []).length === 1, 'the log sums up the auction in one line');
-  check(!/takes trick|bids \$|passes\./.test(log), 'the log has no per-trick or per-bid lines');
-  check(/(made|were set on) the \$\d+k bid/.test(log), 'the log records the result');
-
   check(await result.getByRole('timer').isVisible(), 'the result counts down to the next hand');
   await until(
     async () => (await result.locator('.ready-list .is-ready').count()) === 3,
@@ -325,9 +323,32 @@ async function fullHand(browser: Browser, base: string): Promise<void> {
   await until(() => result.isHidden(), 'the next hand');
   await shoot('7-next-hand');
   check(
-    (await page.locator('.event-log details').count()) === 1,
-    'the finished hand folds up in the log',
+    await page.evaluate(
+      () =>
+        document.documentElement.scrollHeight <= window.innerHeight &&
+        document.documentElement.scrollWidth <= window.innerWidth,
+    ),
+    'the table fits the window without scrolling',
   );
+
+  // The score sheet and log wait in a drawer off the table.
+  const drawer = page.getByRole('complementary', { name: 'Score sheet and table log' });
+  check(await drawer.isHidden(), 'the score sheet and log start put away');
+  await page.getByRole('button', { name: 'Score sheet & log' }).click();
+  check(await drawer.isVisible(), 'the score sheet and log open from the felt');
+  await shoot('8-score-sheet');
+  check(
+    (await drawer.locator('.sheet tbody tr').count()) === 1,
+    'the score sheet has a line for the hand',
+  );
+  const folded = drawer.locator('.event-log details');
+  check((await folded.count()) === 1, 'the finished hand folds up in the log');
+  const log = (await folded.textContent()) ?? '';
+  check((log.match(/Auction:/g) ?? []).length === 1, 'the log sums up the auction in one line');
+  check(!/takes trick|bids \$|passes\./.test(log), 'the log has no per-trick or per-bid lines');
+  check(/(made|were set on) the \$\d+k bid/.test(log), 'the log records the result');
+  await page.keyboard.press('Escape');
+  check(await drawer.isHidden(), 'Esc puts the score sheet and log away');
   check(
     pageErrors.length === 0,
     `the page threw no errors${pageErrors.length ? `: ${pageErrors.join('; ')}` : ''}`,

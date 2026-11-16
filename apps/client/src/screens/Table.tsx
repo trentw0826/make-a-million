@@ -11,12 +11,12 @@ import { LayoutGroup } from 'motion/react';
 import { useEffect, useState } from 'react';
 import { ActionBar } from '../components/ActionBar';
 import { ContractBar } from '../components/ContractBar';
-import { EventLog } from '../components/EventLog';
 import { GameOver } from '../components/GameOver';
 import { Hand } from '../components/Hand';
 import { HandResult } from '../components/HandResult';
-import { ScoreSheet } from '../components/ScoreSheet';
+import { Scoreboard } from '../components/Scoreboard';
 import { SeatPanel } from '../components/SeatPanel';
+import { TableDrawer } from '../components/TableDrawer';
 import { TrickArea } from '../components/TrickArea';
 import { blockedReason, isMyTurn, seatChip } from '../hints';
 import { sound } from '../sound/player';
@@ -90,13 +90,12 @@ export function Table({ room, view }: { room: RoomView; view: TableView }) {
 
   return (
     <main className="table-screen">
-      <aside className="side">
-        <ScoreSheet view={view} room={room} />
-        <EventLog entries={state.log} />
-      </aside>
-
       <section className="felt">
         <ContractBar view={view} room={room} />
+        <Scoreboard view={view} room={room} />
+        <div className="felt-tools">
+          <TableDrawer view={view} room={room} log={state.log} />
+        </div>
         <SeatPanel seat={partnerOf(me)} room={room} view={view} position="top" />
         <SeatPanel seat={nextSeat(me)} room={room} view={view} position="left" />
         <SeatPanel seat={nextSeat(partnerOf(me))} room={room} view={view} position="right" />

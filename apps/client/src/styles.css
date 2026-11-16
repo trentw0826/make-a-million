@@ -281,21 +281,9 @@ input {
 
 /* Table ------------------------------------------------------------------ */
 .table-screen {
-  display: grid;
-  grid-template-columns: 320px 1fr;
-  flex: 1;
-}
-.side {
-  background: var(--paper);
-  padding: 12px;
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  overflow-y: auto;
-  position: sticky;
-  top: var(--topbar-h);
-  align-self: start;
-  height: calc(100vh - var(--topbar-h));
+  flex: 1;
 }
 .score-sheet h2,
 .event-log h2 {
@@ -303,45 +291,59 @@ input {
   margin: 0 0 6px;
   border-bottom: 1px solid var(--line);
 }
-.totals {
+/* Each side's total, in the top corner of the felt. */
+.scoreboard {
+  grid-area: score;
+  align-self: start;
+  justify-self: start;
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-}
-.total {
-  padding: 6px 8px;
-  border-radius: var(--radius-m);
-  background: rgba(0, 0, 0, 0.04);
-  border-top: 3px solid var(--team-them);
-}
-.total.side-us {
-  border-top-color: var(--team-us);
+  gap: 6px;
+  min-width: 170px;
+  padding: 8px 10px;
+  border-radius: var(--radius-l);
+  background: rgba(0, 0, 0, 0.22);
 }
 .total-head {
+  position: relative;
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
   font-size: 0.9em;
 }
-.total-head .muted {
-  display: block;
-  margin-left: 13px;
+.total-name {
+  flex: 1;
 }
 .total-score {
-  position: relative;
-  margin: 2px 0 4px;
+  font-variant-numeric: tabular-nums;
 }
+.total-score.neg {
+  color: var(--bad-on-felt);
+}
+.scoreboard-target {
+  font-size: 0.75em;
+  text-align: right;
+  color: var(--on-felt-muted);
+}
+/* Beside the scoreboard, on the felt, so it never covers the other side's line. */
 .delta-float {
   position: absolute;
-  right: 0;
-  top: -2px;
+  left: calc(100% + 16px);
+  top: 0;
   font-size: 0.85em;
   font-weight: bold;
+  white-space: nowrap;
 }
 .delta-float.pos {
-  color: var(--good);
+  color: var(--good-on-felt);
+}
+.delta-float.neg {
+  color: var(--bad-on-felt);
 }
 .progress {
   height: 4px;
+  margin-top: 3px;
   border-radius: 2px;
-  background: rgba(0, 0, 0, 0.08);
+  background: rgba(255, 255, 255, 0.12);
   overflow: hidden;
 }
 .progress span {
@@ -376,7 +378,7 @@ input {
 }
 .event-log {
   flex: 1;
-  min-height: 120px;
+  min-height: 0;
   overflow-y: auto;
   font-size: 0.85em;
 }
@@ -417,21 +419,65 @@ input {
   color: var(--on-felt-muted);
 }
 .felt {
+  position: relative;
   background:
     var(--felt-texture),
     radial-gradient(ellipse at center, var(--felt-light) 0%, var(--felt) 60%, var(--felt-dark) 100%);
   color: var(--paper);
   display: grid;
   grid-template-columns: 1fr minmax(320px, 2fr) 1fr;
-  grid-template-rows: auto auto 1fr auto;
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
   grid-template-areas:
     "bar bar bar"
-    "left top right"
+    "score top tools"
     "left trick right"
     "me me me";
-  padding: 16px;
-  gap: 12px;
-  min-height: calc(100vh - var(--topbar-h));
+  padding: 12px 16px;
+  gap: 10px;
+  /* The table fits the window: the trick area gives up height first, and the page itself
+     never scrolls. Only a window too short for the hand and the seats scrolls the felt. */
+  height: calc(100dvh - var(--topbar-h));
+  overflow-y: auto;
+}
+.felt-tools {
+  grid-area: tools;
+  align-self: start;
+  justify-self: end;
+}
+.drawer-toggle {
+  background: rgba(0, 0, 0, 0.22);
+  color: var(--paper);
+  border-color: rgba(255, 255, 255, 0.18);
+}
+.drawer-toggle[aria-expanded="true"] {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+/* The score sheet and log, slid in over the right edge of the felt. */
+.drawer {
+  position: absolute;
+  z-index: 5;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(360px, 100%);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 14px 14px 12px;
+  background: var(--paper);
+  color: var(--ink);
+  box-shadow: var(--shadow-drawer);
+}
+.drawer-close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  padding: 2px 8px;
+}
+.score-sheet {
+  max-height: 45%;
+  overflow-y: auto;
 }
 .seat-panel {
   padding: 10px;
@@ -544,7 +590,7 @@ input {
 .trick-area {
   grid-area: trick;
   position: relative;
-  min-height: 260px;
+  min-height: 220px;
 }
 /* The playing surface leans away from you. Only this backdrop tilts: the cards stay flat, so
    Motion can measure them for the flight from your hand. */
@@ -1157,30 +1203,61 @@ button.modal-close {
 }
 
 @media (max-width: 900px) {
-  .table-screen {
-    grid-template-columns: 1fr;
-  }
-  .side {
-    position: static;
-    height: auto;
-    order: 2;
-  }
-  .felt {
-    min-height: auto;
-    grid-template-columns: 1fr 1fr;
-    grid-template-areas:
-      "bar bar"
-      "top top"
-      "left right"
-      "trick trick"
-      "me me";
-  }
   .seats-grid {
     grid-template-columns: 1fr;
   }
 }
 
+/* A short window: everything around the trick tightens up so the trick keeps its room. */
+@media (max-height: 760px) {
+  .felt {
+    padding: 8px 16px;
+    gap: 6px;
+  }
+  .seat-panel {
+    padding: 4px 8px;
+  }
+  .seat-name {
+    margin-bottom: 0;
+  }
+  .seat-role {
+    margin-bottom: 2px;
+  }
+  .trick-area {
+    min-height: 180px;
+  }
+  .me {
+    padding: 4px 8px;
+    gap: 4px;
+  }
+  .action-bar {
+    padding: 6px 12px;
+    min-height: 40px;
+  }
+  .hand {
+    padding: 6px 0 calc(var(--fan-drop) * 24);
+  }
+}
+
+/* A phone: the seats stack and the page scrolls (see "phone-friendly UI" in docs/todo.md). */
 @media (max-width: 600px) {
+  .felt {
+    height: auto;
+    overflow: visible;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto;
+    grid-template-areas:
+      "bar bar"
+      "score tools"
+      "top top"
+      "left right"
+      "trick trick"
+      "me me";
+  }
+  .drawer {
+    position: fixed;
+    top: var(--topbar-h);
+  }
   .brand {
     display: none;
   }
@@ -1224,6 +1301,15 @@ button.modal-close {
 }
 .modal {
   animation: rise-in 200ms var(--ease-out);
+}
+@keyframes slide-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(40px);
+  }
+}
+.drawer {
+  animation: slide-in-right var(--dur-base) var(--ease-out);
 }
 
 @keyframes toast-in {
@@ -1293,6 +1379,7 @@ button.modal-close {
   .card-winning,
   .modal-backdrop,
   .modal,
+  .drawer,
   .toast,
   .delta-float {
     animation: none;
