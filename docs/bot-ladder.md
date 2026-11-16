@@ -24,6 +24,7 @@ Every bot change is measured before it is kept. This page records the results, i
 | 2026‑11‑15 | peek: Hard whose worlds place the Tiger, Bull and Bear truly (all tricks) | hard | 216 | +3.34% [1.42, 5.27] | +20.9k [10.5, 31.4] | the most that inferring the specials could gain. A made 84.3%, B 79.6% |
 | 2026‑11‑15 | peek at the specials in the last 7 tricks only | hard | 421 | +1.40% [0.33, 2.48] | +8.5k [3.2, 13.9] | most of the specials' value is in the first 6 tricks. (The bidding default changed during this run, for both sides alike) |
 | 2026‑11‑15 | expert (≈3× Hard's budget, more worlds) | hard (both still raising partner) | 1200 | +1.12% [−0.20, 2.44] | **+8.4k [1.5, 15.2]** | SPRT continue (LLR 1.37). 777 / 209 ms mean, max 28 s. A: 1172 contracts, 77.5% made; B: 1228, 75.2% |
+| 2026‑11‑15 | hard (current defaults: no partner raises, calibrated bidding), **first‑lead rule** (the player to the bidder's left leads) | normal | 200 | +15.02% [11.43, 18.62] | +73.1k [54.0, 92.1] | SPRT H1 (seed `exp20`). Hard won 264 of 400 contracts and made 89.4%; Normal won 136 and made 71.3%. Mean decision 327 ms, max 4.0 s on a loaded machine (the simulator sets no deadline) |
 
 ### Tuning experiments (A against the Hard defaults unless stated; SPRT δ = 1%)
 
@@ -84,6 +85,12 @@ Calibrated bidding (the new default) in all four seats, 300 fresh hands (287 con
 - Auctions are now mostly contested: 255 of 287 (was 138 of 285), mean bid $201k (was $183k), 72.8% made (was 80.7%). Each seat bids its weak hands, so contests go higher; in duplicate play against the uncalibrated bot this still won clearly.
 - The bidding's model of the other players (`modelCeiling`, the heuristic's ceilings) still describes the old, timid bidding, so it underestimates how high calibrated opponents go when the bot passes. That model is the next candidate for refitting.
 
+**Refit after the first‑lead rule change** (the player to the bidder's left now leads the first trick). Calibrated Hard in all four seats, 1000 fresh hands (seed `calibrate5`, 942 contracts), 2026‑11‑15:
+
+- The bidding team now captures more: $252k on average, against about $236k for the same bot under the old rule (the 300 hands above and 400 more with seed `calibrate4`, on other deals). The playout estimate rose with it, to $243k from $222–228k. Not having to lead the first trick helps the declarer: greedy playouts of the same 20,000 deals from both leaders give the declaring team +$16.1k [15.4, 16.8] when the opponent leads. 73.7% of contracts made (was 71–73%), at a mean bid of $211k (was $201–204k).
+- Fit: actual = 116.5k (±6.9) + 0.559 (±0.028) × estimate, residual SD 56.1k, r = 0.55. The same bot under the old rule (`calibrate4`, 382 contracts) gave 116.0k + 0.538 × estimate, so the rule did not change the calibration.
+- Against the defaults (130k + 0.5 × estimate, SD 58k), the fit predicts within $5k for estimates of $150–300k (74% of contracts). It predicts $8k less at $100k (7% of contracts are below $150k) and $7k more at $350k. The defaults differ from this fit because they were fitted on uncalibrated play, not because of the rule. **They are kept**: so small a change could not be shown to help in an A/B run.
+
 ## Bidding diagnostics
 
 - **The bid rate does not depend on hand strength** (`packages/sim/scripts/bid-diagnostic.ts`, 120–250 auctions per bot). Facing an opponent's standing bid, calibrated Hard bids 52–67% of the time in every band of its own playout estimate, and slightly more with its weakest hands. Uncalibrated Hard bid a flat 22–27%. The evaluation behind it barely separates the two choices: declaring and passing are worth within about 0.01 equity of each other in every band, and both rise with the hand. If Hard passes, its model expects the opponent to win the auction 71–87% of the time, at about $205k.
@@ -111,6 +118,8 @@ Hard, 120 hands, 4 workers in parallel (as the server's pool), idle 24‑core ma
 The slow decisions are the first exact solves, 6 tricks out, and the depth‑2 searches just before them. With the server's 1.3 s deadline (1.5 s reply time minus the 200 ms margin) about 0.6% of decisions would be cut short.
 
 With the smaller budget now in `HARD_DEFAULTS` (`nodes` 2.5M, `worldNodes` 250k), same hands and machine: p99 782 ms overall; card play with more than one legal card p99 965 ms; 21–28 cards left p99 1116 ms; the slowest of 7764 decisions 1218 ms. The deadline should essentially never fire on hardware like this; a slower or busier host needs its own `timing.ts` run.
+
+Under the first‑lead rule (seed `timing-lead`, 120 other hands, same machine idle apart from the desktop): p99 792 ms overall; card play with more than one legal card p99 969 ms; 21–28 cards left p99 1227 ms; the slowest of 7842 decisions 1307 ms, just past the 1.3 s deadline, which cuts it short well inside the 1.5 s reply time. The rule changes the profile very little.
 
 Expert on a loaded machine (24 hands, 3 workers, while other experiments ran): p99 7.5 s overall; discard 3.3 s mean, 9.6 s max; trump up to 7.5 s; play with 21–28 cards left p99 10.6 s.
 

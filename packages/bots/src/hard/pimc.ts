@@ -35,9 +35,9 @@ export interface PimcOptions {
 }
 
 /**
- * Hard's card-play budget. 2.5M nodes (250k per world) keeps every decision under the server's
- * 1.3 s deadline on the dev machine and played as well as 4M over 1200 boards
- * (docs/bot-ladder.md).
+ * Hard's card-play budget. 2.5M nodes (250k per world) keeps decisions under the server's
+ * 1.3 s deadline on the dev machine (p99 about 0.8 s, the slowest about 1.3 s) and played as
+ * well as 4M over 1200 boards (docs/bot-ladder.md).
  */
 export const PIMC_DEFAULTS: PimcOptions = {
   worlds: 40,

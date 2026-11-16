@@ -101,9 +101,9 @@ export function HowToPlay({
       <section>
         <h3>Playing tricks</h3>
         <p>
-          The bidder leads first. Follow the color led if you can; otherwise play anything. The
-          highest trump wins the trick, or else the highest card of the color led. The winner leads
-          the next trick.
+          The player to the bidder's left leads the first trick. Follow the color led if you can;
+          otherwise play anything. The highest trump wins the trick, or else the highest card of the
+          color led. The winner leads the next trick.
         </p>
       </section>
 

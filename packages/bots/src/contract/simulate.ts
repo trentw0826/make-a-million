@@ -3,6 +3,7 @@ import {
   cardById,
   isNumberCard,
   type Observation,
+  openingLeader,
   partnerOf,
   requiredNumberDiscards,
   type Seat,
@@ -48,7 +49,10 @@ export function playoutDeclare(deal: Deal, declarer: Seat): [number, number] {
   return playoutWith(deal.hands, declarer, keep, trump);
 }
 
-/** Greedy open-hand playout with the declarer's final 13 cards and trump given. */
+/**
+ * Greedy open-hand playout with the declarer's final 13 cards and trump given, from the
+ * opening lead by the player to the declarer's left.
+ */
 export function playoutWith(
   hands: readonly (readonly CardId[])[],
   declarer: Seat,
@@ -61,7 +65,7 @@ export function playoutWith(
     trump,
     tricks: [],
     currentTrick: null,
-    turn: declarer,
+    turn: openingLeader(declarer),
   });
   const out = { d0: 0, d1: 0 };
   greedyPlayout(state, out);

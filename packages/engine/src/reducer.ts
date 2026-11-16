@@ -7,7 +7,7 @@ import { Rng, seedToState } from './rng';
 import { DEFAULT_RULESET, type Ruleset } from './ruleset';
 import { nextSeat, otherTeam, SEATS, type Seat, type Team, teamOf } from './seats';
 import type { Auction, GameState, HandResult, HandState, Trick, TrickSummary } from './state';
-import { summarizeTrick, trickWinner } from './tricks';
+import { openingLeader, summarizeTrick, trickWinner } from './tricks';
 
 export type ApplyResult =
   | { readonly ok: true; readonly state: GameState; readonly events: readonly GameEvent[] }
@@ -95,8 +95,9 @@ export function applyAction(state: GameState, seat: Seat, action: Action): Apply
     case 'nameTrump': {
       hand.trump = action.suit;
       hand.phase = 'playing';
-      hand.turn = seat;
-      hand.currentTrick = { leader: seat, plays: [], suit: null, winner: null };
+      const leader = openingLeader(seat);
+      hand.turn = leader;
+      hand.currentTrick = { leader, plays: [], suit: null, winner: null };
       events.push({ type: 'trumpNamed', seat, suit: action.suit });
       break;
     }
