@@ -72,8 +72,10 @@
   --fan-angle: 2.4deg;
   /* How far the outermost cards of the hand drop, per step from the middle, squared. */
   --fan-drop: 0.8px;
-  /* How much of each card the next one covers. */
+  /* How much of each card the next one covers, at most (a narrow hand closes up further). */
   --hand-overlap: 0.3;
+  /* The extra space before a new color in the hand. */
+  --group-gap: 14px;
   /* How far the felt leans away from the player. */
   --felt-tilt: 10deg;
 
@@ -99,5 +101,6 @@
     --fan-angle: 1.2deg;
     --fan-drop: 0.4px;
     --hand-overlap: 0.5;
+    --group-gap: 8px;
   }
 }

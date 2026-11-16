@@ -49,7 +49,11 @@ export function Hand({ ids, trump, dealer, cardProps }: Props) {
   const still = useReducedMotion() ?? false;
 
   return (
-    <section className="hand" aria-label="Your hand">
+    <section
+      className="hand"
+      aria-label="Your hand"
+      style={{ '--n': order.length } as CSSProperties}
+    >
       <AnimatePresence mode="popLayout">
         {order.map((id, i) => {
           const prev = order[i - 1];

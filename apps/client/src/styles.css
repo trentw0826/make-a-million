@@ -597,6 +597,7 @@ input {
 
 .me {
   grid-area: me;
+  min-width: 0;
   display: grid;
   gap: 10px;
   padding: 8px;
@@ -647,20 +648,25 @@ input {
 }
 .hand {
   position: relative;
+  min-width: 0;
   display: flex;
   justify-content: center;
   padding: 16px 0 calc(var(--fan-drop) * 40);
 }
-/* Cards overlap, so each one's corner index stays in view; a gap marks a new color. */
+/* Cards overlap, so each one's corner index stays in view; a gap marks a new color. Where
+   the hand is narrower than that (a phone), the cards close up further to fit its width:
+   --n is the number of cards, and the fit leaves room for up to four color gaps. */
 .hand-slot {
   position: relative;
   display: flex;
+  --fit: calc((100% - var(--card-w) - 4 * var(--group-gap)) / max(var(--n, 13) - 1, 1));
+  --step: min(var(--card-w) * (1 - var(--hand-overlap)), var(--fit));
 }
 .hand-slot + .hand-slot {
-  margin-left: calc(var(--card-w) * var(--hand-overlap) * -1);
+  margin-left: calc(var(--step) - var(--card-w));
 }
 .hand-slot.group-start {
-  margin-left: calc(var(--card-w) * var(--hand-overlap) * -1 + 14px);
+  margin-left: calc(var(--step) - var(--card-w) + var(--group-gap));
 }
 /* The card under the pointer comes to the front. */
 .hand-slot:hover,
