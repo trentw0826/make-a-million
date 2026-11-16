@@ -1,7 +1,7 @@
 // How a bot's bidding depends on hand strength: plays only auctions and records each bid
 // decision with the bidder's playout estimate on the true deal (heuristic discards/trump).
 // Usage: tsx scripts/bid-diagnostic.ts [spec=hard] [auctions=150]  (env SEED)
-import { playoutDeclare } from '@mam/bots';
+import { evaluateBid, HardBot, playoutDeclare } from '@mam/bots';
 import {
   applyActionOrThrow,
   createGame,
@@ -26,6 +26,10 @@ interface Row {
   minBid: number;
   high: 'none' | 'partner' | 'opponent';
   bid: boolean;
+  declare: number;
+  pass: number;
+  ifPass: { self: number; partner: number; opponent: number };
+  passPrice: number;
 }
 const rows: Row[] = [];
 for (let g = 0; g < count; g++) {
@@ -39,8 +43,13 @@ for (let g = 0; g < count; g++) {
     const seat = SEATS.find((s) => legalMoves(state, s).kind !== 'none');
     if (seat === undefined) break;
     const obs = observe(state, seat);
-    const action = await bot.decide(obs, Rng.fromSeed(`${seed}:${g}:${step++}`));
-    if (obs.legal.kind === 'bid' && obs.legal.canPass) {
+    const rngSeed = `${seed}:${g}:${step++}`;
+    const action = await bot.decide(obs, Rng.fromSeed(rngSeed));
+    const e =
+      bot instanceof HardBot && obs.legal.kind === 'bid' && obs.legal.canPass
+        ? evaluateBid(obs, Rng.fromSeed(rngSeed), bot.options)
+        : null;
+    if (obs.legal.kind === 'bid' && obs.legal.canPass && e) {
       const last = [...obs.auction].reverse().find((e) => e.kind === 'bid');
       const high =
         last === undefined ? 'none' : (last.seat + seat) % 2 === 0 ? 'partner' : 'opponent';
@@ -49,6 +58,10 @@ for (let g = 0; g < count; g++) {
         minBid: obs.legal.minBid,
         high,
         bid: action.type === 'bid',
+        declare: e.declare,
+        pass: e.pass,
+        ifPass: e.ifPass,
+        passPrice: e.passPrice,
       });
     }
     state = applyActionOrThrow(state, seat, action).state;
@@ -69,9 +82,11 @@ for (const high of ['opponent', 'none', 'partner'] as const) {
     const b = sel.filter((r) => r.estimate >= lo && r.estimate < hi);
     if (b.length === 0) continue;
     const rate = b.filter((r) => r.bid).length / b.length;
-    const minBid = b.reduce((a, r) => a + r.minBid, 0) / b.length;
+    const m = (f: (r: Row) => number) => b.reduce((a, r) => a + f(r), 0) / b.length;
+    const pct = (x: number) => `${(100 * x).toFixed(0).padStart(3)}%`;
+    const lab = (x: number, d: string) => String(Number.isFinite(x) ? x / 1000 : d);
     console.log(
-      `    estimate ${String(Number.isFinite(lo) ? lo / 1000 : '−∞').padStart(4)}..${String(Number.isFinite(hi) ? hi / 1000 : '∞').padEnd(4)}k  n=${String(b.length).padStart(4)}  bid ${(100 * rate).toFixed(0).padStart(3)}%  (mean price $${(minBid / 1000).toFixed(0)}k)`,
+      `    estimate ${lab(lo, '−∞').padStart(4)}..${lab(hi, '∞').padEnd(4)}k  n=${String(b.length).padStart(4)}  bid ${pct(rate)}  price $${(m((r) => r.minBid) / 1000).toFixed(0)}k | declare ${m((r) => r.declare).toFixed(3)} pass ${m((r) => r.pass).toFixed(3)} | if pass: self ${pct(m((r) => r.ifPass.self))} partner ${pct(m((r) => r.ifPass.partner))} opp ${pct(m((r) => r.ifPass.opponent))} at $${(m((r) => r.passPrice) / 1000).toFixed(0)}k`,
     );
   }
 }

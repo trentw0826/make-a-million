@@ -11,6 +11,7 @@ import {
   type Trick,
   teamOf,
 } from '@mam/engine';
+import { bidRolloutTask } from './bidRollout';
 import './registry';
 import { playGame } from './runner';
 import { type BotSpec, makeStrategy } from './strategies';
@@ -253,6 +254,7 @@ export const TASKS = {
   calibrate: calibrateTask,
   timing: timingTask,
   specials: specialsTask,
+  bidRollout: bidRolloutTask,
 } as const;
 
 export type TaskName = keyof typeof TASKS;

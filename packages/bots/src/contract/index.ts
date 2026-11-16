@@ -159,27 +159,39 @@ function predictAuction(
 /** Fewest sampled deals a contract decision uses, even past its deadline. */
 const MIN_WORLDS = 16;
 
-/** Bid the minimum now, or pass, whichever has the higher expected value. */
-export function decideBid(
+/** What bidding the minimum now and passing are each worth, averaged over sampled deals. */
+export interface BidEvaluation {
+  /** Mean utility of declaring at the minimum bid, and of passing (weighted by deal). */
+  readonly declare: number;
+  readonly pass: number;
+  readonly worlds: number;
+  /** Who the model expects to win the auction if we pass (shares of the weight). */
+  readonly ifPass: { readonly self: number; readonly partner: number; readonly opponent: number };
+  /** Mean predicted price if we pass. */
+  readonly passPrice: number;
+}
+
+/** Evaluates bidding the minimum against passing (null: deals all inconsistent). */
+export function evaluateBid(
   obs: Observation,
   rng: Rng,
   opts: ContractOptions,
   deadline = Number.POSITIVE_INFINITY,
-): Action {
+): BidEvaluation | null {
   const legal = obs.legal;
-  if (legal.kind !== 'bid') throw new Error('decideBid outside bidding');
-  if (!legal.canPass) return { type: 'bid', amount: legal.minBid };
+  if (legal.kind !== 'bid') throw new Error('evaluateBid outside bidding');
   const { raiseIncrement: raise } = obs.ruleset.bidding;
   const step = legal.step;
   const passed = new Set(obs.auction.filter((e) => e.kind === 'pass').map((e) => e.seat));
   const lastBid = [...obs.auction].reverse().find((e) => e.kind === 'bid');
   const high =
     lastBid && lastBid.kind === 'bid' ? { seat: lastBid.seat, amount: lastBid.amount } : null;
-  if (!opts.raisePartner && high && teamOf(high.seat) === teamOf(obs.seat)) return { type: 'pass' };
   const belief = buildBelief(obs);
   let wSum = 0;
   let declare = 0;
   let pass = 0;
+  let price = 0;
+  const share = { self: 0, partner: 0, opponent: 0 };
   for (let i = 0; i < opts.bidWorlds; i++) {
     if (i >= MIN_WORLDS && Date.now() > deadline) break;
     const deal = toDeal(obs, belief.sample(rng));
@@ -213,9 +225,42 @@ export function decideBid(
     wSum += w;
     declare += w * mine;
     pass += w * theirs;
+    price += w * outcome.price;
+    if (outcome.seat === obs.seat) share.self += w;
+    else if (teamOf(outcome.seat) === teamOf(obs.seat)) share.partner += w;
+    else share.opponent += w;
   }
-  if (wSum === 0) return { type: 'pass' };
-  return declare - pass >= opts.bidMargin * wSum
+  if (wSum === 0) return null;
+  return {
+    declare: declare / wSum,
+    pass: pass / wSum,
+    worlds: wSum,
+    ifPass: {
+      self: share.self / wSum,
+      partner: share.partner / wSum,
+      opponent: share.opponent / wSum,
+    },
+    passPrice: price / wSum,
+  };
+}
+
+/** Bid the minimum now, or pass, whichever has the higher expected value. */
+export function decideBid(
+  obs: Observation,
+  rng: Rng,
+  opts: ContractOptions,
+  deadline = Number.POSITIVE_INFINITY,
+): Action {
+  const legal = obs.legal;
+  if (legal.kind !== 'bid') throw new Error('decideBid outside bidding');
+  if (!legal.canPass) return { type: 'bid', amount: legal.minBid };
+  const lastBid = [...obs.auction].reverse().find((e) => e.kind === 'bid');
+  if (!opts.raisePartner && lastBid && teamOf(lastBid.seat) === teamOf(obs.seat)) {
+    return { type: 'pass' };
+  }
+  const e = evaluateBid(obs, rng, opts, deadline);
+  if (!e) return { type: 'pass' };
+  return e.declare - e.pass >= opts.bidMargin
     ? { type: 'bid', amount: legal.minBid }
     : { type: 'pass' };
 }
