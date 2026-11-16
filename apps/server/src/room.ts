@@ -71,6 +71,8 @@ export class Room {
   private botRng = Rng.fromSeed('room');
   private botGeneration = 0;
   private readonly botTimers = new Map<Seat, NodeJS.Timeout>();
+  /** The rest after a trick is taken, before the bots' next turn begins. */
+  private trickPause: NodeJS.Timeout | null = null;
   private idleTimer: NodeJS.Timeout | null = null;
   /** The hand result's countdown; when it runs out every seat still reading is confirmed. */
   private result: { timer: NodeJS.Timeout; endsAt: number } | null = null;
@@ -325,7 +327,9 @@ export class Room {
       this.broadcastRoom();
       return;
     }
-    this.scheduleBots();
+    // The table rests after a trick so it can be seen before it is gathered.
+    const trickTaken = events.some((e) => e.type === 'trickWon');
+    this.scheduleBots(trickTaken ? this.deps.config.trickPauseMs : 0);
   }
 
   // ---------------------------------------------------------------------------
@@ -341,10 +345,23 @@ export class Room {
     return state?.kind === 'bot' ? state.difficulty : this.deps.config.takeoverDifficulty;
   }
 
-  private scheduleBots(): void {
+  /**
+   * Starts the clock for every bot that has a decision to make. With a `pause`, their turns
+   * begin only once it has passed; each bot's own reply time then follows as usual, so the
+   * pause never changes how long a bot thinks.
+   */
+  private scheduleBots(pause = 0): void {
     this.clearBotTimers();
     const game = this.game;
     if (!game || this.phase !== 'playing' || game.phase === 'game-over') return;
+
+    if (pause > 0 && game.hand?.phase !== 'hand-complete') {
+      this.trickPause = setTimeout(() => {
+        this.trickPause = null;
+        this.scheduleBots();
+      }, pause);
+      return;
+    }
 
     if (game.hand?.phase === 'hand-complete') {
       // Bots confirm the result at their usual pace, or slowly when no human is watching.
@@ -488,6 +505,8 @@ export class Room {
   private clearBotTimers(): void {
     for (const timer of this.botTimers.values()) clearTimeout(timer);
     this.botTimers.clear();
+    if (this.trickPause) clearTimeout(this.trickPause);
+    this.trickPause = null;
     // Decisions still being computed for the old position are discarded when they arrive.
     this.botGeneration += 1;
   }

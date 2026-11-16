@@ -153,6 +153,41 @@ describe('play', () => {
     expect(h.last('ann', 'room')).toMatchObject({ room: { phase: 'finished' } });
   });
 
+  it('rests after each trick before a bot leads the next one', async () => {
+    const h = harness({ trickPauseMs: 10_000 });
+    readyRoom(h);
+    h.room.start('ann');
+    // Play on until a bot has won a trick and must lead; the pause holds the table there.
+    const waitingOnBotLead = () => {
+      const hand = h.room.game?.hand;
+      return (
+        hand?.phase === 'playing' &&
+        hand.tricks.length > 0 &&
+        (hand.currentTrick?.plays.length ?? 0) === 0 &&
+        hand.turn !== null &&
+        hand.turn !== 0
+      );
+    };
+    for (let i = 0; i < 2_000 && !waitingOnBotLead(); i++) {
+      await vi.advanceTimersByTimeAsync(5);
+      if (!waitingOnBotLead()) humanActs(h, 'ann');
+    }
+    expect(waitingOnBotLead()).toBe(true);
+    const tricks = h.room.game?.hand?.tricks.length;
+    const leader = h.room.game?.hand?.turn;
+
+    // Nothing is played while the table rests (bots otherwise reply within 1 ms here)...
+    await vi.advanceTimersByTimeAsync(9_000);
+    expect(h.room.game?.hand?.currentTrick?.plays ?? []).toHaveLength(0);
+    // ...then the bot leads, after its usual reply time (and the others follow).
+    await vi.advanceTimersByTimeAsync(1_100);
+    const next =
+      h.room.game?.hand?.tricks.length === tricks
+        ? h.room.game?.hand?.currentTrick
+        : h.room.game?.hand?.tricks.at(-1);
+    expect(next?.plays[0]?.seat).toBe(leader);
+  });
+
   it('rejects illegal human actions and re-sends the view', async () => {
     const h = harness();
     readyRoom(h);
