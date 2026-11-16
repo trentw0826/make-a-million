@@ -36,11 +36,11 @@ Card play maximises money won from here on minus the opponents' (`playUtility: '
 `packages/bots/src/contract/` decides the misdeal call, the bid, the discard and the trump. These decisions value outcomes in **match equity**: the probability of winning the game after the hand is scored, from the table in `packages/search/src/generated/meTable.ts`.
 
 - **Bid** (`evaluateBid`, `decideBid`). The only choice is to bid the minimum now or to pass. For each of `bidWorlds` (160) sampled deals:
-  - **Declaring** is valued by a greedy open‑hand playout of this seat declaring (the Normal bot's discards and trump; `playoutDeclare`), passed through the **calibration** below.
+  - **Declaring** is valued by a greedy open‑hand playout of this seat declaring (the Normal bot's discards and trump; `playoutDeclare`), passed through the **calibration** below. Like every simulated hand, the playout starts from the engine's opening lead (`openingLeader`: the player to the declarer's left).
   - **Passing** is valued by predicting how the rest of the auction ends. The other players' bidding ceilings come from the Normal bot's hand evaluation (`modelCeiling`), and the predicted declarer's contract is valued the same way.
   - Deals are weighted by how well they explain the bids and passes so far (`auctionLikelihood`, scale `auctionSigma`).
   - The bot **never raises over its partner's standing bid** (`raisePartner: false`).
-- **Calibration** (`calibA` 130, `calibB` 0.5, `calibSd` 58, all in $1000s). The greedy playout badly understates weak hands, so the declaring team's capture is taken as Normal(130k + 0.5 × estimate, 58k²) and the utility is averaged over twelve equally likely points (`calibrated`). The parameters come from regressing the actual capture on the estimate over 571 played contracts (`packages/sim/scripts/calibrate.ts`). This was the largest single gain (`bot-ladder.md`, note 8).
+- **Calibration** (`calibA` 130, `calibB` 0.5, `calibSd` 58, all in $1000s). The greedy playout badly understates weak hands, so the declaring team's capture is taken as Normal(130k + 0.5 × estimate, 58k²) and the utility is averaged over twelve equally likely points (`calibrated`). The parameters come from regressing the actual capture on the estimate over 571 played contracts (`packages/sim/scripts/calibrate.ts`). This was the largest single gain (`bot-ladder.md`, note 8). A refit after the first‑lead rule change (942 contracts) gave 116.5k + 0.56 × estimate, SD 56k: the same fit as before the change on the same bot, and within $5k of the defaults for most hands, so the defaults were kept (`bot-ladder.md`, Calibration).
 - **Misdeal.** Call a misdeal when this hand's expected equity, averaged over sampled deals and the predicted auction, is below the equity of a fresh deal.
 - **Discard and trump** (`bestCandidate`):
   1. List the legal discards for each trump suit (`discardCandidates`).
@@ -71,7 +71,7 @@ Simulations pass no deadline, so their results do not depend on the machine.
 
 | Option | Hard | What it does | Evidence |
 |---|---|---|---|
-| `worlds` / `nodes` | 40 / 2.5M | Card‑play sample size and node budget | 3× budget: no gain; 2.5M plays as well as 4M and keeps every decision under the 1.3 s deadline |
+| `worlds` / `nodes` | 40 / 2.5M | Card‑play sample size and node budget | 3× budget: no gain; 2.5M plays as well as 4M and keeps decisions under the 1.3 s deadline (p99 about 0.8 s) |
 | `exactTricks` / `depth` | 6 / 2 | Exact solving from 6 tricks out; otherwise 2 tricks deep | depth 3: no gain |
 | `exactWorlds` | 40 | Worlds once solving is exact | 400: H0 |
 | `worldNodes` | 250k | Per‑world cap before going shallower | lowered with `nodes` |

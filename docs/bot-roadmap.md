@@ -4,11 +4,13 @@ Where the work on the strong bots stands, what was learned, what is left, and ho
 
 ## Status (2026‑11‑15)
 
-- **Hard is offered at the table** next to Easy and Normal. It beats Normal by +8.6% match equity per board (+54k points per hand), and has since gained two promoted improvements:
+- **Hard is offered at the table** next to Easy and Normal. Its first version beat Normal by +8.6% match equity per board (+54k points per hand). It has since gained two promoted improvements:
   - it never raises over its partner's bid;
   - it bids on a calibrated estimate, which was the largest single gain.
 
-  It runs on server worker threads with a 1.5 s reply time. Its card‑play budget (2.5M nodes) keeps every decision under the 1.3 s deadline on the dev machine, at no measurable cost in strength.
+  Under the current rules, the player to the bidder's left leading the first trick, it beats Normal by +15.0% per board (+73k points per hand).
+
+  It runs on server worker threads with a 1.5 s reply time. Its card‑play budget (2.5M nodes) keeps decisions under the 1.3 s deadline on the dev machine (p99 about 0.8 s; the slowest of about 7,800 reached 1.3 s), at no measurable cost in strength.
 - **Expert is simulator‑only.** It is Hard with about three times the budget. Two things keep it from the table:
   - its slowest decisions take far longer than its 5 s reply time;
   - it has not been measured against the current Hard. Against the earlier Hard it gained +8.4k points per hand (its equity gain was not significant).
@@ -48,7 +50,12 @@ The plan was search‑centred: an exact open‑hand solver, sampling of hidden c
    - Even calibrated, the bid‑or‑pass choice does not depend on the bot's own hand strength: declaring and passing come out within about 0.01 equity of each other.
    - Playing about 1,200 bid decisions both ways showed that the bot's estimated advantage has no predictive value (r = −0.015). It also showed that, against calibrated opponents, one bid more or less is worth about nothing on average.
    - Each paired rollout's noise is large (25.7% equity), so tuning bidding from rollouts would need far more data. Duplicate A/B runs of whole policies remain the reliable test.
-4. **Statistics lessons** (`bot-ladder.md`, notes 4, 6 and 9):
+4. **The opening lead is a handicap.** Since the first lead moved from the bidder to the player on their left, the bidding team captures about $16k more per hand ($252k against $236k, same bot, other deals). Greedy playouts of the same 20,000 deals from both leaders give the same answer: +$16.1k [15.4, 16.8] when the opponent leads. The calibration of the bidding estimate did not change, because the estimate rose by as much as the capture.
+5. **The match‑equity table is noisy.**
+   - Two 20,000‑game tables built under the same rules with different seeds differ by 1.6% equity per cell on average over scores of $0–900k. For example, ME(800k, 600k, opponents deal) is 76% in one and 81% in the other.
+   - The old‑rule table differs from a new‑rule one by the same 1.6%, so the first‑lead rule's effect could not be seen, and the table was kept.
+   - A bigger table (say 200,000 games, about 25 minutes) would cut the noise by about two thirds. Any new table changes every equity decision, so test it by duplicate A/B before adopting it.
+6. **Statistics lessons** (`bot-ladder.md`, notes 4, 6 and 9):
    - Promote only after a win on boards the change was not selected on.
    - The SPRT's estimate at its stopping point is biased toward its verdict, so measure small effects on a fixed number of boards (`SPRT=0`).
    - The SPRT must not stop before 200 boards.
@@ -73,14 +80,20 @@ The plan was search‑centred: an exact open‑hand solver, sampling of hidden c
       - the level list in `docs/multiplayer.md` and `docs/architecture.md`;
       - the "no Expert" check in `apps/client/e2e/smoke.ts`.
 2. **Decide on specials inference.**
-   - Runs so far: +1.66% (629 boards, H1), −1.66% (407 boards, H0), and a fixed 1500‑board run at +0.82% [−0.03, 1.68] equity per board, +4.6k [0.1, 9.1] points per hand. That is probably a small real gain.
+   - Runs so far: +1.66% (629 boards, H1), −1.66% (407 boards, H0), and a fixed 1500‑board run at +0.82% [−0.03, 1.68] equity per board, +4.6k [0.1, 9.1] points per hand. That is probably a small real gain. All three ran under the old first‑lead rule with the old model, so confirm with a fixed run under the current rule (the model is already refitted) before promoting.
    - To promote it, set `inferencePool: 6`, `auctionInference: false` and `specialsInference: true` in `HARD_DEFAULTS`.
    - Refit the model (`scripts/specials-model.ts`) whenever card play changes, because it models the bots' own play.
-3. **Pending rule change: who leads the first trick.** `docs/game-rules.md` on `main` now says the player to the left of the highest bidder leads; the engine still has the bidder lead. When the engine changes:
-   - In the bots, the first leader is assumed in `packages/bots/src/contract/simulate.ts` (`playoutWith`: `turn: declarer`) and in `packages/bots/src/contract/index.ts` (`bestCandidate`'s re‑check: `turn: obs.seat`). Both become the seat after the bidder.
-   - Card play itself reads the turn from the observation, so it follows the engine automatically.
-   - Then refit the calibration (`scripts/calibrate.ts`), refit the specials model, and re‑run Hard vs Normal for the ladder.
-4. **Load test** the server with several rooms of Hard bots on the production host size. Watch the `bot answered after its deadline` warnings.
+3. **Load test** the server with several rooms of Hard bots on the production host size. Watch the `bot answered after its deadline` warnings.
+
+### Done since the pause: the first‑lead rule
+
+`docs/game-rules.md` now says the player to the left of the highest bidder leads the first trick. The engine had given the lead to the bidder.
+- The rule is one engine helper, `openingLeader` (`packages/engine/src/tricks.ts`). An engine invariant checks it in the random‑game tests and the simulator's legality checks.
+- The bots' contract code had assumed the bidder leads, in the greedy playout (`playoutWith`) and in the discard/trump re‑check (`bestCandidate`). Both now call `openingLeader`, and a test checks that the playout starts where the engine does. Card play reads the turn from the observation, so it needed no change.
+- **Bidding calibration:** refitted and unchanged (`bot-ladder.md`, Calibration), so the defaults stay.
+- **Match‑equity table:** kept; the rule's effect is smaller than the table's sampling noise (What we learned, above).
+- **Specials model:** refitted (1200 hands, 9642 opportunities). It is off by default, so play did not change.
+- **Checks:** Hard beats Normal by +15.0% per board under the new rule (`bot-ladder.md`), and its decision times barely changed (p99 792 ms, `bot-ladder.md`, Timing).
 
 ### Research directions (bigger, uncertain)
 
@@ -114,14 +127,16 @@ In rough order of expected value:
 5. Promote by changing the default, and update the settings table in `bot-design.md` and the ladder in `bot-ladder.md`. Record rejected ideas too.
 
 **Seeds already used.** Use new ones, so that no change is selected and confirmed on the same boards:
-- experiment boards: `exp` and `exp1`–`exp19`;
-- calibration: `calibrate`, `calibrate2`, `calibrate4`;
-- other: `specials`, `bid-rollouts`, `bid-diagnostic`, `timing`, `timing-x`, `timing-hard`.
+- experiment boards: `exp` and `exp1`–`exp20`;
+- calibration: `calibrate`, `calibrate2`, `calibrate4`, `calibrate5`;
+- other: `specials`, `bid-rollouts`, `bid-diagnostic`, `timing`, `timing-x`, `timing-hard`, `timing-lead`, `me-table-noise`.
 
 **Run times** (24 cores):
 - Hard vs Hard over 1200 boards: about 45–60 minutes on all cores.
 - Expert costs about 3.7× Hard.
-- A 300‑hand calibration: about 15 minutes on 4 workers.
+- A 1000‑hand calibration: about 13 minutes on 22 workers (300 hands: about 15 minutes on 4).
+- Hard vs Normal, stopping at 200 boards: about 6 minutes on 12 workers.
+- The match‑equity table (20,000 Normal games): about 2.5 minutes on all cores.
 
 **Simulator specs.**
 - `hard`, `expert`, `normal`, `easy`, `oracle`.
@@ -150,6 +165,6 @@ In rough order of expected value:
 
 | Data | File | Regenerate with | When |
 |---|---|---|---|
-| Match‑equity table | `packages/search/src/generated/meTable.ts` | `pnpm sim me-table` | after scoring‑rule changes |
+| Match‑equity table | `packages/search/src/generated/meTable.ts` | `pnpm sim me-table` | after scoring‑rule changes. Its sampling noise (1.6% per cell) hid the first‑lead rule's effect, so it was not rebuilt for that change |
 | Specials model | `packages/bots/src/inference/generated/specialsModel.ts` | `scripts/specials-model.ts hard 1200` | after card‑play or rule changes |
-| Bidding calibration | `calibA`, `calibB`, `calibSd` in `contract/index.ts` | `scripts/calibrate.ts hard 400` (prints the fit) | after bidding, playout or rule changes; a refit on calibrated play gave nearly the same values |
+| Bidding calibration | `calibA`, `calibB`, `calibSd` in `contract/index.ts` | `scripts/calibrate.ts hard 1000` (prints the fit) | after bidding, playout or rule changes. Refits on calibrated play, before and after the first‑lead rule change, gave nearly the same values as the defaults |
