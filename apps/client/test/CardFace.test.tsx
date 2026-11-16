@@ -1,6 +1,6 @@
 import { TIGER_ID } from '@mam/engine';
 import { fireEvent, render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { CardFace } from '../src/components/CardFace';
 
 describe('CardFace', () => {
@@ -9,6 +9,12 @@ describe('CardFace', () => {
     const card = screen.getByLabelText('$40k Red');
     expect(card).toHaveClass('card-red');
     expect(card).toHaveClass('card-money');
+  });
+
+  it('draws a placeholder emblem while the card has no artwork', () => {
+    const { container } = render(<CardFace id={12} />);
+    expect(container.querySelector('svg.card-art.card-art-money')).not.toBeNull();
+    expect(container.querySelector('img')).toBeNull();
   });
 
   it('renders special cards by name', () => {
@@ -55,5 +61,25 @@ describe('CardFace', () => {
     const button = screen.getByRole('button');
     expect(button).toHaveAttribute('title', 'You must follow Red.');
     expect(button).toHaveAccessibleDescription('You must follow Red.');
+  });
+});
+
+describe('CardFace with artwork', () => {
+  afterEach(() => {
+    vi.doUnmock('../src/art/manifest');
+    vi.resetModules();
+  });
+
+  it('shows the manifest artwork in place of the placeholder, keeping its name', async () => {
+    vi.resetModules();
+    vi.doMock('../src/art/manifest', () => ({
+      cardFaceArt: () => '/assets/red-40k.png',
+      cardBackArt: null,
+    }));
+    const { CardFace: WithArt } = await import('../src/components/CardFace');
+    const { container } = render(<WithArt id={12} />);
+    expect(container.querySelector('img.card-art')).toHaveAttribute('src', '/assets/red-40k.png');
+    expect(container.querySelector('svg.card-art')).toBeNull();
+    expect(screen.getByLabelText('$40k Red')).toBeInTheDocument();
   });
 });

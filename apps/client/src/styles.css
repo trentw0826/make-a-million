@@ -144,8 +144,28 @@ input {
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 .brand {
+  display: flex;
+}
+
+/* Wordmark --------------------------------------------------------------- */
+.wordmark {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  font-family: var(--font-display);
   font-weight: bold;
   letter-spacing: 0.02em;
+}
+.wordmark-coin {
+  width: 1.25em;
+  height: 1.25em;
+  flex: none;
+}
+.wordmark-million {
+  color: var(--accent-light);
+}
+.wordmark-large {
+  font-size: 1.15em;
 }
 .topbar-room {
   display: flex;
@@ -393,12 +413,9 @@ input {
   color: var(--on-felt-muted);
 }
 .felt {
-  background: radial-gradient(
-    ellipse at center,
-    var(--felt-light) 0%,
-    var(--felt) 60%,
-    var(--felt-dark) 100%
-  );
+  background:
+    var(--felt-texture),
+    radial-gradient(ellipse at center, var(--felt-light) 0%, var(--felt) 60%, var(--felt-dark) 100%);
   color: var(--paper);
   display: grid;
   grid-template-columns: 1fr minmax(320px, 2fr) 1fr;
@@ -504,8 +521,14 @@ input {
   width: var(--back-w);
   height: var(--back-h);
   border-radius: var(--radius-s);
-  background: repeating-linear-gradient(45deg, var(--back) 0 4px, var(--back-dark) 4px 8px);
+  overflow: hidden;
   border: 1px solid var(--back-trim);
+  box-shadow: var(--shadow-1);
+}
+.card-back-art {
+  display: block;
+  width: 100%;
+  height: 100%;
 }
 .card-back-count {
   position: absolute;
@@ -623,17 +646,16 @@ input {
 /* Cards ------------------------------------------------------------------ */
 .card {
   position: relative;
-  display: inline-flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
+  display: block;
+  flex: none;
   width: var(--card-w);
   height: var(--card-h);
   border-radius: var(--radius-card);
-  background: var(--card-paper);
+  background: linear-gradient(160deg, var(--card-paper), var(--card-paper-shade));
   border: 1px solid var(--card-edge);
   box-shadow: var(--shadow-1);
-  padding: 4px;
+  padding: 0;
+  text-align: left;
   cursor: default;
   transition:
     transform var(--dur-fast),
@@ -647,26 +669,72 @@ button.card:hover:not(:disabled, [aria-disabled="true"]) {
   filter: none;
 }
 .card-label {
-  font-size: 1.3em;
+  position: absolute;
+  top: 4px;
+  left: 6px;
+  font-family: var(--font-display);
+  font-size: 1.1em;
+  line-height: 1;
   font-weight: bold;
 }
 .card-sub {
-  font-size: 0.65em;
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 4px;
+  text-align: center;
+  font-size: 0.6em;
+  line-height: 1;
   color: var(--muted);
-  margin-top: 2px;
+}
+/* The picture sits a little below centre, clear of the corner index. */
+.card-art {
+  position: absolute;
+  left: 50%;
+  top: 54%;
+  width: 52%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+.card-art-image {
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  transform: none;
+  object-fit: cover;
+  border-radius: inherit;
+}
+.card-art-special {
+  width: 60%;
+}
+.card-art-medallion {
+  fill: currentColor;
+  opacity: 0.12;
+}
+/* Money cards wear a gold inner frame. */
+.card-money::after {
+  content: "";
+  position: absolute;
+  inset: 3px;
+  border: 1.5px solid var(--accent-light);
+  border-radius: calc(var(--radius-card) - 2px);
+  pointer-events: none;
 }
 .card-small {
   width: var(--card-small-w);
   height: var(--card-small-h);
 }
 .card-small .card-label {
-  font-size: 1em;
+  top: 3px;
+  left: 4px;
+  font-size: 0.85em;
+}
+.card-small .card-art {
+  width: 56%;
+  top: 58%;
 }
 .card-small .card-sub {
   display: none;
-}
-.card-money .card-label {
-  text-decoration: underline;
 }
 .card-selected {
   outline: 3px solid var(--accent);
@@ -710,33 +778,39 @@ button.card-disabled {
     0 2px 10px rgba(0, 0, 0, 0.45);
 }
 .card-red .card-label,
+.card-red .card-art,
 .suit-red {
   color: var(--red);
 }
 .card-yellow .card-label,
+.card-yellow .card-art,
 .suit-yellow {
   color: var(--yellow);
 }
 .card-black .card-label,
+.card-black .card-art,
 .suit-black {
   color: var(--black);
 }
 .card-green .card-label,
+.card-green .card-art,
 .suit-green {
   color: var(--green);
 }
-.card-tiger .card-label {
+.card-tiger {
   color: var(--tiger);
-  font-size: 1em;
-  letter-spacing: 0.05em;
 }
-.card-bull .card-label {
+.card-bull {
   color: var(--bull);
-  font-size: 1em;
 }
-.card-bear .card-label {
+.card-bear {
   color: var(--bear);
-  font-size: 1em;
+}
+.card-tiger .card-label,
+.card-bull .card-label,
+.card-bear .card-label {
+  font-size: 0.85em;
+  letter-spacing: 0.04em;
 }
 
 /* Modals ----------------------------------------------------------------- */
@@ -848,10 +922,18 @@ button.modal-close {
 .result-trick .card {
   width: 36px;
   height: 50px;
-  padding: 2px;
 }
 .result-trick .card-label {
-  font-size: 0.8em;
+  top: 2px;
+  left: 3px;
+  font-size: 0.7em;
+}
+.result-trick .card-art {
+  width: 50%;
+  top: 62%;
+}
+.result-trick .card-sub {
+  display: none;
 }
 .result-foot {
   position: sticky;

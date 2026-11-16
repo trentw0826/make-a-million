@@ -1,4 +1,5 @@
 import { type FormEvent, useState } from 'react';
+import { Wordmark } from '../components/Wordmark';
 import { storage } from '../storage';
 import { codeFromHash, useGame } from '../store';
 
@@ -23,7 +24,9 @@ export function Home() {
 
   return (
     <main className="home">
-      <h1>Make‑a‑Million</h1>
+      <h1>
+        <Wordmark size="large" />
+      </h1>
       <p className="muted">
         A partnership trick‑taking card game. Four seats; bring friends or bots.
       </p>

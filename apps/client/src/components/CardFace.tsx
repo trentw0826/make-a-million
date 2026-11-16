@@ -1,4 +1,6 @@
 import { type Card, type CardId, cardById, cardLabel, isMoney } from '@mam/engine';
+import { CardArt } from '../art/CardArt';
+import { CardBackArt } from '../art/CardBackArt';
 import { SUIT_NAMES } from '../format';
 
 export interface CardFaceProps {
@@ -30,7 +32,10 @@ function subtitle(card: Card): string {
   return 'cancels';
 }
 
-/** A card drawn as colored text on a plain face. There is no artwork by design. */
+/**
+ * A card: its index in the corner, its name below, and its picture (CardArt: the artwork
+ * from the manifest, or a placeholder emblem) in the middle.
+ */
 export function CardFace({
   id,
   size = 'normal',
@@ -68,6 +73,7 @@ export function CardFace({
           new
         </span>
       )}
+      <CardArt card={card} />
       <span className="card-label">{label}</span>
       <span className="card-sub">{subtitle(card)}</span>
     </>
@@ -102,7 +108,9 @@ export function CardBack({ count }: { count: number }) {
   return (
     <div className="card-backs" role="img" aria-label={`${count} cards`}>
       {offsets.map((left) => (
-        <span className="card-back" key={left} style={{ left: `${left}px` }} />
+        <span className="card-back" key={left} style={{ left: `${left}px` }}>
+          <CardBackArt />
+        </span>
       ))}
       <span className="card-back-count">{count}</span>
     </div>

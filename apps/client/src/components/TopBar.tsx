@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useGame } from '../store';
 import { Modal } from './Modal';
+import { Wordmark } from './Wordmark';
 
 export function inviteUrl(code: string): string {
   return `${window.location.origin}${window.location.pathname}#/room/${code}`;
@@ -57,7 +58,11 @@ export function TopBar() {
 
   return (
     <header className="topbar">
-      {room && <span className="brand">Make‑a‑Million</span>}
+      {room && (
+        <span className="brand">
+          <Wordmark />
+        </span>
+      )}
       {room && (
         <div className="topbar-room">
           <span>
