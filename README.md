@@ -25,10 +25,15 @@ Open a second browser (or a private window) and join with the room code to play 
 ## Checks
 
 ```sh
-pnpm check        # lint + typecheck + test
+pnpm check        # lint + typecheck + test + build: the same steps as CI
 pnpm test         # vitest across every package
 pnpm lint:fix     # Biome
+pnpm e2e          # build, then play a hand against bots in headless Chromium
 ```
+
+`pnpm e2e` drives the system Chromium (`/usr/bin/chromium`, or set `CHROMIUM_PATH`) and saves
+screenshots of each stage to `apps/client/e2e/out/`. It takes about a minute. CI runs it as a
+separate job and keeps the screenshots as an artifact.
 
 ## Simulations
 

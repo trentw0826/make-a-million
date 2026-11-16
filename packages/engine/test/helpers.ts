@@ -103,6 +103,7 @@ export function playingState(hand: HandOverrides, game: GameOverrides = {}): Gam
           ? (contract?.bidder ?? null)
           : null,
     result: null,
+    continuePending: [],
   };
   return {
     ruleset: game.ruleset ?? DEFAULT_RULESET,

@@ -216,3 +216,72 @@ describe('play', () => {
     expect(h.room.seats[0]).toMatchObject({ kind: 'human', playerId: 'ann' });
   });
 });
+
+describe('hand result', () => {
+  /** Plays on for the humans until the first hand result is up. */
+  async function playToResult(h: Harness, humans: readonly string[]): Promise<void> {
+    const showing = () => h.room.game?.phase === 'hand-complete';
+    for (let i = 0; i < 2_000 && !showing(); i++) {
+      await vi.advanceTimersByTimeAsync(5);
+      for (const id of humans) {
+        if (showing()) break;
+        humanActs(h, id);
+      }
+    }
+    expect(showing()).toBe(true);
+  }
+
+  it('waits for the humans to confirm, then deals at once', async () => {
+    const h = harness({ handResultMs: 20_000 });
+    readyRoom(h);
+    h.room.start('ann');
+    await playToResult(h, ['ann']);
+
+    const view = h.last('ann', 'view');
+    expect(view).toMatchObject({ resultTimer: { totalMs: 20_000 } });
+
+    // The bots confirm quickly; Ann is still reading.
+    await vi.advanceTimersByTimeAsync(50);
+    expect(h.room.game?.hand?.continuePending).toEqual([0]);
+    expect(h.room.game?.phase).toBe('hand-complete');
+
+    expect(h.room.action('ann', { type: 'continue' })).toBeNull();
+    expect(h.room.game?.hand?.handNumber).toBe(2);
+    expect(h.last('ann', 'view')).not.toHaveProperty('resultTimer');
+  });
+
+  it('deals the next hand when the countdown runs out', async () => {
+    const h = harness({ handResultMs: 20_000 });
+    readyRoom(h);
+    h.room.start('ann');
+    await playToResult(h, ['ann']);
+
+    await vi.advanceTimersByTimeAsync(19_000);
+    expect(h.room.game?.phase).toBe('hand-complete');
+    await vi.advanceTimersByTimeAsync(1_100);
+    expect(h.room.game?.hand?.handNumber).toBe(2);
+    expect(h.room.game?.hand?.phase).toBe('misdeal-window');
+  });
+
+  it('does not let one human close the result for another', async () => {
+    const h = harness({ handResultMs: 20_000 });
+    h.room.join('ann', 'Ann');
+    h.room.join('bob', 'Bob');
+    h.room.sit('ann', 0);
+    h.room.sit('bob', 1);
+    h.room.addBot('ann', 2, 'easy');
+    h.room.addBot('ann', 3, 'easy');
+    h.room.start('ann');
+    await playToResult(h, ['ann', 'bob']);
+    await vi.advanceTimersByTimeAsync(50);
+
+    expect(h.room.action('ann', { type: 'continue' })).toBeNull();
+    expect(h.room.game?.phase).toBe('hand-complete');
+    expect(h.room.game?.hand?.continuePending).toEqual([1]);
+    expect(h.room.action('ann', { type: 'continue' })).toEqual(
+      expect.objectContaining({ code: 'ILLEGAL_ACTION' }),
+    );
+    expect(h.room.action('bob', { type: 'continue' })).toBeNull();
+    expect(h.room.game?.hand?.handNumber).toBe(2);
+  });
+});

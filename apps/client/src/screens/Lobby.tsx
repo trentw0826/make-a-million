@@ -1,5 +1,6 @@
 import type { Seat } from '@mam/engine';
 import type { Difficulty, RoomView, SeatView } from '@mam/protocol';
+import { InviteButton } from '../components/TopBar';
 import { DIFFICULTY_LABELS, DIFFICULTY_ORDER, seatLabel } from '../format';
 import { useGame } from '../store';
 
@@ -16,10 +17,11 @@ export function Lobby({ room }: { room: RoomView }) {
     <main className="lobby">
       <header className="lobby-header">
         <h1>Room {room.code}</h1>
-        <p className="muted">
-          Share the code with your table. Partners sit opposite each other: seats 1 & 3 against 2 &
-          4.
-        </p>
+        <div className="lobby-share">
+          <span className="muted">Share the code or the link with your table.</span>
+          <InviteButton code={room.code} />
+        </div>
+        <p className="muted">Partners sit opposite each other: seats 1 & 3 against 2 & 4.</p>
       </header>
 
       <section className="seats-grid" aria-label="Seats">
@@ -57,9 +59,6 @@ export function Lobby({ room }: { room: RoomView }) {
           <span className="muted">Waiting for the host to start…</span>
         )}
         {!seated && <span className="muted">Pick a seat to play.</span>}
-        <button type="button" className="ghost" onClick={() => send({ type: 'leaveRoom' })}>
-          Leave room
-        </button>
       </footer>
     </main>
   );

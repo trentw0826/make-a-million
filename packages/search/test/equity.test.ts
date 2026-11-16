@@ -72,6 +72,7 @@ describe('handOutcome', () => {
     for (let g = 0; g < 5; g++) {
       let state = createGame({ seed: `outcome-${g}` });
       let before: readonly [number, number] = [0, 0];
+      let checked = 0;
       while (state.phase !== 'game-over') {
         const seat = SEATS.find((s) => legalMoves(state, s).kind !== 'none');
         if (seat === undefined) throw new Error('stuck');
@@ -98,8 +99,10 @@ describe('handOutcome', () => {
                     ? ({ type: 'playCard', cardId: rng.pick(legal.cardIds) } as const)
                     : ({ type: 'continue' } as const);
         state = applyActionOrThrow(state, seat, action).state;
-        const r = state.hand?.result;
-        if (r && state.handHistory.length > 0 && r === state.handHistory.at(-1)) {
+        // Each hand once: its result stays up until every seat has confirmed it.
+        const r = state.handHistory.at(-1);
+        if (r && state.handHistory.length > checked) {
+          checked = state.handHistory.length;
           const ctx: HandContext = {
             ruleset: DEFAULT_RULESET,
             scores: before,
@@ -111,9 +114,6 @@ describe('handOutcome', () => {
           expect(out.scoresAfter).toEqual(r.scoresAfter);
           expect(out.made).toBe(r.made);
           before = r.scoresAfter;
-          if (state.phase === 'hand-complete') {
-            state = applyActionOrThrow(state, 0, { type: 'continue' }).state;
-          }
         }
       }
     }

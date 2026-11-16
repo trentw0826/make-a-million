@@ -50,6 +50,7 @@ function position(): GameState {
       currentTrick: { leader: 0, plays: [], suit: null, winner: null },
       turn: 0,
       result: null,
+      continuePending: [],
     },
   };
   state = applyActionOrThrow(state, 0, { type: 'playCard', cardId: c('Y40k') }).state;

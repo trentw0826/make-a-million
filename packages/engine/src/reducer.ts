@@ -105,7 +105,11 @@ export function applyAction(state: GameState, seat: Seat, action: Action): Apply
       break;
     }
     case 'continue': {
-      startHand(draft, nextSeat(hand.dealer), hand.handNumber + 1, 0, events);
+      hand.continuePending = hand.continuePending.filter((s) => s !== seat);
+      events.push({ type: 'readyForNextHand', seat });
+      if (hand.continuePending.length === 0) {
+        startHand(draft, nextSeat(hand.dealer), hand.handNumber + 1, 0, events);
+      }
       break;
     }
   }
@@ -183,6 +187,7 @@ function startHand(
     currentTrick: null,
     turn: null,
     result: null,
+    continuePending: [],
   };
 
   draft.dealer = dealer;
@@ -313,6 +318,7 @@ function scoreHand(draft: Mutable<GameState>, hand: Mutable<HandState>, events: 
   draft.handHistory = [...draft.handHistory, result];
   hand.result = result;
   hand.phase = 'hand-complete';
+  hand.continuePending = [...SEATS];
   events.push({ type: 'handScored', result });
 
   const winner = decideWinner(scoresAfter, biddingTeam, draft.ruleset);

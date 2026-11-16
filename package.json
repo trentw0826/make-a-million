@@ -18,7 +18,8 @@
     "lint:fix": "biome check --write .",
     "format": "biome format --write .",
     "sim": "pnpm --filter @mam/sim start",
-    "check": "pnpm lint && pnpm typecheck && pnpm test"
+    "e2e": "pnpm build && tsx apps/client/e2e/smoke.ts",
+    "check": "pnpm lint && pnpm typecheck && pnpm test && pnpm build"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.6.7",

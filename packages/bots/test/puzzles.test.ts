@@ -69,6 +69,7 @@ function puzzle(
       currentTrick: { leader: 0, plays: [], suit: null, winner: null },
       turn: 0,
       result: null,
+      continuePending: [],
     },
   };
   let seat: Seat = 0;

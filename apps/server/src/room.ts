@@ -72,6 +72,8 @@ export class Room {
   private botGeneration = 0;
   private readonly botTimers = new Map<Seat, NodeJS.Timeout>();
   private idleTimer: NodeJS.Timeout | null = null;
+  /** The hand result's countdown; when it runs out every seat still reading is confirmed. */
+  private result: { timer: NodeJS.Timeout; endsAt: number } | null = null;
   private closed = false;
 
   constructor(
@@ -313,6 +315,7 @@ export class Room {
   }
 
   private afterGameChange(events: readonly GameEvent[]): void {
+    this.syncResultTimer();
     this.sendViews();
     if (events.length > 0) this.broadcast({ type: 'events', events });
     if (this.game?.phase === 'game-over') {
@@ -344,10 +347,15 @@ export class Room {
     if (!game || this.phase !== 'playing' || game.phase === 'game-over') return;
 
     if (game.hand?.phase === 'hand-complete') {
-      // Humans advance past the hand result; bots only when no human is there to do it.
-      if (this.anyConnectedHumanSeated()) return;
-      const seat = SEATS.find((s) => this.isBotControlled(s));
-      if (seat !== undefined) this.scheduleBot(seat, this.deps.config.botContinueDelayMs);
+      // Bots confirm the result at their usual pace, or slowly when no human is watching.
+      const watched = this.anyConnectedHumanSeated();
+      for (const seat of game.hand.continuePending) {
+        if (!this.isBotControlled(seat)) continue;
+        const delay = watched
+          ? this.deps.config.botDelayMs[this.botDifficulty(seat)]
+          : this.deps.config.botContinueDelayMs;
+        this.scheduleBot(seat, delay);
+      }
       return;
     }
 
@@ -441,6 +449,42 @@ export class Room {
     this.afterGameChange(result.events);
   }
 
+  // ---------------------------------------------------------------------------
+  // Hand result
+
+  /** Starts the countdown when a hand result goes up, and stops it once the result is gone. */
+  private syncResultTimer(): void {
+    const showing = this.phase === 'playing' && this.game?.phase === 'hand-complete';
+    if (!showing) {
+      this.clearResultTimer();
+    } else if (!this.result) {
+      const ms = this.deps.config.handResultMs;
+      this.result = { timer: setTimeout(() => this.resultExpired(), ms), endsAt: Date.now() + ms };
+    }
+  }
+
+  private resultExpired(): void {
+    this.result = null;
+    let game = this.game;
+    if (!game || this.closed || game.phase !== 'hand-complete') return;
+    const events: GameEvent[] = [];
+    for (const seat of game.hand?.continuePending ?? []) {
+      const result = applyAction(game, seat, { type: 'continue' });
+      if (!result.ok) continue;
+      game = result.state;
+      events.push(...result.events);
+    }
+    this.game = game;
+    this.afterGameChange(events);
+  }
+
+  private clearResultTimer(): void {
+    if (this.result) {
+      clearTimeout(this.result.timer);
+      this.result = null;
+    }
+  }
+
   private clearBotTimers(): void {
     for (const timer of this.botTimers.values()) clearTimeout(timer);
     this.botTimers.clear();
@@ -478,6 +522,7 @@ export class Room {
     if (this.closed) return;
     this.closed = true;
     this.clearBotTimers();
+    this.clearResultTimer();
     this.clearIdleTimer();
     for (const member of this.members.values()) {
       this.clearGrace(member);
@@ -554,6 +599,16 @@ export class Room {
   private sendView(playerId: string): void {
     const seat = this.seatOf(playerId);
     if (!this.game || seat === null) return;
-    this.deps.send(playerId, { type: 'view', view: tableView(observe(this.game, seat)) });
+    const view = tableView(observe(this.game, seat));
+    const timer = this.result
+      ? {
+          remainingMs: Math.max(0, this.result.endsAt - Date.now()),
+          totalMs: this.deps.config.handResultMs,
+        }
+      : undefined;
+    this.deps.send(
+      playerId,
+      timer ? { type: 'view', view, resultTimer: timer } : { type: 'view', view },
+    );
   }
 }

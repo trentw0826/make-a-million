@@ -83,13 +83,17 @@ Hidden information is enforced by projection, never by flags.
 ## Client
 
 - React + Vite, desktop‑first.
-- Screens: Home (name, create/join), Lobby (seats, bots, start), Table, Hand Result, Game Over.
-- Cards are rendered as colored text for now; there is no artwork.
-- The client holds only the latest `TableView` and room state it received; all rules decisions are made on the server.
+- Screens: Home (name, create/join), Lobby (seats, bots, start), Table, Hand Result, Game Over. A top bar on every screen carries the room code, a copyable invite link, How to play (the rules in brief, quoting the ruleset in play) and Leave, which asks first during a game because the seat goes to a bot at once.
+- Cards are rendered as colored text for now; there is no artwork. The hand is shown by color, high to low; once trump is named the Tiger and the trump color come first (`handOrder.ts`; the engine's `sortHand` is unchanged).
+- The client holds only the latest `TableView` and room state it received; all rules decisions are made on the server. What the table shows about the state of play (whose turn, each seat's call in the auction, the contract bar, the card winning the trick, why a card is greyed out) is derived from that view in `hints.ts`, so it never shows more than a player at the table would see.
+- The trick on the felt is built from events, not from the view: the server sends each view just before the events that explain it, so after a trick's last card the view already holds the next, empty trick. A finished trick holds for a moment, then sweeps to its winner.
+- The table log keeps a few lines per hand (the deal, the auction as one line, trump, the result) and folds earlier hands away. Card plays and trick winners are never logged (see "Table Visibility" in `game-rules.md`).
+- Motion is CSS plus one FLIP hook (`useFlip.ts`); all of it is off under `prefers-reduced-motion`.
+- Keyboard: `?` opens How to play, Esc closes a dialog, ←/→ step a bid, Enter takes the main action.
 
 ## Testing
 
 - **Engine:** one test file per section of `game-rules.md`, each bullet backed by a named test; property tests over thousands of random games (card conservation, money reconciliation, no illegal states); leak tests for both views; replay fixtures.
 - **Bots:** every strategy plays many seeded games without a single illegal action; `normal` must beat `easy` by a clear margin; identical seeds produce identical games.
 - **Server:** room logic unit tests with fake timers (grace period, takeover, room expiry, host transfer); an integration test over a real WebSocket where four bots play to game over and a scripted client disconnects and reconnects.
-- **Client:** component tests for legality hints and the state reducer.
+- **Client:** unit tests for the state reducer, the hand order and the status hints; component tests for the shell, cards, log and contract bar. `pnpm e2e` plays a hand against bots in headless Chromium and checks the signals, the hand order and the motion (including reduced motion); it needs a local Chromium, so it is not part of CI.

@@ -16,8 +16,13 @@ export interface ServerConfig {
    * deliver it on time; past that it stops searching and plays its best move so far.
    */
   readonly botDeadlineMarginMs: number;
-  /** Delay before a bot advances past the hand-result screen when no human is present. */
+  /** Delay before a bot confirms the hand result when no human is present. */
   readonly botContinueDelayMs: number;
+  /**
+   * How long the hand result stays up. The next hand is dealt when every seat has
+   * confirmed, or when this runs out, whichever comes first.
+   */
+  readonly handResultMs: number;
   /** Strategy used to play a human's seat while they are away. */
   readonly takeoverDifficulty: Difficulty;
   /** Worker threads for searching bots (Hard, Expert). 0 runs them on the main thread. */
@@ -37,6 +42,7 @@ export const DEFAULT_CONFIG: ServerConfig = {
   botDelayMs: { easy: 700, normal: 900, hard: 1500, expert: 5000 },
   botDeadlineMarginMs: 200,
   botContinueDelayMs: 4_000,
+  handResultMs: 20_000,
   takeoverDifficulty: 'normal',
   botWorkers: Number(env.BOT_WORKERS ?? Math.max(1, Math.min(4, availableParallelism() - 1))),
   ruleset: DEFAULT_RULESET,

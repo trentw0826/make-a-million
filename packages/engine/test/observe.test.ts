@@ -119,4 +119,25 @@ describe('tableView', () => {
       }
     }
   });
+
+  it('reports the phase of the hand under way, then game over', () => {
+    const { states } = playRandomGame('table-3', undefined, { keepStates: true });
+    const seen = new Set<string>();
+    for (const state of states) {
+      const phase = observe(state, 0).phase;
+      seen.add(phase);
+      expect(phase).toBe(state.phase === 'game-over' ? 'game-over' : state.hand?.phase);
+    }
+    expect([...seen].sort()).toEqual(
+      [
+        'bidding',
+        'discarding',
+        'game-over',
+        'hand-complete',
+        'misdeal-window',
+        'naming-trump',
+        'playing',
+      ].sort(),
+    );
+  });
 });
