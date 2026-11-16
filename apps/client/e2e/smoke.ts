@@ -73,20 +73,45 @@ async function startServer(port: number): Promise<ChildProcess> {
 }
 
 /**
- * Records which motion classes ever appear, since a sweep lasts only 350 ms. Plain source
+ * Records which motion classes ever appear, since a sweep lasts only a few hundred ms, and
+ * whether each dealt or played card moved: its transform on its first frame against 120 ms
+ * later (Motion animates inline, so there is no CSS animation name to read). Plain source
  * text on purpose: tsx compiles named functions with a `__name` helper that the page lacks.
  */
 const WATCH_CLASSES = `
   window.__seen = new Set();
+  window.__moves = { deal: [], trick: [], mine: [] };
+  const tracked = new WeakSet();
   new MutationObserver(function () {
     for (const name of ['trick-enter', 'trick-sweep', 'card-winning']) {
       if (document.querySelector('.' + name)) window.__seen.add(name);
+    }
+    for (const el of document.querySelectorAll('.hand .card-3d, .trick-enter')) {
+      if (tracked.has(el)) continue;
+      tracked.add(el);
+      const kind = el.classList.contains('card-3d')
+        ? 'deal'
+        : el.closest('.trick-mine') ? 'mine' : 'trick';
+      requestAnimationFrame(function () {
+        const first = getComputedStyle(el).transform;
+        setTimeout(function () {
+          window.__moves[kind].push(first !== getComputedStyle(el).transform);
+        }, 120);
+      });
     }
   }).observe(document, { subtree: true, childList: true, attributes: true, attributeFilter: ['class'] });
 `;
 
 const seenClasses = (page: Page) =>
   page.evaluate(() => [...(window as unknown as { __seen: Set<string> }).__seen]);
+
+/** For dealt and played cards: whether each one moved after it appeared. */
+const cardMoves = (page: Page) =>
+  page.evaluate(
+    () =>
+      (window as unknown as { __moves: { deal: boolean[]; trick: boolean[]; mine: boolean[] } })
+        .__moves,
+  );
 
 /**
  * Home → room → seat 1 → a Hard bot and two Normal bots → start. The Hard bot searches on
@@ -278,6 +303,10 @@ async function fullHand(browser: Browser, base: string): Promise<void> {
   check(seen.includes('trick-enter'), 'played cards slide in');
   check(seen.includes('trick-sweep'), 'taken tricks sweep to the winner');
   check(seen.includes('card-winning'), 'the winning card is highlighted');
+  const moves = await cardMoves(page);
+  check(moves.deal.some(Boolean), 'the deal flies cards into the hand');
+  check(moves.trick.some(Boolean), "the others' cards fly onto the felt");
+  check(moves.mine.some(Boolean), 'your card flies from your hand to the felt');
 
   const log = (await page.locator('.event-log').textContent()) ?? '';
   check((log.match(/Auction:/g) ?? []).length === 1, 'the log sums up the auction in one line');
@@ -303,15 +332,24 @@ async function fullHand(browser: Browser, base: string): Promise<void> {
 async function reducedMotion(browser: Browser, base: string): Promise<void> {
   const context = await browser.newContext({ viewport: VIEWPORT, reducedMotion: 'reduce' });
   const page = await context.newPage();
+  await page.addInitScript(WATCH_CLASSES);
   await openTable(page, base);
   const animation = (selector: string) =>
     page
       .locator(selector)
       .first()
       .evaluate((el) => getComputedStyle(el).animationName);
-  check((await animation('.hand-slot')) === 'none', 'reduced motion: cards are not dealt in');
-  await playUntil(page, async () => (await page.locator('.trick-motion').count()) > 0);
-  check((await animation('.trick-motion')) === 'none', 'reduced motion: trick cards do not slide');
+  await playUntil(page, async () => (await page.locator('.trick-motion').count()) >= 2);
+  await sleep(300);
+  const moves = await cardMoves(page);
+  check(
+    moves.deal.length > 0 && !moves.deal.some(Boolean),
+    'reduced motion: cards are not dealt in',
+  );
+  check(
+    moves.trick.length > 0 && ![...moves.trick, ...moves.mine].some(Boolean),
+    'reduced motion: trick cards do not slide',
+  );
   await page.getByRole('button', { name: 'How to play', exact: true }).click();
   check((await animation('.modal')) === 'none', 'reduced motion: dialogs do not animate');
   await context.close();

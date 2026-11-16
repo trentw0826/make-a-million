@@ -541,11 +541,24 @@ input {
   grid-area: trick;
   position: relative;
   min-height: 260px;
+}
+/* The playing surface leans away from you. Only this backdrop tilts: the cards stay flat, so
+   Motion can measure them for the flight from your hand. */
+.trick-area::before {
+  content: "";
+  position: absolute;
+  inset: 0;
   border-radius: 50%;
-  background: rgba(0, 0, 0, 0.08);
+  background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.04), rgba(0, 0, 0, 0.16));
+  box-shadow: inset 0 0 0 2px rgba(233, 196, 106, 0.18);
+  transform: perspective(900px) rotateX(var(--felt-tilt));
 }
 .trick-card {
   position: absolute;
+  perspective: 700px;
+}
+.trick-motion {
+  transform-style: preserve-3d;
 }
 .trick-bottom {
   left: 50%;
@@ -811,10 +824,16 @@ button.card-disabled {
 .card-fresh {
   border-color: var(--accent);
 }
+@keyframes winning-glow {
+  50% {
+    box-shadow:
+      0 0 0 3px var(--accent),
+      0 0 26px 8px rgba(233, 196, 106, 0.7);
+  }
+}
 .card-winning {
-  box-shadow:
-    0 0 0 3px var(--accent),
-    0 2px 10px rgba(0, 0, 0, 0.45);
+  box-shadow: var(--glow-accent);
+  animation: winning-glow 1.4s ease-in-out infinite;
 }
 .card-red .card-label,
 .card-red .card-art,
@@ -1144,28 +1163,6 @@ button.modal-close {
 /* Every animation here is switched off under prefers-reduced-motion (below), and the
    card motions run by Motion follow the same setting (MotionConfig in App.tsx). */
 
-/* A played card slides in from its player's side (--fx/--fy, set in TrickArea.tsx). */
-@keyframes trick-enter {
-  from {
-    opacity: 0;
-    transform: translate(var(--fx, 0), var(--fy, 0)) scale(0.9);
-  }
-}
-.trick-enter {
-  animation: trick-enter 260ms var(--ease-out) both;
-}
-
-/* A taken trick slides to its winner (--dx/--dy); lasts TRICK_SWEEP_MS in Table.tsx. */
-@keyframes trick-sweep {
-  to {
-    opacity: 0;
-    transform: translate(var(--dx, 0), var(--dy, 0)) scale(0.7);
-  }
-}
-.trick-sweep {
-  animation: trick-sweep 350ms ease-in forwards;
-}
-
 @keyframes pulse-ring {
   0%,
   100% {
@@ -1229,10 +1226,9 @@ button.modal-close {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .trick-enter,
-  .trick-sweep,
   .seat-acting,
   .turn-pill,
+  .card-winning,
   .modal-backdrop,
   .modal,
   .toast,
