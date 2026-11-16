@@ -949,6 +949,7 @@ button.modal-close {
   margin: 0;
 }
 .result-banner {
+  position: relative;
   margin: 0 0 8px;
   padding: 8px 12px;
   border-radius: 8px;
@@ -1232,6 +1233,37 @@ button.modal-close {
 }
 .delta-float {
   animation: float-away 2.6s ease-out forwards;
+}
+
+/* Sparks fly out from the middle of the banner and fade (HandResult's Burst). */
+@keyframes spark {
+  from {
+    opacity: 1;
+    transform: rotate(var(--a)) translateX(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: rotate(var(--a)) translateX(90px) scale(0.4);
+  }
+}
+.burst {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  pointer-events: none;
+}
+.burst > .spark {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  margin: -4px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #fff6d5, var(--accent-light) 60%, var(--accent));
+  opacity: 0;
+  animation: spark 0.9s var(--ease-out) 0.25s;
+}
+.count-up {
+  font-variant-numeric: tabular-nums;
 }
 
 @media (prefers-reduced-motion: reduce) {

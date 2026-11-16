@@ -21,6 +21,9 @@ export const TRICK_SWEEP_MS = 350;
 /** How long a played card takes to reach the felt. */
 export const TRICK_ENTER_MS = 320;
 
+/** How long a sum takes to count up on the hand result. */
+export const COUNT_UP_MS = 900;
+
 /** Dealing: time for one card to arrive, and the gap between cards. */
 export const DEAL_MS = 420;
 export const DEAL_STAGGER_MS = 45;
