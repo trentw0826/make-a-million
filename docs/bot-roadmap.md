@@ -2,15 +2,16 @@
 
 Where the work on the strong bots stands, what was learned, what is left, and how to pick it up. How the bots work is in `bot-design.md`; every measured result is in `bot-ladder.md`.
 
-## Status (2026‑11‑15)
+## Status (2026‑11‑16)
 
-- **Hard is offered at the table** next to Easy and Normal. Its first version beat Normal by +8.6% match equity per board (+54k points per hand). It has since gained two promoted improvements:
+- **Hard is offered at the table** next to Easy and Normal. Its first version beat Normal by +8.6% match equity per board (+54k points per hand). It has since gained three promoted improvements:
   - it never raises over its partner's bid;
-  - it bids on a calibrated estimate, which was the largest single gain.
+  - it bids on a calibrated estimate, which was the largest single gain;
+  - its card play weights the sampled deals by the specials evidence (who passed up a chance to play the Tiger, Bull or Bear): +4.3k points per hand.
 
   Under the current rules, the player to the bidder's left leading the first trick, it beats Normal by +15.0% per board (+73k points per hand).
 
-  It runs on server worker threads with a 1.5 s reply time. Its card‑play budget (2.5M nodes) keeps decisions under the 1.3 s deadline on the dev machine (p99 about 0.8 s; the slowest of about 7,800 reached 1.3 s), at no measurable cost in strength.
+  It runs on server worker threads with a 1.5 s reply time. Its card‑play budget (2.5M nodes) keeps decisions under the 1.3 s deadline on the dev machine (p99 0.7–0.8 s; the slowest of about 7,800 took 1.1–1.3 s), at no measurable cost in strength.
 - **Expert is simulator‑only.** It is Hard with about three times the budget. Two things keep it from the table:
   - its slowest decisions take far longer than its 5 s reply time;
   - it has not been measured against the current Hard. Against the earlier Hard it gained +8.4k points per hand (its equity gain was not significant).
@@ -27,7 +28,7 @@ The plan was search‑centred: an exact open‑hand solver, sampling of hidden c
 | 2 | Belief sampler and PIMC card play | Done; Hard beat Normal |
 | 3 | Contract decisions by search and models | Search done, plus calibration. A learned contract‑value model was not built |
 | 4 | Match equity as the objective | Contract decisions use it. Card play stays in points: equity play lost |
-| 5 | Inference | Auction, trump and throw‑off weighting: no gain. Specials inference: promising, not promoted. A learned policy model was not built |
+| 5 | Inference | Auction, trump and throw‑off weighting: no gain. Specials inference: a small gain, promoted. A learned policy model was not built |
 | 6 | Beyond PIMC (αμ, recursive PIMC, ISMCTS) → Expert | Not started. Expert so far is only a bigger budget |
 | 7 | Learned evaluation, expert iteration | Not started. Python has no numpy or torch on the dev machine |
 | 8 | Production: worker pool, fixed delays, deadline, load test | Done for Hard, except a load test with many rooms |
@@ -79,11 +80,14 @@ The plan was search‑centred: an exact open‑hand solver, sampling of hidden c
       - `DIFFICULTY_LABELS` and `DIFFICULTY_ORDER` in `apps/client/src/format.ts`;
       - the level list in `docs/multiplayer.md` and `docs/architecture.md`;
       - the "no Expert" check in `apps/client/e2e/smoke.ts`.
-2. **Decide on specials inference.**
-   - Runs so far: +1.66% (629 boards, H1), −1.66% (407 boards, H0), and a fixed 1500‑board run at +0.82% [−0.03, 1.68] equity per board, +4.6k [0.1, 9.1] points per hand. That is probably a small real gain. All three ran under the old first‑lead rule with the old model, so confirm with a fixed run under the current rule (the model is already refitted) before promoting.
-   - To promote it, set `inferencePool: 6`, `auctionInference: false` and `specialsInference: true` in `HARD_DEFAULTS`.
-   - Refit the model (`scripts/specials-model.ts`) whenever card play changes, because it models the bots' own play.
-3. **Load test** the server with several rooms of Hard bots on the production host size. Watch the `bot answered after its deadline` warnings.
+2. **Load test** the server with several rooms of Hard bots on the production host size. Watch the `bot answered after its deadline` warnings.
+
+### Done since the pause: specials inference
+
+Promoted on 2026‑11‑16. Hard now sets `inferencePool: 6`, `auctionInference: false` and `specialsInference: true`.
+- Two fixed 1500‑board runs under the current rule (seeds `exp21`, `exp22`) gave +0.44% and +0.61% equity per board, pooled +0.53% [−0.12, 1.17] and **+4.1k [0.7, 7.6]** points per hand. With the earlier old‑rule fixed run: +0.63% [0.12, 1.15], +4.3k [1.6, 7.1] (`bot-ladder.md`, note 10).
+- Decision times stay inside the deadline (`bot-ladder.md`, Timing).
+- Refit the model (`scripts/specials-model.ts`) whenever card play or the rules change, because it models the bots' own play.
 
 ### Done since the pause: the first‑lead rule
 
@@ -127,7 +131,7 @@ In rough order of expected value:
 5. Promote by changing the default, and update the settings table in `bot-design.md` and the ladder in `bot-ladder.md`. Record rejected ideas too.
 
 **Seeds already used.** Use new ones, so that no change is selected and confirmed on the same boards:
-- experiment boards: `exp` and `exp1`–`exp20`;
+- experiment boards: `exp` and `exp1`–`exp22`;
 - calibration: `calibrate`, `calibrate2`, `calibrate4`, `calibrate5`;
 - other: `specials`, `bid-rollouts`, `bid-diagnostic`, `timing`, `timing-x`, `timing-hard`, `timing-lead`, `me-table-noise`.
 

@@ -63,9 +63,12 @@ export const HARD_DEFAULTS: HardOptions = {
   searchTrump: true,
   playUtility: 'linear',
   fastUtility: true,
-  auctionInference: true,
+  // Weight card play's worlds by the Tiger, Bull and Bear evidence only: a small, repeated
+  // gain on fixed fresh boards, where auction inference gave none (docs/bot-ladder.md, note 10).
+  inferencePool: 6,
+  auctionInference: false,
   throwOffs: false,
-  specialsInference: false,
+  specialsInference: true,
 };
 
 /**

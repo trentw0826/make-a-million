@@ -2,5 +2,5 @@
 A scratchpad for future fixes, features, and updates
 
 - [] Create a phone-friendly UI
-- [] Strong bots: fit Expert to its reply time and offer it; decide on specials inference; load-test Hard rooms. Details in `docs/bot-roadmap.md`
+- [] Strong bots: fit Expert to its reply time and offer it; load-test Hard rooms. Details in `docs/bot-roadmap.md`
 
