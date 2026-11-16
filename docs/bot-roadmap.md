@@ -8,7 +8,7 @@ Where the work on the strong bots stands, what was learned, what is left, and ho
   - it never raises over its partner's bid;
   - it bids on a calibrated estimate, which was the largest single gain.
 
-  It runs on server worker threads with a 1.5 s reply time.
+  It runs on server worker threads with a 1.5 s reply time. Its card‑play budget (2.5M nodes) keeps every decision under the 1.3 s deadline on the dev machine, at no measurable cost in strength.
 - **Expert is simulator‑only.** It is Hard with about three times the budget. Two things keep it from the table:
   - its slowest decisions take far longer than its 5 s reply time;
   - it has not been measured against the current Hard. Against the earlier Hard it gained +8.4k points per hand (its equity gain was not significant).
@@ -114,7 +114,7 @@ In rough order of expected value:
 5. Promote by changing the default, and update the settings table in `bot-design.md` and the ladder in `bot-ladder.md`. Record rejected ideas too.
 
 **Seeds already used.** Use new ones, so that no change is selected and confirmed on the same boards:
-- experiment boards: `exp` and `exp1`–`exp18`;
+- experiment boards: `exp` and `exp1`–`exp19`;
 - calibration: `calibrate`, `calibrate2`, `calibrate4`;
 - other: `specials`, `bid-rollouts`, `bid-diagnostic`, `timing`, `timing-x`, `timing-hard`.
 

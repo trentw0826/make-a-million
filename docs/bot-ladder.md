@@ -52,6 +52,7 @@ Every bot change is measured before it is kept. This page records the results, i
 | 2026‑11‑15 | `inferencePool=6,auctionInference=0,specialsInference=1` (weight worlds by passed‑up chances to play the Tiger, Bull or Bear; model fitted on separate hands) | 629 | **+1.66% [0.45, 2.88]** | **+12.0k [5.1, 18.8]** | 124 / 122 ms | **H1**: about 57% of the `peek` ceiling. A made 76.6%, B 71.7% |
 | 2026‑11‑15 | the same specials inference, **replication on fresh boards** | 407 | −1.66% [−3.32, 0.00] | −6.2k [−14.2, 1.7] | 182 / 177 ms | **H0**. Pooled with the first run: +0.5% [−0.5, 1.5], +4.2k [−1.0, 9.4]. Not promoted (note 9) |
 | 2026‑11‑15 | the same specials inference, **fixed 1500 fresh boards** (`SPRT=0`) | 1500 | +0.82% [−0.03, 1.68] | **+4.6k [0.1, 9.1]** | 169 / 166 ms | probably a small real gain; awaiting a decision (`bot-roadmap.md`). A made 72.9%, B 71.3% |
+| 2026‑11‑15 | `nodes=2500000,worldNodes=250000` (smaller card‑play budget, to fit the 1.3 s deadline; fixed 1200 fresh boards) | 1200 | −0.10% [−1.01, 0.81] | +0.4k [−4.6, 5.3] | 275 / 341 ms (machine shared) | no measurable loss; **adopted** as Hard's budget (see Timing) |
 
 Notes:
 1. A utility that depends on money already won ties each solved position to that money, so the cache is far less effective: exact six‑trick solves cost about 3× as many nodes (`packages/search/bench/utility.ts`), and 23% of them overflowed the per‑world node cap and dropped to depth‑limited estimates. A made fewer contracts (446 vs 457 of 600). Hence `fastUtility` (now the default for `playUtility=margin|equity`): solve in points, then apply the utility to each root move's value, which is exact once no Bull or Bear can change the money still out.
@@ -108,6 +109,8 @@ Hard, 120 hands, 4 workers in parallel (as the server's pool), idle 24‑core ma
 | play, 13–20 cards left | 821 | 65 | 31 | 154 | 425 | 985 |
 
 The slow decisions are the first exact solves, 6 tricks out, and the depth‑2 searches just before them. With the server's 1.3 s deadline (1.5 s reply time minus the 200 ms margin) about 0.6% of decisions would be cut short.
+
+With the smaller budget now in `HARD_DEFAULTS` (`nodes` 2.5M, `worldNodes` 250k), same hands and machine: p99 782 ms overall; card play with more than one legal card p99 965 ms; 21–28 cards left p99 1116 ms; the slowest of 7764 decisions 1218 ms. The deadline should essentially never fire on hardware like this; a slower or busier host needs its own `timing.ts` run.
 
 Expert on a loaded machine (24 hands, 3 workers, while other experiments ran): p99 7.5 s overall; discard 3.3 s mean, 9.6 s max; trump up to 7.5 s; play with 21–28 cards left p99 10.6 s.
 

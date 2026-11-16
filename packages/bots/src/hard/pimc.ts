@@ -34,13 +34,18 @@ export interface PimcOptions {
   readonly inferencePool: number;
 }
 
+/**
+ * Hard's card-play budget. 2.5M nodes (250k per world) keeps every decision under the server's
+ * 1.3 s deadline on the dev machine and played as well as 4M over 1200 boards
+ * (docs/bot-ladder.md).
+ */
 export const PIMC_DEFAULTS: PimcOptions = {
   worlds: 40,
-  nodes: 4_000_000,
+  nodes: 2_500_000,
   exactTricks: 6,
   exactWorlds: 40,
   depth: 2,
-  worldNodes: 400_000,
+  worldNodes: 250_000,
   inferencePool: 0,
 };
 

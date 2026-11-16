@@ -26,8 +26,8 @@ Every decision starts from the bot's `Observation` only (`bot-standards.md`). Th
 Perfect‑information Monte Carlo (`packages/bots/src/hard/pimc.ts`):
 
 1. **Belief.** List or sample arrangements of the unseen cards that are consistent with everything the seat has seen: hand sizes, voids (failing to follow trump also proves the player has no Tiger), Bull/Bear leads, and the discards the bidder knows (`packages/search/src/belief/sampler.ts`). Sampling is exact and uniform; when there are no more than `worlds` arrangements, all of them are listed instead.
-2. **Solve each world with all hands open** (`packages/search/src/play/solver.ts`). With `exactTricks` (6) or fewer tricks left the solve is exact. Earlier it searches `depth` (2) tricks and estimates the rest with a greedy playout (`packages/search/src/play/playout.ts`). A world that needs more than `worldNodes` nodes is retried one trick shallower, and every later world uses the shallower depth too, so all worlds are valued the same way.
-3. **Average** each legal card's value over the worlds and play the best. Ties go to the Normal bot's choice. The decision stops at `worlds` (40) worlds or `nodes` (4M) nodes, whichever comes first.
+2. **Solve each world with all hands open** (`packages/search/src/play/solver.ts`). With `exactTricks` (6) or fewer tricks left the solve is exact. Earlier it searches `depth` (2) tricks and estimates the rest with a greedy playout (`packages/search/src/play/playout.ts`). A world that needs more than `worldNodes` (250k) nodes is retried one trick shallower, and every later world uses the shallower depth too, so all worlds are valued the same way.
+3. **Average** each legal card's value over the worlds and play the best. Ties go to the Normal bot's choice. The decision stops at `worlds` (40) worlds or `nodes` (2.5M) nodes, whichever comes first.
 
 Card play maximises money won from here on minus the opponents' (`playUtility: 'linear'`). That keeps solved positions reusable across worlds; playing for match equity or for the hand's score lost (`bot-ladder.md`, notes 1 and 3).
 
@@ -71,10 +71,10 @@ Simulations pass no deadline, so their results do not depend on the machine.
 
 | Option | Hard | What it does | Evidence |
 |---|---|---|---|
-| `worlds` / `nodes` | 40 / 4M | Card‑play sample size and node budget | 3× budget: no gain |
+| `worlds` / `nodes` | 40 / 2.5M | Card‑play sample size and node budget | 3× budget: no gain; 2.5M plays as well as 4M and keeps every decision under the 1.3 s deadline |
 | `exactTricks` / `depth` | 6 / 2 | Exact solving from 6 tricks out; otherwise 2 tricks deep | depth 3: no gain |
 | `exactWorlds` | 40 | Worlds once solving is exact | 400: H0 |
-| `worldNodes` | 400k | Per‑world cap before going shallower | — |
+| `worldNodes` | 250k | Per‑world cap before going shallower | lowered with `nodes` |
 | `playUtility` | `linear` | What card play maximises | `equity`, `margin`: rejected |
 | `bidWorlds` | 160 | Deals for bid and misdeal decisions | — |
 | `screenWorlds`, `refineTop`, `refineWorlds`, `refineDepth` | 40, 4, 12, 1 | Discard/trump screening and re‑check | — |
