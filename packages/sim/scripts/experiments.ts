@@ -1,5 +1,5 @@
 // Runs a list of duplicate SPRT experiments in sequence and appends results as JSON lines.
-// Usage: tsx scripts/experiments.ts <out.jsonl> "A|B" ["A|B" ...]  (env BOARDS, DELTA, SEED, WORKERS, MIN_BOARDS)
+// Usage: tsx scripts/experiments.ts <out.jsonl> "A|B" ["A|B" ...]  (env BOARDS, DELTA, SEED, WORKERS, MIN_BOARDS, SPRT=0)
 import { appendFileSync } from 'node:fs';
 import { ME_TABLE } from '@mam/search';
 import { handStarts, makeBoards, runDuplicate } from '../src/duplicate';
@@ -35,7 +35,10 @@ for (const pair of pairs) {
     workers,
     // At least MIN_BOARDS boards: when a change touches few decisions, most boards score 0
     // and a small sample's variance estimate can stop the test before a rare big swing.
-    sprt: { mu0: 0, mu1: delta, minSamples: Number(process.env.MIN_BOARDS ?? 200) },
+    // SPRT=0 plays every board: estimates at an SPRT stop are biased toward its verdict.
+    ...(process.env.SPRT === '0'
+      ? {}
+      : { sprt: { mu0: 0, mu1: delta, minSamples: Number(process.env.MIN_BOARDS ?? 200) } }),
   });
   const line = {
     a,
