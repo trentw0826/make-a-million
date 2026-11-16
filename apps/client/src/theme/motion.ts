@@ -20,6 +20,14 @@ export const TRICK_HOLD_MS = 1100;
 export const TRICK_SWEEP_MS = 350;
 /** How long a played card takes to reach the felt. */
 export const TRICK_ENTER_MS = 320;
+/** After it touches down, how long a played card slides before friction stops it. */
+export const TRICK_SKID_MS = 300;
+/** How far it slides, in px. */
+export const TRICK_SKID_PX = 16;
+/** A thrown card's flight: it leaves the hand gently and is still moving when it lands. */
+export const FLIGHT_EASE = [0.35, 0.25, 0.65, 0.85] as const;
+/** Sliding to a stop: fast at first, then friction takes it to rest. */
+export const SKID_EASE = [0.15, 0.6, 0.35, 1] as const;
 
 /** How long a sum takes to count up on the hand result. */
 export const COUNT_UP_MS = 900;

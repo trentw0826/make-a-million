@@ -80,18 +80,20 @@ async function startServer(port: number): Promise<ChildProcess> {
  */
 const WATCH_CLASSES = `
   window.__seen = new Set();
-  window.__moves = { deal: [], trick: [], mine: [] };
+  window.__moves = { deal: [], trick: [], mine: [], skid: [] };
   const tracked = new WeakSet();
   new MutationObserver(function () {
     for (const name of ['trick-enter', 'trick-sweep', 'card-winning']) {
       if (document.querySelector('.' + name)) window.__seen.add(name);
     }
-    for (const el of document.querySelectorAll('.hand .card-3d, .trick-enter')) {
+    for (const el of document.querySelectorAll('.hand .card-3d, .trick-enter, .trick-skid')) {
       if (tracked.has(el)) continue;
       tracked.add(el);
-      const kind = el.classList.contains('card-3d')
-        ? 'deal'
-        : el.closest('.trick-mine') ? 'mine' : 'trick';
+      const kind = el.classList.contains('trick-skid')
+        ? 'skid'
+        : el.classList.contains('card-3d')
+          ? 'deal'
+          : el.closest('.trick-mine') ? 'mine' : 'trick';
       requestAnimationFrame(function () {
         const first = getComputedStyle(el).transform;
         setTimeout(function () {
@@ -111,7 +113,7 @@ const cardMoves = (page: Page) =>
     () =>
       (
         window as unknown as {
-          __moves: { deal: boolean[]; trick: boolean[]; mine: boolean[] };
+          __moves: { deal: boolean[]; trick: boolean[]; mine: boolean[]; skid: boolean[] };
         }
       ).__moves,
   );
@@ -312,6 +314,7 @@ async function fullHand(browser: Browser, base: string): Promise<void> {
   check(moves.deal.some(Boolean), 'the deal flies cards into the hand');
   check(moves.trick.some(Boolean), "the others' cards fly onto the felt");
   check(moves.mine.some(Boolean), 'your card flies from your hand to the felt');
+  check(moves.skid.some(Boolean), 'played cards slide to a stop on the felt');
 
   check(await result.getByRole('timer').isVisible(), 'the result counts down to the next hand');
   await until(
@@ -374,7 +377,7 @@ async function reducedMotion(browser: Browser, base: string): Promise<void> {
     'reduced motion: cards are not dealt in',
   );
   check(
-    moves.trick.length > 0 && ![...moves.trick, ...moves.mine].some(Boolean),
+    moves.trick.length > 0 && ![...moves.trick, ...moves.mine, ...moves.skid].some(Boolean),
     'reduced motion: trick cards do not slide',
   );
   await page.getByRole('button', { name: 'How to play', exact: true }).click();

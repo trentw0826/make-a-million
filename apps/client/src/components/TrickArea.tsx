@@ -13,7 +13,14 @@ import { nameOf, SUIT_NAMES } from '../format';
 import { trickSuit } from '../hints';
 import { type Spot, spotOf, TOWARD } from '../spots';
 import type { CompletedTrick } from '../state';
-import { EASE_OUT, TRICK_ENTER_MS, TRICK_SWEEP_MS } from '../theme/motion';
+import {
+  FLIGHT_EASE,
+  SKID_EASE,
+  TRICK_ENTER_MS,
+  TRICK_SKID_MS,
+  TRICK_SKID_PX,
+  TRICK_SWEEP_MS,
+} from '../theme/motion';
 import { CardFace } from './CardFace';
 
 /** The id shared by a card in the hand and on the felt, so Motion flies it from one to the other. */
@@ -39,7 +46,7 @@ function target(from: Spot, sweepTo: Spot | null, cardId: number): TargetAndTran
       rotateY: 0,
       scale: 1,
       opacity: 1,
-      transition: { duration: TRICK_ENTER_MS / 1000, ease: EASE_OUT },
+      transition: { duration: TRICK_ENTER_MS / 1000, ease: FLIGHT_EASE },
     };
   }
   // Across to the winner's spot, then on toward their seat, turning face down.
@@ -53,6 +60,29 @@ function target(from: Spot, sweepTo: Spot | null, cardId: number): TargetAndTran
     scale: 0.6,
     opacity: 0,
     transition: { duration: TRICK_SWEEP_MS / 1000, ease: 'easeIn' },
+  };
+}
+
+/**
+ * The last of a card's arrival: it touches down a little short of its spot, still moving,
+ * and slides the rest of the way while friction slows it, twisting slightly as it goes.
+ * Runs on an inner layer, on top of the flight (the outer layer, or the shared layout flight
+ * for your own card): the offset grows from nothing during the flight, so the card leaves
+ * the hand where it was, and is spent by the end of the slide.
+ */
+function skid(from: Spot, cardId: number): TargetAndTransition {
+  const [px, py] = TOWARD[from];
+  const twist = cardId % 2 === 0 ? 3 : -3;
+  const landed = TRICK_ENTER_MS / (TRICK_ENTER_MS + TRICK_SKID_MS);
+  return {
+    x: [0, px * TRICK_SKID_PX, 0],
+    y: [0, py * TRICK_SKID_PX, 0],
+    rotate: [0, twist, 0],
+    transition: {
+      duration: (TRICK_ENTER_MS + TRICK_SKID_MS) / 1000,
+      times: [0, landed, 1],
+      ease: ['linear', SKID_EASE],
+    },
   };
 }
 
@@ -112,10 +142,15 @@ export function TrickArea({ me, room, view, plays, completed }: Props) {
             <motion.div
               className={`trick-motion ${sweepTo ? `trick-sweep trick-to-${sweepTo}` : 'trick-enter'}`}
               {...(mine ? { layoutId: cardLayoutId(play.cardId) } : {})}
+              transition={{ layout: { duration: TRICK_ENTER_MS / 1000, ease: FLIGHT_EASE } }}
               initial={initial}
               animate={target(from, sweepTo, play.cardId)}
             >
-              <div className="card-3d">
+              <motion.div
+                className="trick-skid card-3d"
+                initial={still ? false : { x: 0, y: 0, rotate: 0 }}
+                animate={still ? { x: 0, y: 0, rotate: 0 } : skid(from, play.cardId)}
+              >
                 <CardFace
                   id={play.cardId}
                   size="small"
@@ -125,7 +160,7 @@ export function TrickArea({ me, room, view, plays, completed }: Props) {
                 <div className="card-3d-back" aria-hidden="true">
                   <CardBackArt />
                 </div>
-              </div>
+              </motion.div>
             </motion.div>
           </div>
         );
