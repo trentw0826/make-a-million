@@ -1,7 +1,8 @@
 /**
  * Browser smoke test. Starts the built server, then in headless Chromium plays one hand
- * against three bots, checking the table's signals, the hand order and the motion along the
- * way; a second pass checks that reduced motion switches the animations off.
+ * against three bots (one Hard, two Normal), checking the table's signals, the hand order
+ * and the motion along the way; a second pass checks that reduced motion switches the
+ * animations off.
  *
  *   pnpm e2e                         # builds first
  *   CHROMIUM_PATH=/path/to/chrome pnpm e2e
@@ -87,18 +88,29 @@ const WATCH_CLASSES = `
 const seenClasses = (page: Page) =>
   page.evaluate(() => [...(window as unknown as { __seen: Set<string> }).__seen]);
 
-/** Home → room → seat 1 → three Normal bots → start. */
+/**
+ * Home → room → seat 1 → a Hard bot and two Normal bots → start. The Hard bot searches on
+ * a server worker thread, so this also checks that the built server runs one.
+ */
 async function openTable(page: Page, base: string): Promise<void> {
   await page.goto(base);
   await page.getByLabel('Your name').fill('Tester');
   await page.getByRole('button', { name: 'Create a room' }).click();
   await page.getByRole('button', { name: 'Sit here' }).first().click();
-  const addBot = page.getByRole('button', { name: '+ Bot · Normal' });
-  for (let left = 3; left > 0; left--) {
-    await until(async () => (await addBot.count()) === left, `${left} empty seats`);
-    await addBot.first().click();
+  const addHard = page.getByRole('button', { name: '+ Bot · Hard' });
+  const addNormal = page.getByRole('button', { name: '+ Bot · Normal' });
+  await until(async () => (await addHard.count()) === 3, '3 empty seats');
+  check(
+    (await page.getByRole('button', { name: '+ Bot · Expert' }).count()) === 0,
+    'the lobby offers no Expert bot yet',
+  );
+  await addHard.first().click();
+  for (let left = 2; left > 0; left--) {
+    await until(async () => (await addNormal.count()) === left, `${left} empty seats`);
+    await addNormal.first().click();
   }
-  await until(async () => (await addBot.count()) === 0, 'a full table');
+  await until(async () => (await addNormal.count()) === 0, 'a full table');
+  check((await page.getByText(/Bot \d · Hard/).count()) === 1, 'a seat shows "Bot · Hard"');
   await page.getByRole('button', { name: 'Start game' }).click();
   await page.locator('.felt').waitFor();
 }

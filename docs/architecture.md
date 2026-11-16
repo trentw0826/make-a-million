@@ -9,13 +9,14 @@ A pnpm monorepo, TypeScript throughout.
 | Package | Name | Role |
 |---|---|---|
 | `packages/engine` | `@mam/engine` | Pure rules engine. No I/O, no timers, no network. |
+| `packages/search` | `@mam/search` | Search machinery for the strong bots: a fast mutable play state, the open‑hand solver, the belief sampler, the match‑equity table. |
 | `packages/bots` | `@mam/bots` | `BotStrategy` interface and the strategies behind each difficulty. |
 | `packages/sim` | `@mam/sim` | Command‑line simulator: tournaments, invariant checks, replays. |
 | `packages/protocol` | `@mam/protocol` | Message schemas shared by client and server (validated with zod). |
 | `apps/server` | `@mam/server` | Node WebSocket server: rooms, sessions, bot runner, static hosting of the client. |
 | `apps/client` | `@mam/client` | React + Vite browser client. |
 
-Dependency direction is strictly downward: `client` → `protocol` → `engine`; `server` → `protocol`, `bots`, `engine`; `bots` → `engine`; `sim` → `bots`, `engine`. The engine depends on nothing.
+Dependency direction is strictly downward: `client` → `protocol` → `engine`; `server` → `protocol`, `bots`, `engine`; `bots` → `search` → `engine`; `sim` → `bots`, `search`, `engine`. The engine depends on nothing.
 
 ## The engine
 
@@ -70,7 +71,7 @@ Hidden information is enforced by projection, never by flags.
 ## Bots
 
 - One interface: `decide(observation, rng) → action`. Strategies are registered by difficulty id and can be swapped per seat.
-- Current strategies: `easy` (random legal play, never raises), `normal` (heuristic evaluation, bidding, discarding and play), and `hard` / `expert` (search: sampled deals solved with all hands open, plus simulation for contract decisions; see `bot-design.md`). Hard and Expert run on server worker threads.
+- Current strategies: `easy` (random legal play, never raises), `normal` (heuristic evaluation, bidding, discarding and play) and `hard` (search: sampled deals solved with all hands open, plus simulation for contract decisions; see `bot-design.md`). Hard runs on server worker threads. An `expert` strategy (Hard with about three times the budget) exists in `@mam/bots` and the simulator but is not offered at the table yet; see `bot-roadmap.md`.
 - The think delay is applied by the server, not the strategy, so timing carries no information.
 
 ## Server

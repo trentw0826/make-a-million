@@ -27,10 +27,9 @@ export const DIFFICULTY_LABELS: Record<Difficulty, string> = {
   easy: 'Easy',
   normal: 'Normal',
   hard: 'Hard',
-  expert: 'Expert',
 };
 
-export const DIFFICULTY_ORDER: readonly Difficulty[] = ['easy', 'normal', 'hard', 'expert'];
+export const DIFFICULTY_ORDER: readonly Difficulty[] = ['easy', 'normal', 'hard'];
 
 export function seatLabel(seat: SeatView): string {
   if (!seat) return 'Empty seat';

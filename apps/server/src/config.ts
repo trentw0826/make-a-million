@@ -25,7 +25,7 @@ export interface ServerConfig {
   readonly handResultMs: number;
   /** Strategy used to play a human's seat while they are away. */
   readonly takeoverDifficulty: Difficulty;
-  /** Worker threads for searching bots (Hard, Expert). 0 runs them on the main thread. */
+  /** Worker threads for searching bots (Hard). 0 runs them on the main thread. */
   readonly botWorkers: number;
   /** The one global ruleset (see docs/architecture.md). */
   readonly ruleset: Ruleset;
@@ -39,7 +39,7 @@ export const DEFAULT_CONFIG: ServerConfig = {
   port: Number(env.PORT ?? 3000),
   graceMs: Number(env.GRACE_MS ?? 60_000),
   roomIdleMs: Number(env.ROOM_IDLE_MS ?? 10 * 60_000),
-  botDelayMs: { easy: 700, normal: 900, hard: 1500, expert: 5000 },
+  botDelayMs: { easy: 700, normal: 900, hard: 1500 },
   botDeadlineMarginMs: 200,
   botContinueDelayMs: 4_000,
   handResultMs: 20_000,
@@ -54,7 +54,7 @@ export function testConfig(overrides: Partial<ServerConfig> = {}): ServerConfig 
   return {
     ...DEFAULT_CONFIG,
     port: 0,
-    botDelayMs: { easy: 1, normal: 1, hard: 1, expert: 1 },
+    botDelayMs: { easy: 1, normal: 1, hard: 1 },
     botWorkers: 0,
     botContinueDelayMs: 1,
     ...overrides,

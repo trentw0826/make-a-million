@@ -57,7 +57,7 @@ docker run -p 3000:3000 make-a-million
 ```
 
 Environment: `PORT` (3000), `GRACE_MS` (60000), `ROOM_IDLE_MS` (600000), `STATIC_DIR`,
-`BOT_WORKERS` (worker threads for Hard/Expert bots; default min(4, cores − 1)).
+`BOT_WORKERS` (worker threads for Hard bots; default min(4, cores − 1)).
 Any host that supports long‑lived WebSocket connections will do.
 
 ## Layout
@@ -65,7 +65,7 @@ Any host that supports long‑lived WebSocket connections will do.
 ```
 packages/engine    pure rules engine (deterministic, no I/O)
 packages/search    match equity, fast play state, open-hand solver, belief sampling
-packages/bots      BotStrategy interface + easy/normal/hard/expert strategies
+packages/bots      BotStrategy interface + easy/normal/hard strategies (+ expert, simulator only)
 packages/sim       CLI: tournaments, invariant sweeps, benchmarks, replays
 packages/protocol  client/server message schemas (zod)
 apps/server        Node + ws: rooms, sessions, bot runner, static hosting
