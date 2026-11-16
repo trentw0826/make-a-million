@@ -9,7 +9,7 @@ Where the work on the strong bots stands, what was learned, what is left, and ho
   - it bids on a calibrated estimate, which was the largest single gain;
   - its card play weights the sampled deals by the specials evidence (who passed up a chance to play the Tiger, Bull or Bear): +4.3k points per hand.
 
-  Under the current rules, the player to the bidder's left leading the first trick, it beats Normal by +15.0% per board (+73k points per hand).
+  Under the current rules (the player to the bidder's left leads the first trick) and defaults, it beats Normal by +12.7% [11.0, 14.4] match equity per board and +66k points per hand, over 800 fixed boards (`bot-ladder.md`). An earlier 200‑board SPRT run had shown +15.0%, an estimate biased upward by the early stop.
 
   It runs on server worker threads with a 1.5 s reply time. Its card‑play budget (2.5M nodes) keeps decisions under the 1.3 s deadline on the dev machine (p99 0.7–0.8 s; the slowest of about 7,800 took 1.1–1.3 s), at no measurable cost in strength.
 - **Expert is simulator‑only.** It is Hard with about three times the budget. Two things keep it from the table:
@@ -97,7 +97,7 @@ Promoted on 2026‑11‑16. Hard now sets `inferencePool: 6`, `auctionInference:
 - **Bidding calibration:** refitted and unchanged (`bot-ladder.md`, Calibration), so the defaults stay.
 - **Match‑equity table:** kept; the rule's effect is smaller than the table's sampling noise (What we learned, above).
 - **Specials model:** refitted (1200 hands, 9642 opportunities). It is off by default, so play did not change.
-- **Checks:** Hard beats Normal by +15.0% per board under the new rule (`bot-ladder.md`), and its decision times barely changed (p99 792 ms, `bot-ladder.md`, Timing).
+- **Checks:** Hard beat Normal by +15.0% per board under the new rule in a 200‑board SPRT run (`bot-ladder.md`; a fixed 800‑board run later gave +12.7%), and its decision times barely changed (p99 792 ms, `bot-ladder.md`, Timing).
 
 ### Research directions (bigger, uncertain)
 
@@ -131,7 +131,7 @@ In rough order of expected value:
 5. Promote by changing the default, and update the settings table in `bot-design.md` and the ladder in `bot-ladder.md`. Record rejected ideas too.
 
 **Seeds already used.** Use new ones, so that no change is selected and confirmed on the same boards:
-- experiment boards: `exp` and `exp1`–`exp22`;
+- experiment boards: `exp` and `exp1`–`exp23`;
 - calibration: `calibrate`, `calibrate2`, `calibrate4`, `calibrate5`;
 - other: `specials`, `bid-rollouts`, `bid-diagnostic`, `timing`, `timing-x`, `timing-hard`, `timing-lead`, `me-table-noise`.
 
@@ -140,6 +140,7 @@ In rough order of expected value:
 - Expert costs about 3.7× Hard.
 - A 1000‑hand calibration: about 13 minutes on 22 workers (300 hands: about 15 minutes on 4).
 - Hard vs Normal, stopping at 200 boards: about 6 minutes on 12 workers.
+- Hard vs Normal over 800 fixed boards: about 12 minutes on 22 workers.
 - The match‑equity table (20,000 Normal games): about 2.5 minutes on all cores.
 
 **Simulator specs.**
