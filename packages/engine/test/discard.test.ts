@@ -134,7 +134,7 @@ describe('discarding after picking up the widow', () => {
     });
   });
 
-  it('is followed by the bidder naming trump, after which the bidder leads', () => {
+  it('is followed by the bidder naming trump, after which the player to their left leads', () => {
     const state = act(discardingState(1, RICH_IN_NUMBERS), 1, {
       type: 'discard',
       cardIds: cards('R9', 'R8', 'B1'),
@@ -150,7 +150,9 @@ describe('discarding after picking up the widow', () => {
     const playing = act(state, 1, { type: 'nameTrump', suit: 'green' });
     expect(playing.hand?.trump).toBe('green');
     expect(playing.hand?.phase).toBe('playing');
-    expect(playing.hand?.turn).toBe(1);
-    expect(playing.hand?.currentTrick).toEqual({ leader: 1, plays: [], suit: null, winner: null });
+    expect(playing.hand?.turn).toBe(2);
+    expect(playing.hand?.currentTrick).toEqual({ leader: 2, plays: [], suit: null, winner: null });
+    expect(legalMoves(playing, 1)).toEqual({ kind: 'none' });
+    expect(legalMoves(playing, 2)).toMatchObject({ kind: 'play' });
   });
 });

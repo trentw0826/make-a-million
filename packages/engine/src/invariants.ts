@@ -1,6 +1,7 @@
 import { type CardId, DECK_SIZE, sortHand, sumMoney, TOTAL_MONEY } from './cards';
 import { SEATS } from './seats';
 import type { GameState } from './state';
+import { openingLeader } from './tricks';
 
 /** Every card that must be accounted for in the current hand, exactly once each. */
 export function allCardsInPlay(state: GameState): CardId[] {
@@ -53,6 +54,11 @@ export function assertInvariants(state: GameState): void {
       check(hand.currentTrick !== null, 'a trick must be in progress during play');
       check(hand.discards.length === 3, 'exactly three cards must be discarded');
       check(hand.turn !== null, 'someone must have the turn during play');
+      const firstLeader = hand.tricks[0]?.leader ?? hand.currentTrick?.leader;
+      check(
+        hand.contract === null || firstLeader === openingLeader(hand.contract.bidder),
+        'the player to the left of the bidder must lead the first trick',
+      );
     }
 
     if (hand.result) {
@@ -71,6 +77,11 @@ export function assertInvariants(state: GameState): void {
     check(
       r.scoresAfter[0] === expected[0] && r.scoresAfter[1] === expected[1],
       `score sheet is inconsistent at hand ${r.handNumber}`,
+    );
+    const firstLeader = r.tricks[0]?.leader;
+    check(
+      firstLeader === undefined || firstLeader === openingLeader(r.bidder),
+      `the player to the left of the bidder must lead the first trick of hand ${r.handNumber}`,
     );
   }
   check(

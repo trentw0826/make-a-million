@@ -1,14 +1,26 @@
 import {
+  applyActionOrThrow,
   cardById,
   createGame,
+  type GameState,
   isNumberCard,
+  legalMoves,
+  observe,
   Rng,
   requiredNumberDiscards,
+  SEATS,
   SUITS,
 } from '@mam/engine';
+import { greedyPlayout, playStateFromGame } from '@mam/search';
 import { describe, expect, it } from 'vitest';
 import { calibrated } from '../src/contract/index';
-import { combinations, discardCandidates, playoutDeclare } from '../src/contract/simulate';
+import {
+  combinations,
+  discardCandidates,
+  playoutDeclare,
+  playoutWith,
+} from '../src/contract/simulate';
+import { HeuristicBot } from '../src/heuristic/index';
 
 describe('contract simulation', () => {
   it('enumerates combinations', () => {
@@ -51,6 +63,26 @@ describe('contract simulation', () => {
     // Up to $400k plus a Bull doubling, minus anything discarded.
     expect(c0 + c1).toBeGreaterThan(0);
     expect(c0 + c1).toBeLessThanOrEqual(520);
+  });
+
+  it('plays out from the same opening lead as the engine', () => {
+    const normal = new HeuristicBot();
+    for (let g = 0; g < 20; g++) {
+      let state: GameState = createGame({ seed: `opening-${g}` });
+      const rng = Rng.fromSeed(`opening-${g}`);
+      while (state.hand?.phase !== 'playing') {
+        const seat = SEATS.find((s) => legalMoves(state, s).kind !== 'none');
+        if (seat === undefined) throw new Error('stuck');
+        state = applyActionOrThrow(state, seat, normal.decide(observe(state, seat), rng)).state;
+      }
+      const hand = state.hand;
+      const bidder = hand.contract?.bidder;
+      if (bidder === undefined || hand.trump === null) throw new Error('no contract');
+      const engine = { d0: 0, d1: 0 };
+      greedyPlayout(playStateFromGame(state), engine);
+      const simulated = playoutWith(hand.hands, bidder, hand.hands[bidder], hand.trump);
+      expect(simulated).toEqual([engine.d0, engine.d1]);
+    }
   });
 
   it('calibrates a playout estimate before applying the utility', () => {

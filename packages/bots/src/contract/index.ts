@@ -2,6 +2,7 @@ import {
   type Action,
   type CardId,
   type Observation,
+  openingLeader,
   type Rng,
   type Seat,
   SUITS,
@@ -370,7 +371,7 @@ function bestCandidate(
         trump: t.c.trump,
         tricks: [],
         currentTrick: null,
-        turn: obs.seat,
+        turn: openingLeader(obs.seat),
       });
       if (solver.nodes >= opts.refineNodes) break refine;
       solver.depthTricks = opts.refineDepth;

@@ -23,6 +23,7 @@ import { Rng } from '../src/rng';
 import { DEFAULT_RULESET, type Ruleset } from '../src/ruleset';
 import { SEATS, type Seat } from '../src/seats';
 import type { Contract, GameState, HandState } from '../src/state';
+import { openingLeader } from '../src/tricks';
 
 // ---------------------------------------------------------------------------
 // Card notation: "R40k", "Y11", "B1", "G5k", "T" (Tiger), "BU" (Bull), "BE" (Bear).
@@ -70,12 +71,20 @@ interface GameOverrides {
   readonly handHistory?: GameState['handHistory'];
 }
 
-/** A game in the 'playing' phase with the given hands, trump and leader. */
+/**
+ * A game in the 'playing' phase with the given hands, trump and leader. Unless both are
+ * given, the bidder and leader are those of an opening lead: the leader sits to the bidder's left.
+ */
 export function playingState(hand: HandOverrides, game: GameOverrides = {}): GameState {
   const dealer = hand.dealer ?? 0;
   const contract =
-    hand.contract === undefined ? { bidder: hand.leader ?? 1, amount: 175_000 } : hand.contract;
-  const leader = hand.leader ?? contract?.bidder ?? 1;
+    hand.contract === undefined
+      ? {
+          bidder: hand.leader === undefined ? 1 : (((hand.leader + 3) % 4) as Seat),
+          amount: 175_000,
+        }
+      : hand.contract;
+  const leader = hand.leader ?? (contract ? openingLeader(contract.bidder) : 1);
   const phase = hand.phase ?? 'playing';
   const handState: HandState = {
     handNumber: hand.handNumber ?? 1,

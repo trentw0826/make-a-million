@@ -1,6 +1,11 @@
 import { type Card, cardById, isTrump, moneyValue, rankIndex, type Suit } from './cards';
-import type { Seat } from './seats';
+import { nextSeat, type Seat } from './seats';
 import type { Trick, TrickModifier, TrickPlay, TrickSummary } from './state';
+
+/** Who leads the first trick of a hand: the player to the left of the highest bidder. */
+export function openingLeader(bidder: Seat): Seat {
+  return nextSeat(bidder);
+}
 
 /**
  * How strongly a card competes in a trick of the given suit: the Tiger above everything,
