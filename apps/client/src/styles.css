@@ -1,25 +1,5 @@
 :root {
-  --felt: #1f5f3b;
-  --felt-dark: #184a2e;
-  --paper: #fbf7ee;
-  --ink: #1b1b1b;
-  --muted: #6b6b6b;
-  --line: #d9d2c3;
-  --accent: #b8860b;
-  --red: #c62828;
-  --yellow: #b07d00;
-  --black: #1b1b1b;
-  --green: #2e7d32;
-  --tiger: #e65100;
-  --bull: #5d4037;
-  --bear: #37474f;
-  --danger: #b00020;
-  --topbar-h: 48px;
-  --team-us: #e0a526;
-  --team-them: #6fa8dc;
-  --good: #2e7d32;
-  --bar: #123822;
-  font-family: Georgia, "Times New Roman", serif;
+  font-family: var(--font-body);
   color: var(--ink);
 }
 
@@ -36,7 +16,7 @@ body {
 button {
   font: inherit;
   padding: 6px 12px;
-  border-radius: 6px;
+  border-radius: var(--radius-m);
   border: 1px solid var(--line);
   background: var(--paper);
   color: var(--ink);
@@ -53,7 +33,7 @@ button[aria-disabled="true"] {
 button.primary {
   background: var(--accent);
   border-color: var(--accent);
-  color: white;
+  color: var(--on-accent);
   font-weight: bold;
 }
 button.ghost {
@@ -77,7 +57,7 @@ button.link {
   text-decoration: underline;
 }
 kbd {
-  font-family: ui-monospace, monospace;
+  font-family: var(--font-mono);
   font-size: 0.85em;
   padding: 1px 6px;
   border: 1px solid var(--line);
@@ -89,13 +69,13 @@ input {
   font: inherit;
   padding: 8px 10px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: var(--radius-m);
   width: 100%;
 }
 .code-input {
   letter-spacing: 0.3em;
   text-transform: uppercase;
-  font-family: ui-monospace, monospace;
+  font-family: var(--font-mono);
 }
 .muted {
   color: var(--muted);
@@ -112,17 +92,17 @@ input {
   display: inline-block;
   margin-left: 6px;
   padding: 0 6px;
-  border-radius: 10px;
+  border-radius: var(--radius-l);
   font-size: 0.75em;
   background: rgba(0, 0, 0, 0.12);
 }
 .tag.warn {
-  background: #ffe0b2;
-  color: #7a3e00;
+  background: var(--warn-bg);
+  color: var(--warn-ink);
 }
 .panel {
   background: var(--paper);
-  border-radius: 10px;
+  border-radius: var(--radius-l);
   padding: 16px;
 }
 .neg {
@@ -173,7 +153,7 @@ input {
   gap: 10px;
 }
 .room-code {
-  font-family: ui-monospace, monospace;
+  font-family: var(--font-mono);
   letter-spacing: 0.15em;
 }
 .topbar-actions {
@@ -191,8 +171,8 @@ input {
   padding: 6px 16px;
   text-align: center;
   font-size: 0.9em;
-  background: #ffe0b2;
-  color: #7a3e00;
+  background: var(--warn-bg);
+  color: var(--warn-ink);
 }
 
 /* Home ------------------------------------------------------------------- */
@@ -212,7 +192,7 @@ input {
   gap: 10px;
 }
 .home .muted {
-  color: rgba(255, 255, 255, 0.75);
+  color: var(--on-felt-muted);
 }
 .home-form label {
   display: grid;
@@ -228,7 +208,7 @@ input {
   color: var(--paper);
 }
 .lobby .muted {
-  color: rgba(255, 255, 255, 0.75);
+  color: var(--on-felt-muted);
 }
 .seats-grid {
   display: grid;
@@ -239,7 +219,7 @@ input {
 .seat-card {
   background: var(--paper);
   color: var(--ink);
-  border-radius: 10px;
+  border-radius: var(--radius-l);
   padding: 14px;
   display: grid;
   gap: 8px;
@@ -306,7 +286,7 @@ input {
 }
 .total {
   padding: 6px 8px;
-  border-radius: 6px;
+  border-radius: var(--radius-m);
   background: rgba(0, 0, 0, 0.04);
   border-top: 3px solid var(--team-them);
 }
@@ -410,12 +390,12 @@ input {
 }
 
 .felt .muted {
-  color: rgba(255, 255, 255, 0.75);
+  color: var(--on-felt-muted);
 }
 .felt {
   background: radial-gradient(
     ellipse at center,
-    #2a7a4c 0%,
+    var(--felt-light) 0%,
     var(--felt) 60%,
     var(--felt-dark) 100%
   );
@@ -434,7 +414,7 @@ input {
 }
 .seat-panel {
   padding: 10px;
-  border-radius: 10px;
+  border-radius: var(--radius-l);
   border: 2px solid transparent;
   text-align: center;
 }
@@ -470,7 +450,7 @@ input {
 .seat-chip {
   margin-left: 8px;
   padding: 1px 8px;
-  border-radius: 10px;
+  border-radius: var(--radius-l);
   font-size: 1.05em;
   font-weight: bold;
   background: var(--paper);
@@ -478,7 +458,7 @@ input {
 }
 .chip-high {
   background: var(--accent);
-  color: white;
+  color: var(--on-accent);
 }
 .chip-pass {
   background: rgba(255, 255, 255, 0.2);
@@ -486,8 +466,8 @@ input {
   font-weight: normal;
 }
 .chip-ready {
-  background: #c8e6c9;
-  color: #1b5e20;
+  background: var(--good-chip);
+  color: var(--good-ink);
   font-weight: normal;
 }
 .contract-bar {
@@ -499,7 +479,7 @@ input {
   gap: 6px 22px;
   min-height: 34px;
   padding: 4px 14px;
-  border-radius: 10px;
+  border-radius: var(--radius-l);
   background: rgba(0, 0, 0, 0.22);
   font-size: 0.95em;
 }
@@ -508,7 +488,7 @@ input {
 }
 .suit-chip {
   padding: 1px 10px;
-  border-radius: 10px;
+  border-radius: var(--radius-l);
   background: var(--paper);
 }
 
@@ -521,11 +501,11 @@ input {
 .card-back {
   position: absolute;
   top: 0;
-  width: 30px;
-  height: 42px;
-  border-radius: 4px;
-  background: repeating-linear-gradient(45deg, #7b1e1e 0 4px, #5a1414 4px 8px);
-  border: 1px solid #f3e9d2;
+  width: var(--back-w);
+  height: var(--back-h);
+  border-radius: var(--radius-s);
+  background: repeating-linear-gradient(45deg, var(--back) 0 4px, var(--back-dark) 4px 8px);
+  border: 1px solid var(--back-trim);
 }
 .card-back-count {
   position: absolute;
@@ -597,9 +577,9 @@ input {
 }
 .turn-pill {
   padding: 2px 10px;
-  border-radius: 10px;
+  border-radius: var(--radius-l);
   background: var(--accent);
-  color: white;
+  color: var(--on-accent);
   font-weight: bold;
   font-size: 0.9em;
 }
@@ -610,7 +590,7 @@ input {
   align-items: center;
   background: rgba(0, 0, 0, 0.2);
   padding: 10px 14px;
-  border-radius: 10px;
+  border-radius: var(--radius-l);
   min-height: 48px;
 }
 .bid-stepper {
@@ -647,17 +627,17 @@ input {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  width: 60px;
-  height: 90px;
-  border-radius: 7px;
-  background: white;
-  border: 1px solid #c9c2b2;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  width: var(--card-w);
+  height: var(--card-h);
+  border-radius: var(--radius-card);
+  background: var(--card-paper);
+  border: 1px solid var(--card-edge);
+  box-shadow: var(--shadow-1);
   padding: 4px;
   cursor: default;
   transition:
-    transform 0.12s,
-    box-shadow 0.2s;
+    transform var(--dur-fast),
+    box-shadow var(--dur-base);
 }
 button.card {
   cursor: pointer;
@@ -676,8 +656,8 @@ button.card:hover:not(:disabled, [aria-disabled="true"]) {
   margin-top: 2px;
 }
 .card-small {
-  width: 48px;
-  height: 68px;
+  width: var(--card-small-w);
+  height: var(--card-small-h);
 }
 .card-small .card-label {
   font-size: 1em;
@@ -719,7 +699,7 @@ button.card-disabled {
   text-transform: uppercase;
   letter-spacing: 0.05em;
   background: var(--accent);
-  color: white;
+  color: var(--on-accent);
 }
 .card-fresh {
   border-color: var(--accent);
@@ -811,7 +791,7 @@ button.modal-close {
   padding-left: 20px;
 }
 .rank-order {
-  font-family: ui-monospace, monospace;
+  font-family: var(--font-mono);
   font-size: 0.9em;
 }
 .keys {
@@ -835,11 +815,11 @@ button.modal-close {
   font-size: 1.15em;
 }
 .result-banner.good {
-  background: #e8f5e9;
-  color: #1b5e20;
+  background: var(--good-bg);
+  color: var(--good-ink);
 }
 .result-banner.bad {
-  background: #fdecea;
+  background: var(--bad-bg);
   color: var(--danger);
 }
 .result-team h3 .muted {
@@ -924,13 +904,13 @@ button.modal-close {
   color: var(--muted);
 }
 .ready-list .is-ready {
-  background: #e8f5e9;
-  border-color: #a5d6a7;
-  color: #1b5e20;
+  background: var(--good-bg);
+  border-color: var(--good-line);
+  color: var(--good-ink);
 }
 .ready-list .is-ready .ready-mark {
   background: var(--good);
-  color: white;
+  color: var(--on-accent);
 }
 .ready-list .is-reading {
   color: var(--muted);
@@ -995,7 +975,7 @@ button.modal-close {
   border-radius: 8px;
   background: var(--paper);
   color: var(--ink);
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+  box-shadow: var(--shadow-2);
   z-index: 20;
 }
 .toast-error {
@@ -1049,7 +1029,7 @@ button.modal-close {
   }
 }
 .hand-slot {
-  animation: deal-in 360ms cubic-bezier(0.2, 0.7, 0.3, 1) both;
+  animation: deal-in 360ms var(--ease-out) both;
   animation-delay: calc(var(--i, 0) * 40ms);
 }
 
@@ -1061,7 +1041,7 @@ button.modal-close {
   }
 }
 .trick-enter {
-  animation: trick-enter 260ms cubic-bezier(0.2, 0.7, 0.3, 1) both;
+  animation: trick-enter 260ms var(--ease-out) both;
 }
 
 /* A taken trick slides to its winner (--dx/--dy); lasts TRICK_SWEEP_MS in Table.tsx. */
@@ -1104,7 +1084,7 @@ button.modal-close {
   animation: fade-in 160ms ease-out;
 }
 .modal {
-  animation: rise-in 200ms cubic-bezier(0.2, 0.7, 0.3, 1);
+  animation: rise-in 200ms var(--ease-out);
 }
 
 @keyframes toast-in {

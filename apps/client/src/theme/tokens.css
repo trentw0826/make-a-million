@@ -1,0 +1,83 @@
+/*
+ * Design tokens: the one place the look is defined. Components read these, never raw
+ * values, so a rebrand (palette, type, card size, motion feel) is an edit here. The motion
+ * durations are mirrored for script in theme/motion.ts; keep the two in step.
+ */
+:root {
+  /* Colour: table ------------------------------------------------------- */
+  --felt: #1f5f3b;
+  --felt-light: #2a7a4c;
+  --felt-dark: #184a2e;
+  --bar: #123822;
+  --paper: #fbf7ee;
+  --card-paper: #fffdf8;
+  --card-edge: #c9c2b2;
+  --ink: #1b1b1b;
+  --muted: #6b6b6b;
+  --line: #d9d2c3;
+  --accent: #b8860b;
+  --accent-light: #e9c46a;
+  --on-accent: #ffffff;
+  --on-felt-muted: rgba(255, 255, 255, 0.75);
+
+  /* Colour: suits and specials ----------------------------------------- */
+  --red: #c62828;
+  --yellow: #b07d00;
+  --black: #1b1b1b;
+  --green: #2e7d32;
+  --tiger: #e65100;
+  --bull: #5d4037;
+  --bear: #37474f;
+  --back: #7b1e1e;
+  --back-dark: #5a1414;
+  --back-trim: #f3e9d2;
+
+  /* Colour: sides and states ------------------------------------------- */
+  --team-us: #e0a526;
+  --team-them: #6fa8dc;
+  --good: #2e7d32;
+  --good-ink: #1b5e20;
+  --good-bg: #e8f5e9;
+  --good-line: #a5d6a7;
+  --good-chip: #c8e6c9;
+  --danger: #b00020;
+  --bad-bg: #fdecea;
+  --warn-bg: #ffe0b2;
+  --warn-ink: #7a3e00;
+
+  /* Type ---------------------------------------------------------------- */
+  --font-display: Georgia, "Times New Roman", serif;
+  --font-body: Georgia, "Times New Roman", serif;
+  --font-mono: ui-monospace, monospace;
+
+  /* Shape and depth ----------------------------------------------------- */
+  --radius-s: 4px;
+  --radius-m: 6px;
+  --radius-l: 10px;
+  --radius-card: 7px;
+  --shadow-1: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --shadow-2: 0 2px 10px rgba(0, 0, 0, 0.4);
+  --shadow-lift: 0 10px 18px rgba(0, 0, 0, 0.35);
+  --glow-accent: 0 0 0 3px var(--accent), 0 0 18px 4px rgba(233, 196, 106, 0.55);
+
+  /* Cards --------------------------------------------------------------- */
+  --card-w: 60px;
+  --card-h: 90px;
+  --card-small-w: 48px;
+  --card-small-h: 68px;
+  --back-w: 30px;
+  --back-h: 42px;
+  /* Degrees between neighbouring cards in the fanned hand. */
+  --fan-angle: 2.4deg;
+  /* How far the felt leans away from the player. */
+  --felt-tilt: 10deg;
+
+  /* Layout -------------------------------------------------------------- */
+  --topbar-h: 48px;
+
+  /* Motion (mirrored in theme/motion.ts) -------------------------------- */
+  --dur-fast: 120ms;
+  --dur-base: 200ms;
+  --dur-slow: 360ms;
+  --ease-out: cubic-bezier(0.2, 0.7, 0.3, 1);
+}

@@ -19,12 +19,8 @@ import { SeatPanel } from '../components/SeatPanel';
 import { TrickArea } from '../components/TrickArea';
 import { blockedReason, isMyTurn, seatChip } from '../hints';
 import { useGame } from '../store';
+import { TRICK_HOLD_MS, TRICK_SWEEP_MS } from '../theme/motion';
 import { useTurnTitle } from '../useTurnTitle';
-
-/** How long a finished trick lies on the felt before it is gathered (a new lead cuts it short). */
-const TRICK_HOLD_MS = 1100;
-/** How long gathering takes; matches the trick-sweep animation in styles.css. */
-const TRICK_SWEEP_MS = 350;
 
 export function Table({ room, view }: { room: RoomView; view: TableView }) {
   const { state, act, dispatch } = useGame();
