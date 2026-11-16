@@ -76,6 +76,12 @@
   --hand-overlap: 0.3;
   /* The extra space before a new color in the hand. */
   --group-gap: 14px;
+  /* Hovering a card in the hand: it rises and grows a little, and the next card moves aside
+     by --part-gap, enough to uncover it. A card picked for the discard rises further. */
+  --hover-lift: 12px;
+  --hover-scale: 0.04;
+  --pick-lift: 22px;
+  --part-gap: calc(var(--card-w) * var(--hand-overlap) + 6px);
   /* How far the felt leans away from the player. */
   --felt-tilt: 10deg;
 
@@ -90,6 +96,7 @@
   --dur-base: 200ms;
   --dur-slow: 360ms;
   --ease-out: cubic-bezier(0.2, 0.7, 0.3, 1);
+  --dur-hover: 280ms;
 }
 
 @media (max-width: 600px) {

@@ -655,9 +655,12 @@ input {
 }
 /* Cards overlap, so each one's corner index stays in view; a gap marks a new color. Where
    the hand is narrower than that (a phone), the cards close up further to fit its width:
-   --n is the number of cards, and the fit leaves room for up to four color gaps. */
+   --n is the number of cards, and the fit leaves room for up to four color gaps. Hits go to
+   the cards as drawn (.hand-fan), not to the slots: a slot's box stays put while its card
+   parts aside, and must not steal the pointer from the card it has uncovered. */
 .hand-slot {
   position: relative;
+  pointer-events: none;
   display: flex;
   --fit: calc((100% - var(--card-w) - 4 * var(--group-gap)) / max(var(--n, 13) - 1, 1));
   --step: min(var(--card-w) * (1 - var(--hand-overlap)), var(--fit));
@@ -668,18 +671,29 @@ input {
 .hand-slot.group-start {
   margin-left: calc(var(--step) - var(--card-w) + var(--group-gap));
 }
-/* The card under the pointer comes to the front. */
-.hand-slot:hover,
-.hand-slot:focus-within {
-  z-index: 2;
-}
-/* The fan: each card leans by its distance from the middle (--d) and drops a little. */
+/* The fan: each card leans by its distance from the middle (--d) and drops a little. Around
+   a hovered card the others part (--part, set by Hand) and the card itself rises (--raise);
+   a card picked for the discard stays up (--picked). The stacking order never changes. */
 .hand-fan {
+  --lift: calc(var(--raise, 0) * var(--hover-lift) + var(--picked, 0) * var(--pick-lift));
+  position: relative;
+  pointer-events: auto;
   transform-origin: 50% 100%;
-  transform: translateY(calc(var(--d, 0) * var(--d, 0) * var(--fan-drop)))
-    rotate(calc(var(--d, 0) * var(--fan-angle)));
-  transition: transform var(--dur-slow) var(--ease-out);
+  transform: translate(
+      calc(var(--part, 0) * var(--part-gap)),
+      calc(var(--d, 0) * var(--d, 0) * var(--fan-drop) - var(--lift))
+    )
+    rotate(calc(var(--d, 0) * var(--fan-angle)))
+    scale(calc(1 + var(--raise, 0) * var(--hover-scale)));
+  transition: transform var(--dur-hover) var(--ease-out);
   perspective: 900px;
+}
+/* Keeps the pointer on a raised card across the gap it leaves below. */
+.hand-fan-hovered::after {
+  content: "";
+  position: absolute;
+  inset: 100% 0 auto;
+  height: var(--lift);
 }
 
 /* Cards ------------------------------------------------------------------ */
@@ -800,6 +814,13 @@ button.card-selected:hover:not([aria-disabled="true"]) {
   outline: 3px solid var(--accent);
   transform: translateY(-22px);
   box-shadow: var(--shadow-lift);
+}
+/* In the hand the fan does the lifting, so the card itself stays still. */
+.hand-fan .card,
+.hand-fan button.card:hover:not(:disabled, [aria-disabled="true"]),
+.hand-fan button.card:focus-visible:not([aria-disabled="true"]),
+.hand-fan button.card-selected:hover:not([aria-disabled="true"]) {
+  transform: none;
 }
 .card-disabled,
 button.card-disabled {
