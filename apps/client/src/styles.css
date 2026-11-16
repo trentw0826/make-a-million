@@ -631,16 +631,51 @@ input {
 .hand {
   position: relative;
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px 4px;
   justify-content: center;
-  padding-top: 10px;
+  padding: 16px 0 calc(var(--fan-drop) * 40);
 }
+/* Cards overlap, so each one's corner index stays in view; a gap marks a new color. */
 .hand-slot {
+  position: relative;
   display: flex;
 }
+.hand-slot + .hand-slot {
+  margin-left: calc(var(--card-w) * var(--hand-overlap) * -1);
+}
 .hand-slot.group-start {
-  margin-left: 10px;
+  margin-left: calc(var(--card-w) * var(--hand-overlap) * -1 + 14px);
+}
+/* The card under the pointer comes to the front. */
+.hand-slot:hover,
+.hand-slot:focus-within {
+  z-index: 2;
+}
+/* The fan: each card leans by its distance from the middle (--d) and drops a little. */
+.hand-fan {
+  transform-origin: 50% 100%;
+  transform: translateY(calc(var(--d, 0) * var(--d, 0) * var(--fan-drop)))
+    rotate(calc(var(--d, 0) * var(--fan-angle)));
+  transition: transform var(--dur-slow) var(--ease-out);
+  perspective: 900px;
+}
+
+/* A card with two faces, for turning over: its face and, behind it, its back. */
+.card-3d {
+  position: relative;
+  transform-style: preserve-3d;
+}
+.card-3d > .card {
+  backface-visibility: hidden;
+}
+.card-3d-back {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: var(--radius-card);
+  border: 1px solid var(--back-trim);
+  transform: rotateY(180deg);
+  backface-visibility: hidden;
+  pointer-events: none;
 }
 
 /* Cards ------------------------------------------------------------------ */
@@ -664,8 +699,10 @@ input {
 button.card {
   cursor: pointer;
 }
-button.card:hover:not(:disabled, [aria-disabled="true"]) {
-  transform: translateY(-6px);
+button.card:hover:not(:disabled, [aria-disabled="true"]),
+button.card:focus-visible:not([aria-disabled="true"]) {
+  transform: translateY(-14px);
+  box-shadow: var(--shadow-lift);
   filter: none;
 }
 .card-label {
@@ -736,9 +773,11 @@ button.card:hover:not(:disabled, [aria-disabled="true"]) {
 .card-small .card-sub {
   display: none;
 }
-.card-selected {
+.card-selected,
+button.card-selected:hover:not([aria-disabled="true"]) {
   outline: 3px solid var(--accent);
-  transform: translateY(-10px);
+  transform: translateY(-22px);
+  box-shadow: var(--shadow-lift);
 }
 .card-disabled,
 button.card-disabled {
@@ -1103,17 +1142,7 @@ button.modal-close {
 
 /* Motion ----------------------------------------------------------------- */
 /* Every animation here is switched off under prefers-reduced-motion (below), and the
-   FLIP slides in useFlip.ts check the same setting. */
-@keyframes deal-in {
-  from {
-    opacity: 0;
-    transform: translateY(28px) scale(0.94);
-  }
-}
-.hand-slot {
-  animation: deal-in 360ms var(--ease-out) both;
-  animation-delay: calc(var(--i, 0) * 40ms);
-}
+   card motions run by Motion follow the same setting (MotionConfig in App.tsx). */
 
 /* A played card slides in from its player's side (--fx/--fy, set in TrickArea.tsx). */
 @keyframes trick-enter {
@@ -1200,7 +1229,6 @@ button.modal-close {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .hand-slot,
   .trick-enter,
   .trick-sweep,
   .seat-acting,
@@ -1212,6 +1240,7 @@ button.modal-close {
     animation: none;
   }
   .card,
+  .hand-fan,
   .progress span,
   .countdown-fill {
     transition: none;

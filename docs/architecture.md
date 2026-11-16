@@ -89,7 +89,7 @@ Hidden information is enforced by projection, never by flags.
 - The client holds only the latest `TableView` and room state it received; all rules decisions are made on the server. What the table shows about the state of play (whose turn, each seat's call in the auction, the contract bar, the card winning the trick, why a card is greyed out) is derived from that view in `hints.ts`, so it never shows more than a player at the table would see.
 - The trick on the felt is built from events, not from the view: the server sends each view just before the events that explain it, so after a trick's last card the view already holds the next, empty trick. A finished trick holds for a moment, then sweeps to its winner.
 - The table log keeps a few lines per hand (the deal, the auction as one line, trump, the result) and folds earlier hands away. Card plays and trick winners are never logged (see "Table Visibility" in `game-rules.md`).
-- Motion is CSS plus one FLIP hook (`useFlip.ts`); all of it is off under `prefers-reduced-motion`.
+- Card motion (the deal, the fanned hand re-sorting) uses the Motion library; the rest is CSS. Under `prefers-reduced-motion` nothing moves; fades may still play.
 - Keyboard: `?` opens How to play, Esc closes a dialog, ←/→ step a bid, Enter takes the main action.
 
 ## Testing

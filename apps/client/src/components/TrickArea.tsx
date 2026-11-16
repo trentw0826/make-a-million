@@ -10,25 +10,9 @@ import type { RoomView } from '@mam/protocol';
 import type { CSSProperties } from 'react';
 import { nameOf, SUIT_NAMES } from '../format';
 import { trickSuit } from '../hints';
+import { type Spot, spotOf, TOWARD } from '../spots';
 import type { CompletedTrick } from '../state';
 import { CardFace } from './CardFace';
-
-export type Spot = 'bottom' | 'left' | 'top' | 'right';
-
-const SPOTS: readonly Spot[] = ['bottom', 'left', 'top', 'right'];
-
-/** Where a seat sits on screen, seen from `me` (always at the bottom). */
-export function spotOf(seat: Seat, me: Seat): Spot {
-  return SPOTS[(seat - me + 4) % 4] ?? 'bottom';
-}
-
-/** Unit vectors from the middle of the felt toward each spot. */
-const TOWARD: Readonly<Record<Spot, readonly [number, number]>> = {
-  bottom: [0, 1],
-  left: [-1, 0],
-  top: [0, -1],
-  right: [1, 0],
-};
 
 /** Offsets that drive the CSS motions: where a card slides in from, and where it sweeps to. */
 function motionStyle(from: Spot, to: Spot | null): CSSProperties {

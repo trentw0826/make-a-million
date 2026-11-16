@@ -18,6 +18,7 @@ import { ScoreSheet } from '../components/ScoreSheet';
 import { SeatPanel } from '../components/SeatPanel';
 import { TrickArea } from '../components/TrickArea';
 import { blockedReason, isMyTurn, seatChip } from '../hints';
+import { spotOf } from '../spots';
 import { useGame } from '../store';
 import { TRICK_HOLD_MS, TRICK_SWEEP_MS } from '../theme/motion';
 import { useTurnTitle } from '../useTurnTitle';
@@ -106,6 +107,7 @@ export function Table({ room, view }: { room: RoomView; view: TableView }) {
             key={`${view.handNumber}-${view.redeals}`}
             ids={view.hand}
             trump={view.trump}
+            dealer={spotOf(view.dealer, me)}
             cardProps={(id) => {
               const disabled = legalPlays
                 ? !legalPlays.has(id)

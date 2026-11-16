@@ -70,6 +70,10 @@
   --back-h: 42px;
   /* Degrees between neighbouring cards in the fanned hand. */
   --fan-angle: 2.4deg;
+  /* How far the outermost cards of the hand drop, per step from the middle, squared. */
+  --fan-drop: 0.8px;
+  /* How much of each card the next one covers. */
+  --hand-overlap: 0.3;
   /* How far the felt leans away from the player. */
   --felt-tilt: 10deg;
 
@@ -92,5 +96,8 @@
     --card-h: 74px;
     --card-small-w: 44px;
     --card-small-h: 64px;
+    --fan-angle: 1.2deg;
+    --fan-drop: 0.4px;
+    --hand-overlap: 0.5;
   }
 }

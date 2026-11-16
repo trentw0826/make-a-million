@@ -1,42 +1,79 @@
 import { type CardId, cardById, isTrump, type Suit } from '@mam/engine';
-import { type CSSProperties, useMemo } from 'react';
+import { motion } from 'motion/react';
+import { type CSSProperties, useEffect, useMemo, useRef } from 'react';
+import { CardBackArt } from '../art/CardBackArt';
 import { displayGroup, displayOrder } from '../handOrder';
-import { useFlip } from '../useFlip';
+import type { Spot } from '../spots';
+import { CARD_SPRING, DEAL_MS, DEAL_STAGGER_MS, EASE_OUT } from '../theme/motion';
 import { CardFace, type CardFaceProps } from './CardFace';
 
 interface Props {
   readonly ids: readonly CardId[];
   readonly trump: Suit | null;
+  /** Where the dealer sits, so the deal flies in from there. */
+  readonly dealer?: Spot | undefined;
   /** Per-card state from the table: selection, legality, widow mark, tooltip. */
   readonly cardProps: (id: CardId) => Omit<CardFaceProps, 'id' | 'trump'>;
 }
 
+/** Offsets from the hand to each dealer's seat, roughly, for the deal to start from. */
+const DEAL_FROM: Readonly<Record<Spot, { x: number; y: number }>> = {
+  top: { x: 0, y: -420 },
+  left: { x: -520, y: -240 },
+  right: { x: 520, y: -240 },
+  bottom: { x: 0, y: 140 },
+};
+/** Cards that join later (the widow) come up from the middle of the felt. */
+const WIDOW_FROM = { x: 0, y: -260 };
+
 /**
- * The player's own cards, grouped by color, the trump group first once it is named. Mount a
- * fresh Hand for each deal (key it by deal) so the cards are dealt in again.
+ * The player's own cards, fanned and grouped by color, the trump group first once it is
+ * named. Mount a fresh Hand for each deal (key it by deal) so the cards are dealt in again:
+ * each flies from the dealer face down and turns over as it lands. When the order changes
+ * (trump named, a card played) the cards slide to their new places.
  */
-export function Hand({ ids, trump, cardProps }: Props) {
+export function Hand({ ids, trump, dealer, cardProps }: Props) {
   const order = useMemo(() => displayOrder(ids, trump), [ids, trump]);
-  const flip = useFlip(order);
+  // The first render is the deal; cards that mount after it are the widow.
+  const dealt = useRef(false);
+  useEffect(() => {
+    dealt.current = true;
+  }, []);
+  const mid = (order.length - 1) / 2;
+
   return (
     <section className="hand" aria-label="Your hand">
       {order.map((id, i) => {
         const prev = order[i - 1];
         const newGroup =
           prev !== undefined && displayGroup(prev, trump) !== displayGroup(id, trump);
+        const from = dealt.current ? WIDOW_FROM : DEAL_FROM[dealer ?? 'top'];
+        const delay = dealt.current ? 0 : (i * DEAL_STAGGER_MS) / 1000;
         return (
-          <div
+          <motion.div
             key={id}
-            ref={flip(id)}
+            layout="position"
+            transition={{ layout: CARD_SPRING }}
             className={newGroup ? 'hand-slot group-start' : 'hand-slot'}
-            style={{ '--i': i } as CSSProperties}
           >
-            <CardFace
-              id={id}
-              {...cardProps(id)}
-              trump={trump !== null && isTrump(cardById(id), trump)}
-            />
-          </div>
+            <div className="hand-fan" style={{ '--d': i - mid } as CSSProperties}>
+              <motion.div
+                className="card-3d"
+                initial={{ x: from.x, y: from.y, rotateY: 180, opacity: 0 }}
+                animate={{ x: 0, y: 0, rotateY: 0, opacity: 1 }}
+                transition={{ duration: DEAL_MS / 1000, delay, ease: EASE_OUT }}
+              >
+                <CardFace
+                  id={id}
+                  {...cardProps(id)}
+                  trump={trump !== null && isTrump(cardById(id), trump)}
+                />
+                <div className="card-3d-back" aria-hidden="true">
+                  <CardBackArt />
+                </div>
+              </motion.div>
+            </div>
+          </motion.div>
         );
       })}
     </section>
