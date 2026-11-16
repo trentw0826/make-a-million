@@ -18,6 +18,11 @@ export interface CreateGameOptions {
   readonly ruleset?: Ruleset;
   /** Dealer of the first hand. Default: seat 0. */
   readonly dealer?: Seat;
+  /**
+   * Cumulative scores to start from. Default [0, 0]. Used to replay a single hand at a
+   * given point in a game (duplicate evaluation, bot analysis).
+   */
+  readonly scores?: readonly [number, number];
 }
 
 /** A new game with the first hand already dealt. */
@@ -28,7 +33,8 @@ export function createGame(options: CreateGameOptions): GameState {
     seed,
     rngState: seedToState(options.seed),
     phase: 'misdeal-window',
-    scores: [0, 0],
+    scores: options.scores ? [options.scores[0], options.scores[1]] : [0, 0],
+    ...(options.scores ? { initialScores: [options.scores[0], options.scores[1]] as const } : {}),
     dealer: options.dealer ?? 0,
     handHistory: [],
     hand: null,

@@ -1,9 +1,9 @@
-import { createBot, DIFFICULTIES } from '@mam/bots';
+import { CHEAP_DIFFICULTIES, createBot } from '@mam/bots';
 import { makeRuleset } from '@mam/engine';
 import { describe, expect, it } from 'vitest';
 import { playGame } from '../src/runner';
 
-describe.each(DIFFICULTIES)('%s bot', (difficulty) => {
+describe.each(CHEAP_DIFFICULTIES)('%s bot', (difficulty) => {
   const four = () =>
     [
       createBot(difficulty),

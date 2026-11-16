@@ -1,7 +1,8 @@
 import { defineConfig } from 'tsup';
 
 export default defineConfig({
-  entry: ['src/index.ts'],
+  // The bot worker is loaded by URL at runtime, so it needs its own output file.
+  entry: ['src/index.ts', 'src/botWorker.ts'],
   format: ['esm'],
   target: 'node24',
   platform: 'node',

@@ -122,6 +122,8 @@ export interface GameState {
   readonly rngState: RngState;
   readonly phase: Phase;
   readonly scores: readonly [number, number];
+  /** Scores the game started from, when not [0, 0] (a replayed single hand). */
+  readonly initialScores?: readonly [number, number];
   /** Dealer of the hand in progress (or of the hand just finished). */
   readonly dealer: Seat;
   readonly handHistory: readonly HandResult[];

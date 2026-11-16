@@ -1,4 +1,4 @@
-import { type Action, cardById, type Observation, partnerOf } from '@mam/engine';
+import { type Action, type CardId, cardById, type Observation, partnerOf } from '@mam/engine';
 import type { Analysis } from './analysis';
 import { bestTrump } from './evaluate';
 
@@ -20,8 +20,13 @@ export function chooseBid(a: Analysis): Action {
 
 /** The most this seat is willing to bid, rounded down to the bid step. */
 export function bidCeiling(obs: Observation, step: number): number {
-  const { value } = bestTrump(obs.hand.map(cardById));
   const partnerBid = obs.auction.some((e) => e.kind === 'bid' && e.seat === partnerOf(obs.seat));
+  return ceilingForHand(obs.hand, partnerBid, step);
+}
+
+/** The heuristic ceiling for any 13-card hand (used to model other players' bidding). */
+export function ceilingForHand(hand: readonly CardId[], partnerBid: boolean, step: number): number {
+  const { value } = bestTrump(hand.map(cardById));
   const raw = value + WIDOW_BONUS + (partnerBid ? PARTNER_BID_BONUS : 0) - MARGIN;
   return Math.floor(raw / step) * step;
 }

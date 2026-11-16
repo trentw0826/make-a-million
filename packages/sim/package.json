@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "@mam/bots": "workspace:*",
-    "@mam/engine": "workspace:*"
+    "@mam/engine": "workspace:*",
+    "@mam/search": "workspace:*"
   }
 }

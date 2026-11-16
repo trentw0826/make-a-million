@@ -15,6 +15,7 @@
     "build": "tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {
-    "@mam/engine": "workspace:*"
+    "@mam/engine": "workspace:*",
+    "@mam/search": "workspace:*"
   }
 }

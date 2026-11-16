@@ -261,6 +261,9 @@ importers:
       '@mam/engine':
         specifier: workspace:*
         version: link:../engine
+      '@mam/search':
+        specifier: workspace:*
+        version: link:../search
 
   packages/engine:
     devDependencies:
@@ -277,6 +280,16 @@ importers:
         specifier: ^4.6.7
         version: 4.6.7
 
+  packages/search:
+    dependencies:
+      '@mam/engine':
+        specifier: workspace:*
+        version: link:../engine
+    devDependencies:
+      fast-check:
+        specifier: ^4.10.2
+        version: 4.10.2
+
   packages/sim:
     dependencies:
       '@mam/bots':
@@ -285,6 +298,9 @@ importers:
       '@mam/engine':
         specifier: workspace:*
         version: link:../engine
+      '@mam/search':
+        specifier: workspace:*
+        version: link:../search
 
 packages:
 
