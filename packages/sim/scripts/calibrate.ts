@@ -61,6 +61,29 @@ console.log(
 console.log(
   `  estimate − actual (contract as chosen):  ${ci(lines.map((l) => l.estimateChosen - l.actual))}`,
 );
+{
+  // The bidding's calibration (ContractOptions calibA/calibB/calibSd, in $1000s) is this
+  // least-squares fit of the actual capture on the estimate.
+  const xs = lines.map((l) => l.estimate / 1000);
+  const ys = lines.map((l) => l.actual / 1000);
+  const mx = mean(xs);
+  const my = mean(ys);
+  let sxx = 0;
+  let sxy = 0;
+  let syy = 0;
+  xs.forEach((x, i) => {
+    const y = ys[i] as number;
+    sxx += (x - mx) ** 2;
+    sxy += (x - mx) * (y - my);
+    syy += (y - my) ** 2;
+  });
+  const b = sxy / sxx;
+  const a = my - b * mx;
+  const sd = Math.sqrt((syy - b * sxy) / (lines.length - 2));
+  console.log(
+    `  fit: actual = ${a.toFixed(1)}k + ${b.toFixed(3)} × estimate, residual sd ${sd.toFixed(1)}k, r = ${(sxy / Math.sqrt(sxx * syy)).toFixed(3)}  (calibA, calibB, calibSd)`,
+  );
+}
 
 const table = (title: string, key: (l: CalibrationLine) => number, edges: number[]) => {
   console.log(`\n  ${title}`);

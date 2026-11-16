@@ -50,7 +50,8 @@ Every bot change is measured before it is kept. This page records the results, i
 | 2026‑11‑15 | `exactWorlds=400` (up to 400 worlds once solving is exact; against the calibrated default) | 42 | −0.84% [−2.16, 0.47] | −6.2k [−15.1, 2.6] | 316 / 177 ms | **H0**: endgame sampling noise is not where Hard loses; rejected |
 | 2026‑11‑15 | `calibScreen=1` (calibrate the discard/trump screening playouts too) | 36 | −0.21% [−1.14, 0.73] | +1.9k [−16.4, 20.2] | 175 / — ms | **H0** (stopped at 36 boards, before the 200‑board minimum existed; the CI still excludes +1%); rejected |
 | 2026‑11‑15 | `inferencePool=6,auctionInference=0,specialsInference=1` (weight worlds by passed‑up chances to play the Tiger, Bull or Bear; model fitted on separate hands) | 629 | **+1.66% [0.45, 2.88]** | **+12.0k [5.1, 18.8]** | 124 / 122 ms | **H1**: about 57% of the `peek` ceiling. A made 76.6%, B 71.7% |
-| 2026‑11‑15 | the same specials inference, **replication on fresh boards** | 407 | −1.66% [−3.32, 0.00] | −6.2k [−14.2, 1.7] | 182 / 177 ms | **H0**. Pooled with the first run: +0.5% [−0.5, 1.5], +4.2k [−1.0, 9.4]. Not promoted; a fixed 1500‑board run (no early stop) is running (note 9) |
+| 2026‑11‑15 | the same specials inference, **replication on fresh boards** | 407 | −1.66% [−3.32, 0.00] | −6.2k [−14.2, 1.7] | 182 / 177 ms | **H0**. Pooled with the first run: +0.5% [−0.5, 1.5], +4.2k [−1.0, 9.4]. Not promoted (note 9) |
+| 2026‑11‑15 | the same specials inference, **fixed 1500 fresh boards** (`SPRT=0`) | 1500 | +0.82% [−0.03, 1.68] | **+4.6k [0.1, 9.1]** | 169 / 166 ms | probably a small real gain; awaiting a decision (`bot-roadmap.md`). A made 72.9%, B 71.3% |
 
 Notes:
 1. A utility that depends on money already won ties each solved position to that money, so the cache is far less effective: exact six‑trick solves cost about 3× as many nodes (`packages/search/bench/utility.ts`), and 23% of them overflowed the per‑world node cap and dropped to depth‑limited estimates. A made fewer contracts (446 vs 457 of 600). Hence `fastUtility` (now the default for `playUtility=margin|equity`): solve in points, then apply the utility to each root move's value, which is exact once no Bull or Bear can change the money still out.
@@ -86,7 +87,29 @@ Calibrated bidding (the new default) in all four seats, 300 fresh hands (287 con
 
 - **The bid rate does not depend on hand strength** (`packages/sim/scripts/bid-diagnostic.ts`, 120–250 auctions per bot). Facing an opponent's standing bid, calibrated Hard bids 52–67% of the time in every band of its own playout estimate, and slightly more with its weakest hands. Uncalibrated Hard bid a flat 22–27%. The evaluation behind it barely separates the two choices: declaring and passing are worth within about 0.01 equity of each other in every band, and both rise with the hand. If Hard passes, its model expects the opponent to win the auction 71–87% of the time, at about $205k.
 - **The model of the other players** cannot be fitted from the heuristic's hand ceilings: on 382 calibrated auctions the best fit gives the heuristic ceiling no weight at all (a flat ceiling of about $205k ± 45k). This follows from the first point, since calibrated bots bid nearly regardless of their hand.
-- Next: `packages/sim/scripts/bid-rollouts.ts` plays sampled bid decisions out both ways, to measure whether the estimated advantage of bidding predicts the real one, and what does.
+- **Paired rollouts** (`packages/sim/scripts/bid-rollouts.ts`, 1196 decisions from 1500 hands): at one random optional bid decision per hand, the hand was played out after bidding the minimum and after passing, with common randomness.
+  - On average, bidding was worth −0.06% [−1.51, 1.40] equity more than passing.
+  - The bot's estimated advantage did not predict the realised one (r = −0.015, slope −0.06). Neither did the price, the scores or who the bot expected to win: every |r| was below 0.07.
+  - The noise is large: the standard deviation of one pair's outcome difference is 25.7% equity (285k points), because a different auction changes the contract, trump and play.
+  - Against calibrated opponents, one bid more or less is worth about nothing on average, and rollouts are too noisy to tune bidding. Whole‑policy duplicate runs remain the test.
+
+## Timing (`packages/sim/scripts/timing.ts`)
+
+Hard, 120 hands, 4 workers in parallel (as the server's pool), idle 24‑core machine, 2026‑11‑15:
+
+| Decision | n | mean | p50 | p90 | p99 | max (ms) |
+|---|---|---|---|---|---|---|
+| all | 7764 | 138 | 48 | 413 | 1085 | 2356 |
+| bid | 797 | 41 | 52 | 69 | 108 | 123 |
+| discard | 120 | 131 | 129 | 163 | 219 | 236 |
+| trump | 120 | 57 | 55 | 72 | 84 | 85 |
+| play, more than one legal card | 4952 | 205 | 93 | 583 | 1285 | 2356 |
+| play, 21–28 cards left | 792 | 372 | 194 | 990 | 2040 | 2356 |
+| play, 13–20 cards left | 821 | 65 | 31 | 154 | 425 | 985 |
+
+The slow decisions are the first exact solves, 6 tricks out, and the depth‑2 searches just before them. With the server's 1.3 s deadline (1.5 s reply time minus the 200 ms margin) about 0.6% of decisions would be cut short.
+
+Expert on a loaded machine (24 hands, 3 workers, while other experiments ran): p99 7.5 s overall; discard 3.3 s mean, 9.6 s max; trump up to 7.5 s; play with 21–28 cards left p99 10.6 s.
 
 ## Settings
 
