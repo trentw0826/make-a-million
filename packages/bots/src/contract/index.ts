@@ -75,6 +75,8 @@ export interface ContractOptions {
   readonly calibA: number;
   readonly calibB: number;
   readonly calibSd: number;
+  /** Also calibrate the playouts that screen discard and trump candidates. */
+  readonly calibScreen: boolean;
 }
 
 export const CONTRACT_DEFAULTS: ContractOptions = {
@@ -94,6 +96,7 @@ export const CONTRACT_DEFAULTS: ContractOptions = {
   calibA: 130,
   calibB: 0.5,
   calibSd: 58,
+  calibScreen: false,
 };
 
 /**
@@ -274,7 +277,8 @@ function bestCandidate(
   const contract = obs.contract;
   if (!contract) throw new Error('no contract');
   const belief = buildBelief(obs);
-  const u = utilityFor(obs, contract.bidder, contract.amount, opts.utility);
+  const raw = utilityFor(obs, contract.bidder, contract.amount, opts.utility);
+  const u = opts.calibScreen ? calibrated(raw, teamOf(contract.bidder), opts) : raw;
   const screenDeals = Array.from({ length: opts.screenWorlds }, () => belief.sample(rng));
   const screened = candidates.map((c) => {
     let total = 0;
