@@ -13,6 +13,7 @@ import {
 } from '@mam/engine';
 import type { World } from '@mam/search';
 import { describe, expect, it } from 'vitest';
+import { HARD_DEFAULTS, HardBot } from '../src/hard/index';
 import { HeuristicBot } from '../src/heuristic/index';
 import {
   couldPlay,
@@ -97,5 +98,25 @@ describe('specials inference', () => {
       }
     }
     expect(checked).toBeGreaterThan(0);
+  });
+
+  it("is Hard's only inference, and Hard plays a whole hand legally with it", () => {
+    expect(HARD_DEFAULTS.inferencePool).toBeGreaterThan(0);
+    expect(HARD_DEFAULTS.specialsInference).toBe(true);
+    expect(HARD_DEFAULTS.auctionInference).toBe(false);
+    // A small budget keeps the test fast; the weighting runs on every card-play decision.
+    const hard = new HardBot({ worlds: 4, nodes: 20_000, worldNodes: 5_000, bidWorlds: 8 });
+    const rng = Rng.fromSeed('specials-hard');
+    let state: GameState = createGame({ seed: 'specials-hard' });
+    let plays = 0;
+    while (state.hand && state.hand.phase !== 'hand-complete') {
+      const seat = SEATS.find((s) => legalMoves(state, s).kind !== 'none');
+      if (seat === undefined) break;
+      const obs = observe(state, seat);
+      if (obs.legal.kind === 'play') plays += 1;
+      state = applyActionOrThrow(state, seat, hard.decide(obs, rng)).state;
+    }
+    expect(state.hand?.phase).toBe('hand-complete');
+    expect(plays).toBeGreaterThan(40);
   });
 });

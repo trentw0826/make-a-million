@@ -47,12 +47,12 @@ Card play maximises money won from here on minus the opponents' (`playUtility: '
   2. **Screen** them by greedy playouts over `screenWorlds` (40) shared deals.
   3. **Re‑check** the best `refineTop` (4) with a `refineDepth` (1)‑trick search over `refineWorlds` (12) deals.
 
-### Inference (off by default)
+### Inference
 
-Two kinds of soft inference re‑weight the sampled worlds when `inferencePool > 0`: draw `inferencePool × worlds` candidates, weight each, and resample.
+Two kinds of soft inference re‑weight the sampled worlds when `inferencePool > 0`: draw `inferencePool × worlds` candidates, weight each, and resample. Hard weights by the specials only (`inferencePool` 6).
 
-- **Auction and trump choice** (`auctionInference`, `inference/index.ts`): did not help (H0).
-- **The specials** (`specialsInference`, `inference/specials.ts`). A player who could have played the Tiger, Bull or Bear and did not is less likely to hold it, by P(play | situation) fitted from self‑play (`inference/generated/specialsModel.ts`, written by `packages/sim/scripts/specials-model.ts`). Three tests gave +1.7%, −1.7% and +0.8% equity per board: probably a small real gain, not yet promoted (`bot-roadmap.md`).
+- **Auction and trump choice** (`auctionInference`, `inference/index.ts`): did not help (H0); off.
+- **The specials** (`specialsInference`, `inference/specials.ts`). A player who could have played the Tiger, Bull or Bear and did not is less likely to hold it, by P(play | situation) fitted from self‑play (`inference/generated/specialsModel.ts`, written by `packages/sim/scripts/specials-model.ts`). Its three fixed 1500‑board runs gave +0.8%, +0.4% and +0.6% equity per board, pooling to +0.6% [0.1, 1.2] and +4.3k points per hand: a small gain, promoted (`bot-ladder.md`, note 10). Refit the model whenever card play or the rules change.
 
 ### Live‑play safety net
 
@@ -86,7 +86,7 @@ Simulations pass no deadline, so their results do not depend on the machine.
 | `bidMargin` | 0 | Required edge before bidding | 0.01: H0 on replication |
 | `auctionSigma` | 20k | Scale of the auction likelihood | 40k: H0 |
 | `ceilingShift`, `ceilingScale`, `partnerPassInformative` | 0, 1, true | Model of the other players' bidding | not yet tested (`bot-roadmap.md`) |
-| `inferencePool`, `auctionInference`, `throwOffs`, `specialsInference` | 0, true, false, false | Soft inference for card play | see above |
+| `inferencePool`, `auctionInference`, `throwOffs`, `specialsInference` | 6, false, false, true | Soft inference for card play | specials: +4.3k points per hand, promoted |
 
 **Expert** (`EXPERT_DEFAULTS`) is Hard with `worlds` 60, `nodes` 12M, `exactTricks` 7, `worldNodes` 1.2M, `bidWorlds` 400, `screenWorlds` 80, `refineWorlds` 24, `refineTop` 5 and `refineDepth` 2. It is not offered at the table; see `bot-roadmap.md`.
 
