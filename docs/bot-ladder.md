@@ -78,6 +78,12 @@ Calibrated bidding (the new default) in all four seats, 300 fresh hands (287 con
 - Auctions are now mostly contested: 255 of 287 (was 138 of 285), mean bid $201k (was $183k), 72.8% made (was 80.7%). Each seat bids its weak hands, so contests go higher; in duplicate play against the uncalibrated bot this still won clearly.
 - The bidding's model of the other players (`modelCeiling`, the heuristic's ceilings) still describes the old, timid bidding, so it underestimates how high calibrated opponents go when the bot passes. That model is the next candidate for refitting.
 
+## Bidding diagnostics
+
+- **The bid rate does not depend on hand strength** (`packages/sim/scripts/bid-diagnostic.ts`, 120–250 auctions per bot). Facing an opponent's standing bid, calibrated Hard bids 52–67% of the time in every band of its own playout estimate, and slightly more with its weakest hands. Uncalibrated Hard bid a flat 22–27%. The evaluation behind it barely separates the two choices: declaring and passing are worth within about 0.01 equity of each other in every band, and both rise with the hand. If Hard passes, its model expects the opponent to win the auction 71–87% of the time, at about $205k.
+- **The model of the other players** cannot be fitted from the heuristic's hand ceilings: on 382 calibrated auctions the best fit gives the heuristic ceiling no weight at all (a flat ceiling of about $205k ± 45k). This follows from the first point, since calibrated bots bid nearly regardless of their hand.
+- Next: `packages/sim/scripts/bid-rollouts.ts` plays sampled bid decisions out both ways, to measure whether the estimated advantage of bidding predicts the real one, and what does.
+
 ## Settings
 
 The `hard` defaults live in `packages/bots/src/hard/index.ts` (`HARD_DEFAULTS`). Individual options can be overridden in a spec, for example `hard:worlds=20,searchBid=0`.
