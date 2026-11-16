@@ -92,6 +92,18 @@ describe('How to play', () => {
 });
 
 describe('top bar', () => {
+  it('mutes and unmutes sound, remembering the choice', () => {
+    window.localStorage.removeItem('mam.muted');
+    renderWith();
+    const toggle = screen.getByRole('button', { name: 'Mute sounds' });
+    const before = toggle.getAttribute('aria-pressed');
+    fireEvent.click(toggle);
+    expect(toggle).toHaveAttribute('aria-pressed', before === 'true' ? 'false' : 'true');
+    expect(window.localStorage.getItem('mam.muted')).toBe(before === 'true' ? null : '1');
+    fireEvent.click(toggle);
+    expect(toggle).toHaveAttribute('aria-pressed', before ?? 'false');
+  });
+
   it('shows the room code with an invite button', () => {
     renderWith(inLobby);
     expect(document.querySelector('.topbar')).toHaveTextContent('Room ABC123');

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { sound } from '../sound/player';
 import { useGame } from '../store';
 import { Modal } from './Modal';
 import { Wordmark } from './Wordmark';
@@ -43,7 +44,28 @@ export function InviteButton({ code, className }: { code: string; className?: st
   );
 }
 
-/** Shown on every screen: the room, an invite link, How to play, and Leave. */
+/** Turns the game's sounds off and on; the choice is kept for next time. */
+export function SoundToggle() {
+  const [muted, setMuted] = useState(sound.isMuted);
+  const toggle = () => {
+    sound.setMuted(!muted);
+    setMuted(!muted);
+  };
+  return (
+    <button
+      type="button"
+      className="ghost small sound-toggle"
+      aria-pressed={muted}
+      aria-label="Mute sounds"
+      title={muted ? 'Sounds are off' : 'Sounds are on'}
+      onClick={toggle}
+    >
+      <span aria-hidden="true">{muted ? '🔇' : '🔊'}</span>
+    </button>
+  );
+}
+
+/** Shown on every screen: the room, an invite link, sound, How to play, and Leave. */
 export function TopBar() {
   const { state, send, dispatch } = useGame();
   const { room } = state;
@@ -72,6 +94,7 @@ export function TopBar() {
         </div>
       )}
       <nav className="topbar-actions" aria-label="Game">
+        <SoundToggle />
         <button
           type="button"
           className="ghost small"

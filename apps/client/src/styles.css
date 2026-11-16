@@ -181,6 +181,10 @@ input {
   gap: 8px;
   margin-left: auto;
 }
+.sound-toggle {
+  min-width: 34px;
+  line-height: 1.2;
+}
 .topbar .ghost {
   border-color: rgba(255, 255, 255, 0.35);
 }
@@ -672,25 +676,6 @@ input {
   perspective: 900px;
 }
 
-/* A card with two faces, for turning over: its face and, behind it, its back. */
-.card-3d {
-  position: relative;
-  transform-style: preserve-3d;
-}
-.card-3d > .card {
-  backface-visibility: hidden;
-}
-.card-3d-back {
-  position: absolute;
-  inset: 0;
-  overflow: hidden;
-  border-radius: var(--radius-card);
-  border: 1px solid var(--back-trim);
-  transform: rotateY(180deg);
-  backface-visibility: hidden;
-  pointer-events: none;
-}
-
 /* Cards ------------------------------------------------------------------ */
 .card {
   position: relative;
@@ -708,6 +693,24 @@ input {
   transition:
     transform var(--dur-fast),
     box-shadow var(--dur-base);
+}
+/* A card with two faces, for turning over: its face and, behind it, its back. */
+.card-3d {
+  position: relative;
+  transform-style: preserve-3d;
+}
+.card-3d > .card {
+  backface-visibility: hidden;
+}
+.card-3d-back {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: var(--radius-card);
+  border: 1px solid var(--back-trim);
+  transform: rotateY(180deg);
+  backface-visibility: hidden;
+  pointer-events: none;
 }
 button.card {
   cursor: pointer;

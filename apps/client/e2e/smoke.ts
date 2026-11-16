@@ -227,6 +227,8 @@ async function handIds(page: Page): Promise<CardId[]> {
 
 async function fullHand(browser: Browser, base: string): Promise<void> {
   const page = await browser.newPage({ viewport: VIEWPORT });
+  const pageErrors: string[] = [];
+  page.on('pageerror', (error) => pageErrors.push(error.message));
   await page.addInitScript(WATCH_CLASSES);
   // Screenshots wait out the entrance motions (dialogs, the deal) so they show the settled page.
   const shots = new Set<string>();
@@ -325,6 +327,10 @@ async function fullHand(browser: Browser, base: string): Promise<void> {
   check(
     (await page.locator('.event-log details').count()) === 1,
     'the finished hand folds up in the log',
+  );
+  check(
+    pageErrors.length === 0,
+    `the page threw no errors${pageErrors.length ? `: ${pageErrors.join('; ')}` : ''}`,
   );
   await page.close();
 }

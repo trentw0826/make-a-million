@@ -19,6 +19,7 @@ import { ScoreSheet } from '../components/ScoreSheet';
 import { SeatPanel } from '../components/SeatPanel';
 import { TrickArea } from '../components/TrickArea';
 import { blockedReason, isMyTurn, seatChip } from '../hints';
+import { sound } from '../sound/player';
 import { spotOf } from '../spots';
 import { useGame } from '../store';
 import { TRICK_HOLD_MS, TRICK_SWEEP_MS } from '../theme/motion';
@@ -30,6 +31,9 @@ export function Table({ room, view }: { room: RoomView; view: TableView }) {
   const [selected, setSelected] = useState<ReadonlySet<CardId>>(new Set());
   const myTurn = isMyTurn(view);
   useTurnTitle(myTurn);
+  useEffect(() => {
+    if (myTurn) sound.play('yourTurn');
+  }, [myTurn]);
 
   // The finished trick lies on the table for a moment, then slides to its winner.
   const completed = state.completedTrick;

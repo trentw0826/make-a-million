@@ -90,6 +90,7 @@ Hidden information is enforced by projection, never by flags.
 - The trick on the felt is built from events, not from the view: the server sends each view just before the events that explain it, so after a trick's last card the view already holds the next, empty trick. A finished trick holds for a moment, then sweeps to its winner.
 - The table log keeps a few lines per hand (the deal, the auction as one line, trump, the result) and folds earlier hands away. Card plays and trick winners are never logged (see "Table Visibility" in `game-rules.md`).
 - Card motion uses the Motion library: the deal flies from the dealer's seat, the fanned hand re-sorts, a card you play flies from your hand to the felt (it shares a layout id with its place there), the others' cards turn over as they land, and a taken trick is swept to its winner. The rest is CSS. Under `prefers-reduced-motion` cards appear in place and nothing moves.
+- Sounds (the deal, a card played, a trick taken, your turn, the end of a hand) come from the sound manifest (`sound/manifest.ts`). Each is a placeholder synthesised with Web Audio until a recorded file is set. Audio starts on the player's first click or key, as browsers require, and the top bar's mute toggle is remembered in the browser.
 - Keyboard: `?` opens How to play, Esc closes a dialog, ←/→ step a bid, Enter takes the main action.
 
 ## Testing
