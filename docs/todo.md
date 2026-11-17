@@ -4,8 +4,10 @@ A scratchpad for future fixes, features, and updates
 
 ## Immediate
 - [ ] When choosing trump, instead of the 4 button multiple choice, the player chooses using the cards in their hand. The player can hover over the different groups (as opposed to hovering over single cards at a time) which gently move upward and 'push' the other groups away, in the same exact manner as happens with choosing a single card. The UI is slightly redesigned to make it clear that the player is being asked to choose trump and a dynamic element lets the player know what color they're about to choose for trump when they're hovered over a color. The special cards go transparent during this process.
-- [ ] Each player gets their own messy pile of cards they've won (rather than one per partnership). Use your judgement as to the location of each
 - [ ] Creatively re-imagine the landing page to more closely fit the rest of the theme
+- [ ] No scrolling on any page, rearrange any page that has it
+- [ ] Remove the trick-counting text in the center of the table entirely
+- [ ] Rather than "Bot 2 · Hard" it should say "Bot 2 Hard" where "Hard" is subtly colored/transparent (apply generally)
 
 
 ## Later

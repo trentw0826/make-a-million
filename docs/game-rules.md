@@ -62,7 +62,7 @@ The application reproduces the **physical tabletop experience**. A player sees e
 - **Own hand.** Other players' hands are never shown, only how many cards each player holds.
 - **The trick in progress:** the cards played so far in the current trick, who played them, and the trick suit. Once a trick is taken, its cards are turned face‑down and are no longer visible.
 - **The auction:** bids and passes as they are spoken, and the resulting contract (bidder, amount) and named trump.
-- **Trick piles:** how many tricks each partnership has taken this hand (visible as face‑down piles). The money inside those piles is **not** shown.
+- **Trick piles:** how many tricks each player has taken this hand (each player gathers the tricks they win into a face‑down pile in front of them). The money inside those piles is **not** shown.
 - **The score sheet:** cumulative scores, and for each completed hand the bidder, bid, trump, whether the bid was made or set, and each side's result.
 - **Hand result:** when the last trick is taken, both sides' captured Money is counted openly, so the hand total and the cards that produced it are shown at that point only.
 

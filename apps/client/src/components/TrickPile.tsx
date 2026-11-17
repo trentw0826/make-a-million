@@ -7,11 +7,14 @@ import { CardFace } from './CardFace';
 import { cardLayoutId } from './TrickArea';
 
 interface Props {
+  /** Whose pile it is, for its accessible name: "Your", or a player's name. */
+  readonly owner: string;
   readonly side: 'us' | 'them';
   /** Tricks already in the pile. */
   readonly count: number;
   /** The trick being gathered into it now, if any: its cards fly here from the felt. */
   readonly incoming: readonly TrickPlay[] | null;
+  readonly className?: string;
 }
 
 /** Where card `k` of the pile's trick `t` lies: a loose stack, the same every time. */
@@ -26,19 +29,18 @@ function lie(t: number, k: number): { x: number; y: number; rotate: number } {
 const CARDS_PER_TRICK = 4;
 
 /**
- * A partnership's taken tricks, face down in a loose pile beside them. Only how many tricks
+ * A player's taken tricks, face down in a loose pile on their left. Only how many tricks
  * there are shows, never what is in them (see "Table Visibility" in game-rules.md). A trick
  * being gathered is drawn here already: its cards share their layout ids with their places
  * on the felt, so Motion flies them in, turning them over on the way.
  */
-export function TrickPile({ side, count, incoming }: Props) {
+export function TrickPile({ owner, side, count, incoming, className }: Props) {
   const taken = count + (incoming ? 1 : 0);
-  const who = side === 'us' ? 'Your side' : 'Opponents';
   return (
     <div
-      className={`trick-pile pile-${side}`}
+      className={`trick-pile pile-${side}${className ? ` ${className}` : ''}`}
       role="img"
-      aria-label={`${who}: ${taken} ${taken === 1 ? 'trick' : 'tricks'} taken`}
+      aria-label={`${owner}: ${taken} ${taken === 1 ? 'trick' : 'tricks'} taken`}
     >
       {Array.from({ length: count }, (_, t) =>
         Array.from({ length: CARDS_PER_TRICK }, (_, k) => {

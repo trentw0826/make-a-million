@@ -267,8 +267,8 @@ describe('score sheet and log drawer', () => {
 
 describe('trick piles', () => {
   it('shows each taken trick face down, and nothing of what is in it', () => {
-    render(<TrickPile side="them" count={2} incoming={null} />);
-    const pile = screen.getByRole('img', { name: 'Opponents: 2 tricks taken' });
+    render(<TrickPile owner="Bot 2's" side="them" count={2} incoming={null} />);
+    const pile = screen.getByRole('img', { name: "Bot 2's: 2 tricks taken" });
     expect(pile.querySelectorAll('.pile-card')).toHaveLength(8);
     expect(pile.querySelector('[data-card-id]')).toBeNull();
   });
@@ -280,15 +280,44 @@ describe('trick piles', () => {
       { seat: 2, cardId: 9 },
       { seat: 3, cardId: 12 },
     ] as const;
-    render(<TrickPile side="us" count={1} incoming={incoming} />);
-    const pile = screen.getByRole('img', { name: 'Your side: 2 tricks taken' });
+    render(<TrickPile owner="Your" side="us" count={1} incoming={incoming} />);
+    const pile = screen.getByRole('img', { name: 'Your: 2 tricks taken' });
     expect(pile.querySelectorAll('.pile-card.trick-sweep .card-3d')).toHaveLength(4);
     expect(pile.querySelectorAll('.pile-card:not(.trick-sweep)')).toHaveLength(4);
   });
 
   it('says one trick, not one tricks', () => {
-    render(<TrickPile side="us" count={1} incoming={null} />);
-    expect(screen.getByRole('img', { name: 'Your side: 1 trick taken' })).toBeInTheDocument();
+    render(<TrickPile owner="Your" side="us" count={1} incoming={null} />);
+    expect(screen.getByRole('img', { name: 'Your: 1 trick taken' })).toBeInTheDocument();
+  });
+});
+
+describe('trick piles at the table', () => {
+  it("lays each player's pile on their left as they face the table", () => {
+    renderWith([
+      welcome,
+      { type: 'room', room: room('playing') },
+      {
+        type: 'view',
+        view: {
+          ...dealt,
+          phase: 'playing',
+          trump: 'red',
+          contract: { bidder: 1, amount: 175_000 },
+          trickCounts: [3, 2],
+          tricksWon: [1, 2, 2, 0],
+        },
+      },
+    ]);
+    const pile = (name: string) => screen.getByRole('img', { name });
+    expect(pile('Your: 1 trick taken')).toHaveClass('pile-me', 'pile-us');
+    expect(pile("Bot 2's: 2 tricks taken")).toHaveClass('pile-left', 'pile-them');
+    expect(pile("Bot 3's: 2 tricks taken")).toHaveClass('pile-top', 'pile-us');
+    expect(pile("Bot 4's: 0 tricks taken")).toHaveClass('pile-right', 'pile-them');
+    // Your partner's pile is to their right on screen; the right player's is below them.
+    expect(document.querySelector('.top-side')?.lastElementChild).toHaveClass('pile-top');
+    expect(document.querySelector('.right-side')?.lastElementChild).toHaveClass('pile-right');
+    expect(document.querySelector('.left-side')?.firstElementChild).toHaveClass('pile-left');
   });
 });
 

@@ -107,6 +107,10 @@ describe('tableView', () => {
         const view = tableView(obs);
         expect(Object.keys(view)).not.toContain('tricks');
         expect(view.trickCounts[0] + view.trickCounts[1]).toBe(obs.tricks.length);
+        for (const s of SEATS) {
+          expect(view.tricksWon[s]).toBe(obs.tricks.filter((t) => t.winner === s).length);
+        }
+        expect(view.tricksWon[0] + view.tricksWon[2]).toBe(view.trickCounts[0]);
         expect(view.hand).toEqual(obs.hand);
         expect(view.currentTrick).toEqual(obs.currentTrick);
       }

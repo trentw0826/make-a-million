@@ -134,6 +134,7 @@ describe('play', () => {
     expect(view.view.hand).toHaveLength(13);
     expect(Object.keys(view.view)).not.toContain('tricks');
     expect(view.view.trickCounts).toEqual([0, 0]);
+    expect(view.view.tricksWon).toEqual([0, 0, 0, 0]);
 
     // Bidding opens with the deal: the bots call in turn after their fixed delays, and
     // every seat gets a turn before the auction can end, so it comes round to Ann.

@@ -608,9 +608,15 @@ input {
   border: 2px solid transparent;
   text-align: center;
 }
-.seat-top {
+/* Each seat with its trick pile on the player's own left as they face the middle: your
+   partner's to their right on screen, the left player's above them, the right player's
+   below them. */
+.top-side {
   grid-area: top;
   justify-self: center;
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 /* The player on your left, with the opponents' tricks on their left: seen from their seat,
    facing the middle of the table, that is above them on screen. */
@@ -624,12 +630,18 @@ input {
   min-height: 0;
   min-width: 0;
 }
-.pile-them {
+.pile-left {
   align-self: center;
 }
-.seat-right {
+.right-side {
   grid-area: right;
-  align-self: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  min-height: 0;
+  min-width: 0;
 }
 .seat-acting {
   border-color: var(--accent);
@@ -988,7 +1000,7 @@ input {
   width: var(--card-small-w);
   height: var(--card-small-h);
 }
-.pile-us {
+.pile-me {
   grid-area: me;
   justify-self: start;
   align-self: center;
@@ -1774,7 +1786,7 @@ button.modal-close {
   .table-corner {
     grid-area: score;
   }
-  .pile-us {
+  .pile-me {
     grid-area: tools;
     justify-self: start;
     align-self: end;
