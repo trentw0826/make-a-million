@@ -135,7 +135,13 @@ async function openTable(page: Page, base: string): Promise<void> {
     (await page.getByRole('button', { name: '+ Bot · Expert' }).count()) === 0,
     'the lobby offers no Expert bot yet',
   );
+  check(
+    (await page.locator('.chair-mine.chair-bottom').count()) === 1,
+    'your chair sits at the bottom of the lobby table',
+  );
   await addHard.first().click();
+  await until(async () => (await addHard.count()) === 2, 'a Hard bot seated');
+  await page.screenshot({ path: path.join(OUT, '0-lobby.png') });
   for (let left = 2; left > 0; left--) {
     await until(async () => (await addNormal.count()) === left, `${left} empty seats`);
     await addNormal.first().click();

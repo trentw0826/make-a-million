@@ -179,6 +179,32 @@ describe('scoreboard', () => {
   });
 });
 
+describe('lobby', () => {
+  it('turns the table so your chair is at the bottom, partner across', () => {
+    const lobby: RoomView = {
+      ...room('lobby'),
+      seats: [
+        null,
+        { kind: 'bot', name: 'Bot 2', difficulty: 'hard' },
+        { kind: 'human', playerId: 'p1', name: 'Ann', connected: true, botControlled: false },
+        null,
+      ],
+      yourSeat: 2,
+    };
+    renderWith([welcome, { type: 'room', room: lobby }]);
+    const chair = (n: number) => screen.getByRole('group', { name: `Seat ${n}` });
+    expect(chair(3)).toHaveClass('chair-bottom', 'chair-mine', 'side-us');
+    expect(chair(1)).toHaveClass('chair-top', 'chair-empty', 'side-us');
+    expect(chair(2)).toHaveClass('chair-right', 'side-them');
+    expect(chair(2)).toHaveTextContent('Bot 2 · Hard');
+    expect(chair(4)).toHaveClass('chair-left', 'side-them');
+    // The host fills an empty chair with a bot of the chosen strength.
+    expect(within(chair(4)).getByRole('button', { name: '+ Bot · Hard' })).toBeInTheDocument();
+    expect(within(chair(4)).getByRole('button', { name: 'Sit here' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Start game' })).toBeDisabled();
+  });
+});
+
 describe('score sheet and log drawer', () => {
   const entries = [{ id: 1, hand: 1, text: 'Ann deals.', tone: 'info' as const }];
 
@@ -200,6 +226,31 @@ describe('score sheet and log drawer', () => {
 
     fireEvent.click(toggle);
     fireEvent.click(screen.getByRole('button', { name: 'Close the score sheet and log' }));
+    expect(screen.queryByRole('complementary')).toBeNull();
+  });
+
+  it('dims the table while open, and a click anywhere else puts it away', () => {
+    render(
+      <div>
+        <p>The table</p>
+        <TableDrawer view={dealt} room={room('playing')} log={entries} />
+      </div>,
+    );
+    const toggle = screen.getByRole('button', { name: 'Score sheet & log' });
+    expect(document.querySelector('.drawer-scrim')).toBeNull();
+    fireEvent.click(toggle);
+    expect(document.querySelector('.drawer-scrim')).not.toBeNull();
+
+    // A press inside the sheet keeps it open.
+    fireEvent.pointerDown(screen.getByText('Ann deals.'));
+    expect(screen.getByRole('complementary')).toBeInTheDocument();
+
+    fireEvent.pointerDown(document.querySelector('.drawer-scrim') as Element);
+    expect(screen.queryByRole('complementary')).toBeNull();
+    expect(document.querySelector('.drawer-scrim')).toBeNull();
+
+    fireEvent.click(toggle);
+    fireEvent.pointerDown(screen.getByText('The table'));
     expect(screen.queryByRole('complementary')).toBeNull();
   });
 });
@@ -456,5 +507,48 @@ describe('Hand result', () => {
     ]);
     expect(screen.queryByRole('button', { name: 'Ready' })).toBeNull();
     expect(screen.getByText('Waiting for the others…')).toBeInTheDocument();
+  });
+
+  it("weighs the capture against the bid and lays out each side's tricks as tiles", () => {
+    const result = scored.result;
+    if (!result) throw new Error('fixture has a result');
+    renderWith([
+      welcome,
+      { type: 'room', room: room('playing') },
+      {
+        type: 'view',
+        view: {
+          ...scored,
+          result: {
+            ...result,
+            tricks: [
+              // Bot 2 (them) takes Green $40k and the Bull: doubled.
+              {
+                leader: 1,
+                winner: 1,
+                cardIds: [51, 53, 39, 0],
+                money: 40_000,
+                modifier: 'bull',
+                value: 80_000,
+              },
+              // Ann (us) takes a trick with no Money in it.
+              { leader: 0, winner: 0, cardIds: [1, 2, 3, 4], money: 0, modifier: 'none', value: 0 },
+            ],
+          },
+        },
+      },
+    ]);
+    expect(
+      screen.getByRole('img', {
+        name: /captured \$120,000 against a \$100,000 bid: made by \$20k/,
+      }),
+    ).toBeInTheDocument();
+    const them = screen.getByRole('region', { name: 'Them' });
+    const bull = within(them).getByRole('button', { name: 'Trick 1: $80,000 (Bull ×2)' });
+    expect(bull).toHaveAccessibleDescription(/Bull/);
+    expect(within(them).getByText('1 trick')).toBeInTheDocument();
+    const us = screen.getByRole('region', { name: 'Us' });
+    expect(within(us).getByRole('button', { name: 'Trick 2: $0' })).toBeInTheDocument();
+    expect(us).toHaveTextContent('Captured $60,000 · Total $60,000');
   });
 });

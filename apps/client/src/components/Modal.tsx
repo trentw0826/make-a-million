@@ -29,7 +29,10 @@ export function Modal({ title, children, onClose, className }: ModalProps) {
     const me = token.current;
     const before = document.activeElement;
     stack.push(me);
-    const first = box.current?.querySelector<HTMLElement>(FOCUSABLE);
+    // A dialog can name the control to start on; otherwise focus starts on the first one.
+    const first =
+      box.current?.querySelector<HTMLElement>('[data-autofocus]') ??
+      box.current?.querySelector<HTMLElement>(FOCUSABLE);
     (first ?? box.current)?.focus();
     return () => {
       const i = stack.indexOf(me);
