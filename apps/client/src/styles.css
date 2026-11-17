@@ -1140,7 +1140,11 @@ button.card-selected:hover:not([aria-disabled="true"]) {
 }
 /* A card that can't be chosen right now fades into the felt. A felt-coloured veil over an
    opaque card, rather than a see-through card, so where cards overlap in the hand the one
-   underneath doesn't show through. */
+   underneath doesn't show through. Each card keeps its veil to itself (isolation), or a
+   covered card's veil would paint over the card on top of it too. */
+.card-disabled {
+  isolation: isolate;
+}
 .card-disabled::before {
   content: "";
   position: absolute;
