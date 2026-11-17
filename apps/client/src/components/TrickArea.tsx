@@ -137,7 +137,6 @@ export function TrickArea({ me, room, view, plays, completed }: Props) {
               >
                 <CardFace
                   id={play.cardId}
-                  size="small"
                   trump={trump !== null && isTrump(cardById(play.cardId), trump)}
                   winning={play.cardId === winningCard}
                 />

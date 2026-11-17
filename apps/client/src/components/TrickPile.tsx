@@ -73,7 +73,7 @@ export function TrickPile({ owner, side, count, incoming, className }: Props) {
             animate={{ rotateY: 180 }}
             transition={{ duration: TRICK_SWEEP_MS / 1000, ease: 'easeInOut' }}
           >
-            <CardFace id={play.cardId} size="small" />
+            <CardFace id={play.cardId} />
             <div className="card-3d-back" aria-hidden="true">
               <CardBackArt />
             </div>

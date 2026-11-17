@@ -252,7 +252,9 @@ async function act(page: Page, shoot: Shoot): Promise<boolean> {
     }
     // Trump is named from the hand: point at a color, read it in the bar, click.
     if (await page.locator('.trump-bar').isVisible()) {
-      const colored = page.locator('.hand button.card:not([aria-disabled])').first();
+      const colored = page
+        .locator('.hand .hand-present:not([inert]) button.card:not([aria-disabled])')
+        .first();
       if ((await colored.count()) > 0) {
         await colored.hover(quick);
         await sleep(350);
@@ -284,9 +286,13 @@ async function act(page: Page, shoot: Shoot): Promise<boolean> {
       await suit.click(quick);
       return true;
     }
-    const card = page.locator('.hand button.card:not([aria-disabled])').first();
+    const card = page
+      .locator('.hand .hand-present:not([inert]) button.card:not([aria-disabled])')
+      .first();
     if (await card.isVisible()) {
-      const blocked = page.locator('.hand button.card[aria-disabled="true"]').first();
+      const blocked = page
+        .locator('.hand .hand-present:not([inert]) button.card[aria-disabled="true"]')
+        .first();
       if (!blockedCardChecked && (await blocked.count()) > 0) {
         const reason = await blocked.getAttribute('title', quick);
         check(Boolean(reason), 'a greyed-out card carries a tooltip saying why');

@@ -852,7 +852,7 @@ button.icon-btn {
 /* Sized to its fan (inline), so it centres under the seat's name. */
 .card-backs {
   position: relative;
-  height: 44px;
+  height: var(--back-h);
   margin: 0 auto;
 }
 .card-back {
@@ -860,7 +860,7 @@ button.icon-btn {
   top: 0;
   width: var(--back-w);
   height: var(--back-h);
-  border-radius: var(--radius-s);
+  border-radius: var(--radius-card);
   overflow: hidden;
   border: 1px solid var(--back-trim);
   box-shadow: var(--shadow-1);
@@ -897,8 +897,8 @@ button.icon-btn {
   gap: 14px;
 }
 .discard-slot {
-  width: calc(var(--card-w) * var(--trick-scale));
-  height: calc(var(--card-h) * var(--trick-scale));
+  width: var(--card-w);
+  height: var(--card-h);
   border: 2px dashed rgba(255, 255, 255, 0.28);
   border-radius: var(--radius-card);
 }
@@ -1204,14 +1204,14 @@ button.icon-btn {
 .trick-pile {
   position: relative;
   flex: none;
-  width: var(--card-small-w);
-  height: var(--card-small-h);
+  width: var(--card-w);
+  height: var(--card-h);
 }
 .pile-me {
   grid-area: me;
   justify-self: start;
   align-self: center;
-  margin-left: max(16px, (25% - var(--card-small-w)) / 2);
+  margin-left: max(16px, (25% - var(--card-w)) / 2);
 }
 .pile-card {
   position: absolute;
@@ -1336,14 +1336,6 @@ button.card:focus-visible:not([aria-disabled="true"]) {
 }
 .card-small .card-sub {
   display: none;
-}
-/* Cards on the felt are larger than in the hand, for reading across the table; a played
-   card grows on its way there. */
-.trick-card .card,
-.discard-card .card {
-  width: calc(var(--card-w) * var(--trick-scale));
-  height: calc(var(--card-h) * var(--trick-scale));
-  font-size: calc(var(--trick-scale) * 1em);
 }
 .card-selected,
 button.card-selected:hover:not([aria-disabled="true"]) {

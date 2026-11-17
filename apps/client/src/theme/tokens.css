@@ -72,16 +72,17 @@
   --scrim-light: rgba(0, 0, 0, 0.35);
 
   /* Cards --------------------------------------------------------------- */
-  --card-w: 64px;
-  --card-h: 92px;
+  /* One size for every card at the table: in the hand, face down before the other players,
+     on the felt, in the discard tray and in the piles. (Small cards appear only in the hand
+     review, off the table.) */
+  --card-w: 68px;
+  --card-h: 98px;
   --card-small-w: 54px;
   --card-small-h: 78px;
-  /* Cards on the felt, against the hand's size. */
-  --trick-scale: 1.25;
   /* The action bar's fixed height. */
   --action-h: 52px;
-  --back-w: 30px;
-  --back-h: 42px;
+  --back-w: var(--card-w);
+  --back-h: var(--card-h);
   /* Degrees between neighbouring cards in the fanned hand. */
   --fan-angle: 2.4deg;
   /* How far the outermost cards of the hand drop, per step from the middle, squared. */
@@ -120,7 +121,6 @@
     --card-h: 80px;
     --card-small-w: 46px;
     --card-small-h: 66px;
-    --trick-scale: 1.1;
     --action-h: 44px;
   }
 }

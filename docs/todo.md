@@ -4,7 +4,6 @@ A scratchpad for future fixes, features, and updates
 
 ## Immediate
 - [ ] Add gentle animations throughout the whole experience to make it feel smoother. As part of that, Include animations that more clearly indicate whose turn it is
-- [ ] Having cards of different sizes on the screen looks funky (hidden cards vs. user cards vs. discarded cards). 
 - [ ] Choose an elegant and clean new approach to fonts throughout the project
 
 ## Later
