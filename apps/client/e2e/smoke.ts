@@ -54,6 +54,7 @@ let passedSeatChecked = false;
 let discardChecked = false;
 let cursorChecked = false;
 let trumpChecked = false;
+let trayChecked = false;
 let blockedCardChecked = false;
 function check(ok: boolean, what: string): void {
   console.log(`${ok ? '✓' : '✗'} ${what}`);
@@ -231,9 +232,20 @@ async function act(page: Page, shoot: Shoot): Promise<boolean> {
       // the card's own click, as a keyboard or screen reader would.
       for (let i = 0; i < 3; i++) {
         await page
-          .locator('.hand button.card:not([aria-disabled])[aria-pressed="false"]')
+          .locator(
+            '.hand .hand-present:not([inert]) button.card:not([aria-disabled])[aria-pressed="false"]',
+          )
           .first()
           .dispatchEvent('click');
+        await sleep(450); // the card flies to the discard tray before the next pick
+      }
+      if (!trayChecked) {
+        check(
+          (await page.locator('.discard-tray .discard-card').count()) === 3,
+          'picked discards are laid out in the tray on the felt',
+        );
+        await shoot('4c-discard-tray');
+        trayChecked = true;
       }
       await page.getByRole('button', { name: 'Discard', exact: true }).click(quick);
       return true;
@@ -247,8 +259,17 @@ async function act(page: Page, shoot: Shoot): Promise<boolean> {
         if (!trumpChecked) {
           const raised = await page.locator('.hand-fan-hovered').count();
           const preview = (await page.locator('.trump-word').textContent()) ?? '';
+          const ofColor = await page
+            .locator(`.hand [data-card-id]`)
+            .evaluateAll(
+              (cards, color) =>
+                cards.filter((c) =>
+                  (c.getAttribute('aria-label') ?? '').toLowerCase().includes(color),
+                ).length,
+              preview,
+            );
           check(
-            raised > 1 && /^(red|yellow|black|green)$/.test(preview),
+            raised === ofColor && raised > 0 && /^(red|yellow|black|green)$/.test(preview),
             `pointing at a color raises its group and names it in the bar (${raised} cards, ${preview})`,
           );
           trumpChecked = true;

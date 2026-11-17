@@ -876,6 +876,35 @@ button.icon-btn {
   position: relative;
   min-height: 220px;
 }
+/* The bidder's discards, laid out in the middle of the felt as they are picked. */
+.discard-tray {
+  grid-area: trick;
+  place-self: center;
+  z-index: 2;
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+}
+.discard-tray-label {
+  margin: 0;
+  font-size: 0.85em;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--on-felt-muted);
+}
+.discard-slots {
+  display: flex;
+  gap: 14px;
+}
+.discard-slot {
+  width: calc(var(--card-w) * var(--trick-scale));
+  height: calc(var(--card-h) * var(--trick-scale));
+  border: 2px dashed rgba(255, 255, 255, 0.28);
+  border-radius: var(--radius-card);
+}
+.discard-card {
+  position: relative;
+}
 /* The playing surface leans away from you. Only this backdrop tilts: the cards stay flat, so
    Motion can measure them for the flight from your hand. */
 .trick-area::before {
@@ -1107,14 +1136,21 @@ button.icon-btn {
   position: relative;
   pointer-events: none;
   display: flex;
-  --fit: calc((100% - var(--card-w) - 4 * var(--group-gap)) / max(var(--n, 13) - 1, 1));
+  --fit: calc((100% - var(--card-w) - 6 * var(--group-gap)) / max(var(--n, 13) - 1, 1));
   --step: min(var(--card-w) * (1 - var(--hand-overlap)), var(--fit));
+}
+.hand-present {
+  display: contents;
 }
 .hand-slot + .hand-slot {
   margin-left: calc(var(--step) - var(--card-w));
 }
 .hand-slot.group-start {
   margin-left: calc(var(--step) - var(--card-w) + var(--group-gap));
+}
+/* While discarding, the cards that must be kept sit apart at the end of the hand. */
+.hand-slot.kept-start {
+  margin-left: calc(var(--step) - var(--card-w) + var(--group-gap) * 2.5);
 }
 /* The fan: each card leans by its distance from the middle (--d) and drops a little. Around
    a hovered card the others part (--part, set by Hand) and the card itself rises (--raise);
@@ -1303,7 +1339,8 @@ button.card:focus-visible:not([aria-disabled="true"]) {
 }
 /* Cards on the felt are larger than in the hand, for reading across the table; a played
    card grows on its way there. */
-.trick-card .card {
+.trick-card .card,
+.discard-card .card {
   width: calc(var(--card-w) * var(--trick-scale));
   height: calc(var(--card-h) * var(--trick-scale));
   font-size: calc(var(--trick-scale) * 1em);

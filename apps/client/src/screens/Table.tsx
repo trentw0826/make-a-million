@@ -14,6 +14,7 @@ import { LayoutGroup } from 'motion/react';
 import { useEffect, useState } from 'react';
 import { ActionBar } from '../components/ActionBar';
 import { ContractBar } from '../components/ContractBar';
+import { DiscardTray } from '../components/DiscardTray';
 import { GameOver } from '../components/GameOver';
 import { Hand } from '../components/Hand';
 import { HandResult } from '../components/HandResult';
@@ -73,6 +74,15 @@ export function Table({ room, view }: { room: RoomView; view: TableView }) {
     !forbidden.has(id) && (selected.has(id) || isNumber(id) || moneySelected < moneyAllowed);
   // The widow is in view only for the bidder; mark its cards while they choose discards.
   const widow = new Set(discarding ? (view.widow ?? []) : []);
+  // While discarding, the cards that must be kept (the Tiger, Bull and Bear, and Money while
+  // number cards remain) move to the end of the hand together, set apart, and the picked
+  // cards leave the hand for the discard tray on the felt.
+  const kept = new Set(
+    discarding
+      ? view.hand.filter((id) => forbidden.has(id) || (!isNumber(id) && moneyAllowed === 0))
+      : [],
+  );
+  const handIds = discarding ? view.hand.filter((id) => !selected.has(id)) : view.hand;
 
   // Tooltips need a hover, which touch screens don't have, so a click on a greyed-out card
   // says why too.
@@ -156,6 +166,7 @@ export function Table({ room, view }: { room: RoomView; view: TableView }) {
             plays={state.trickPlays}
             completed={completed}
           />
+          {discarding && <DiscardTray ids={[...selected]} onReturn={onCard} />}
 
           <div
             className={['me', myTurn && 'me-turn', hasPassed(view, me) && 'seat-passed']
@@ -171,8 +182,9 @@ export function Table({ room, view }: { room: RoomView; view: TableView }) {
             />
             <Hand
               key={dealKey}
-              ids={view.hand}
+              ids={handIds}
               trump={view.trump}
+              kept={kept}
               dealer={spotOf(view.dealer, me)}
               onHoverColor={naming ? setTrumpPreview : undefined}
               cardProps={(id) => {

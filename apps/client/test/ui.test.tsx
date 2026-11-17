@@ -499,6 +499,45 @@ describe('table status', () => {
     expect(screen.getByRole('button', { name: 'Discard' })).toBeEnabled();
   });
 
+  it('sets the kept cards apart and lays picked discards out on the felt', async () => {
+    renderWith([
+      welcome,
+      { type: 'room', room: room('playing') },
+      {
+        type: 'view',
+        view: {
+          ...dealt,
+          phase: 'discarding',
+          turn: 0,
+          contract: { bidder: 0, amount: 175_000 },
+          // Red 1, 2, 3, Red $40k, the Tiger, Green 1: four number cards, so Money stays.
+          hand: [0, 1, 2, 12, 52, 39],
+          legal: { kind: 'discard', requiredNumberCards: 3, forbiddenIds: [52] },
+        },
+      },
+    ]);
+    const handIds = () =>
+      [...document.querySelectorAll('.hand [data-card-id]')].map((c) =>
+        Number(c.getAttribute('data-card-id')),
+      );
+    // The Red $40k and the Tiger must be kept: they close the hand, set apart.
+    expect(handIds().slice(-2)).toEqual([12, 52]);
+    expect(document.querySelector('[data-card-id="12"]')?.closest('.hand-slot')).toHaveClass(
+      'kept-start',
+    );
+
+    const tray = screen.getByRole('region', { name: 'Your discards' });
+    fireEvent.click(document.querySelector('.hand [data-card-id="1"]') as Element);
+    // It flies to the tray (in jsdom the hand's copy lingers, as its exit never runs).
+    await waitFor(() => expect(tray.querySelector('[data-card-id="1"]')).not.toBeNull());
+    expect(screen.getByRole('button', { name: 'Discard (2 left)' })).toBeDisabled();
+
+    fireEvent.click(tray.querySelector('[data-card-id="1"]') as Element);
+    expect(tray.querySelector('[data-card-id="1"]')).toBeNull();
+    expect(handIds()).toContain(1);
+    expect(screen.getByRole('button', { name: 'Discard (3 left)' })).toBeDisabled();
+  });
+
   it('puts the bid amount on the button, − and + beside it, and Pass to the right', () => {
     renderWith(atTable);
     const stepper = document.querySelector('.bid-stepper') as HTMLElement;

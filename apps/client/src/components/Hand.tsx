@@ -1,6 +1,14 @@
 import { type CardId, cardById, isTrump, type Suit } from '@mam/engine';
-import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
-import { type CSSProperties, type FocusEvent, useEffect, useMemo, useRef, useState } from 'react';
+import { AnimatePresence, motion, useIsPresent, useReducedMotion } from 'motion/react';
+import {
+  type CSSProperties,
+  type FocusEvent,
+  type ReactNode,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { CardBackArt } from '../art/CardBackArt';
 import { displayGroup, displayOrder } from '../handOrder';
 import type { Spot } from '../spots';
@@ -21,6 +29,8 @@ interface Props {
    * focus, or null.
    */
   readonly onHoverColor?: ((suit: Suit | null) => void) | undefined;
+  /** Cards to set apart at the end of the hand (the ones that must be kept when discarding). */
+  readonly kept?: ReadonlySet<CardId> | undefined;
 }
 
 /** Offsets from the hand to each dealer's seat, roughly, for the deal to start from. */
@@ -50,6 +60,19 @@ export function partOffset(i: number, at: number): number {
 }
 
 /**
+ * A card on its way out of the hand (played, or picked to discard) fades where it was for a
+ * moment; it mustn't take a click meant for the card sliding into its place.
+ */
+function Present({ children }: { children: ReactNode }) {
+  const present = useIsPresent();
+  return (
+    <div className="hand-present" inert={!present}>
+      {children}
+    </div>
+  );
+}
+
+/**
  * The player's own cards, fanned and grouped by color, the trump group first once it is
  * named. Mount a fresh Hand for each deal (key it by deal) so the cards are dealt in again:
  * each flies from the dealer face down and turns over as it lands. When the order changes
@@ -58,13 +81,28 @@ export function partOffset(i: number, at: number): number {
  * while it leaves, because the view that drops it arrives just before the event that puts it
  * on the felt. Hovering or focusing a card raises it and parts the cards around it.
  */
-export function Hand({ ids, trump, dealer, cardProps, onHoverColor }: Props) {
-  const order = useMemo(() => displayOrder(ids, trump), [ids, trump]);
-  // The first render is the deal; cards that mount after it are the widow.
+export function Hand({ ids, trump, dealer, cardProps, onHoverColor, kept }: Props) {
+  const order = useMemo(() => {
+    if (!kept || kept.size === 0) return displayOrder(ids, trump);
+    return [
+      ...displayOrder(
+        ids.filter((id) => !kept.has(id)),
+        trump,
+      ),
+      ...displayOrder(
+        ids.filter((id) => kept.has(id)),
+        trump,
+      ),
+    ];
+  }, [ids, trump, kept]);
+  // The first render is the deal; cards that mount after it are the widow. A card that left
+  // and comes back (a discard put back) flies home on its own, so it isn't dealt in again.
   const dealt = useRef(false);
+  const seen = useRef(new Set<CardId>());
   useEffect(() => {
     dealt.current = true;
-  }, []);
+    for (const id of order) seen.current.add(id);
+  });
   const mid = (order.length - 1) / 2;
   // With reduced motion, cards simply appear where they belong: no start pose, not even for
   // a frame.
@@ -99,8 +137,10 @@ export function Hand({ ids, trump, dealer, cardProps, onHoverColor }: Props) {
       <AnimatePresence mode="popLayout">
         {order.map((id, i) => {
           const prev = order[i - 1];
+          const keptStart = kept?.has(id) === true && prev !== undefined && !kept.has(prev);
           const newGroup =
-            prev !== undefined && displayGroup(prev, trump) !== displayGroup(id, trump);
+            prev !== undefined &&
+            (keptStart || displayGroup(prev, trump) !== displayGroup(id, trump));
           const from = dealt.current ? WIDOW_FROM : DEAL_FROM[dealer ?? 'top'];
           const delay = dealt.current ? 0 : (i * DEAL_STAGGER_MS) / 1000;
           const props = cardProps(id);
@@ -128,30 +168,38 @@ export function Hand({ ids, trump, dealer, cardProps, onHoverColor }: Props) {
               layoutId={cardLayoutId(id)}
               exit={{ opacity: 0, transition: { duration: DUR_FAST_MS / 1000 } }}
               transition={{ layout: CARD_SPRING }}
-              className={newGroup ? 'hand-slot group-start' : 'hand-slot'}
+              className={['hand-slot', newGroup && 'group-start', keptStart && 'kept-start']
+                .filter(Boolean)
+                .join(' ')}
               onPointerEnter={(e) => {
                 // A tap is a play, not a look: don't part the hand under a finger.
                 if (e.pointerType !== 'touch') setHovered(id);
               }}
               onFocus={() => setHovered(id)}
             >
-              <div className={raise ? 'hand-fan hand-fan-hovered' : 'hand-fan'} style={fan}>
-                <motion.div
-                  className="card-3d"
-                  initial={still ? false : { x: from.x, y: from.y, rotateY: 180, opacity: 0 }}
-                  animate={{ x: 0, y: 0, rotateY: 0, opacity: 1 }}
-                  transition={{ duration: DEAL_MS / 1000, delay, ease: EASE_OUT }}
-                >
-                  <CardFace
-                    id={id}
-                    {...props}
-                    trump={trump !== null && isTrump(cardById(id), trump)}
-                  />
-                  <div className="card-3d-back" aria-hidden="true">
-                    <CardBackArt />
-                  </div>
-                </motion.div>
-              </div>
+              <Present>
+                <div className={raise ? 'hand-fan hand-fan-hovered' : 'hand-fan'} style={fan}>
+                  <motion.div
+                    className="card-3d"
+                    initial={
+                      still || seen.current.has(id)
+                        ? false
+                        : { x: from.x, y: from.y, rotateY: 180, opacity: 0 }
+                    }
+                    animate={{ x: 0, y: 0, rotateY: 0, opacity: 1 }}
+                    transition={{ duration: DEAL_MS / 1000, delay, ease: EASE_OUT }}
+                  >
+                    <CardFace
+                      id={id}
+                      {...props}
+                      trump={trump !== null && isTrump(cardById(id), trump)}
+                    />
+                    <div className="card-3d-back" aria-hidden="true">
+                      <CardBackArt />
+                    </div>
+                  </motion.div>
+                </div>
+              </Present>
             </motion.div>
           );
         })}
