@@ -1,7 +1,8 @@
 import type { Seat } from '@mam/engine';
 import type { Difficulty, RoomView, SeatView } from '@mam/protocol';
 import { LayoutGroup, motion } from 'motion/react';
-import { DIFFICULTY_LABELS, DIFFICULTY_ORDER, seatLabel } from '../format';
+import { SeatName } from '../components/SeatName';
+import { DIFFICULTY_LABELS, DIFFICULTY_ORDER } from '../format';
 import { type Spot, spotOf } from '../spots';
 import { useGame } from '../store';
 
@@ -123,7 +124,7 @@ function Chair(p: ChairProps) {
         {v ? (
           <>
             <strong className="chair-name">
-              {seatLabel(v)}
+              <SeatName seat={v} />
               {p.isMine && <span className="muted"> (you)</span>}
             </strong>
             <span className="chair-tags">

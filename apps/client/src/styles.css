@@ -650,6 +650,11 @@ input {
 .seat-name {
   margin-bottom: 4px;
 }
+/* A bot's strength, after its name: there if you look, quiet if you don't. */
+.seat-difficulty {
+  font-weight: normal;
+  opacity: 0.55;
+}
 .seat-role {
   display: flex;
   align-items: center;
@@ -764,24 +769,6 @@ input {
   right: 24px;
   top: 50%;
   transform: translateY(-50%);
-}
-.trick-caption {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  text-align: center;
-  display: grid;
-  gap: 4px;
-  pointer-events: none;
-}
-/* How many of the hand's tricks have been played: there to find, not to read. */
-.trick-count {
-  font-size: 0.85em;
-  letter-spacing: 0.08em;
-  font-variant-numeric: tabular-nums;
-  color: var(--paper);
-  opacity: 0.35;
 }
 
 /* Your seat: centred, about half the table wide, with your side's tricks off to its right. */

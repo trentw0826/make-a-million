@@ -1,8 +1,8 @@
 import { partnerOf, type Seat, type TableView } from '@mam/engine';
 import type { RoomView } from '@mam/protocol';
-import { seatLabel } from '../format';
 import { hasPassed, seatChip } from '../hints';
 import { CardBack } from './CardFace';
+import { SeatName } from './SeatName';
 
 interface Props {
   seat: Seat;
@@ -29,7 +29,7 @@ export function SeatPanel({ seat, room, view, position }: Props) {
     <div className={classes.join(' ')}>
       <div className="seat-name">
         <span className="side-dot" aria-hidden="true" />
-        {seatLabel(s)}
+        <SeatName seat={s} />
         <span className="visually-hidden">, {partner ? 'your partner' : 'opponent'}</span>
         {s?.kind === 'human' && !s.connected && (
           <span className="tag warn">{s.botControlled ? 'bot playing' : 'reconnecting…'}</span>

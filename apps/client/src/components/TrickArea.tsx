@@ -1,7 +1,6 @@
 import {
   cardById,
   currentWinner,
-  HAND_SIZE,
   isTrump,
   type Seat,
   type TableView,
@@ -149,16 +148,9 @@ export function TrickArea({ me, room, view, plays, completed }: Props) {
           </div>
         );
       })}
-      {/* The felt only counts the tricks played; what is happening is in words for screen
-          readers, since sighted players see it in the cards. */}
-      <div className="trick-caption">
-        {(view.phase === 'playing' || held) && (
-          <span className="trick-count" aria-hidden="true">
-            {view.trickCounts[0] + view.trickCounts[1]}/{HAND_SIZE}
-          </span>
-        )}
-        <span className="visually-hidden">{caption}</span>
-      </div>
+      {/* The middle of the felt is left to the cards; what is happening is put in words
+          for screen readers only, since sighted players see it in the cards. */}
+      <div className="visually-hidden">{caption}</div>
     </section>
   );
 }

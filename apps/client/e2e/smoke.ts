@@ -149,7 +149,10 @@ async function openTable(page: Page, base: string): Promise<void> {
     await addNormal.first().click();
   }
   await until(async () => (await addNormal.count()) === 0, 'a full table');
-  check((await page.getByText(/Bot \d · Hard/).count()) === 1, 'a seat shows "Bot · Hard"');
+  check(
+    (await page.locator('.chair-name', { hasText: /^Bot \d Hard$/ }).count()) === 1,
+    'a seat shows "Bot 2 Hard", its strength in quiet type',
+  );
   await page.getByRole('button', { name: 'Start game' }).click();
   await page.locator('.felt').waitFor();
 }

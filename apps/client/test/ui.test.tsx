@@ -197,7 +197,8 @@ describe('lobby', () => {
     expect(chair(3)).toHaveClass('chair-bottom', 'chair-mine', 'side-us');
     expect(chair(1)).toHaveClass('chair-top', 'chair-empty', 'side-us');
     expect(chair(2)).toHaveClass('chair-right', 'side-them');
-    expect(chair(2)).toHaveTextContent('Bot 2 · Hard');
+    expect(chair(2)).toHaveTextContent('Bot 2 Hard');
+    expect(within(chair(2)).getByText('Hard')).toHaveClass('seat-difficulty');
     expect(chair(4)).toHaveClass('chair-left', 'side-them');
     // The host fills an empty chair with a bot of the chosen strength.
     expect(within(chair(4)).getByRole('button', { name: '+ Bot · Hard' })).toBeInTheDocument();
@@ -368,7 +369,7 @@ describe('table status', () => {
     }
   });
 
-  it('counts the tricks on the felt, and leaves the bar and the seats unlabelled in play', () => {
+  it('leaves the felt, the bar and the seats unlabelled in play', () => {
     renderWith([
       welcome,
       { type: 'room', room: room('playing') },
@@ -385,7 +386,7 @@ describe('table status', () => {
         },
       },
     ]);
-    expect(document.querySelector('.trick-count')).toHaveTextContent('5/13');
+    expect(document.querySelector('.trick-area')).not.toHaveTextContent(/\d+\/13/);
     expect(document.querySelector('.seat-left')).not.toHaveTextContent('bidder');
     expect(document.querySelector('.action-bar')).toHaveClass('action-hidden');
     expect(screen.getByText(/^Your turn\./)).toHaveClass('visually-hidden');
