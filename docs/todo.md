@@ -3,18 +3,13 @@
 A scratchpad for future fixes, features, and updates
 
 ## Immediate
-- [ ] Remove the rounded golden border that seems to denote money cards
-- [ ] The mouse changes to denote clickable elements like cards
 - [ ] When choosing trump, instead of the 4 button multiple choice, the player chooses using the cards in their hand. The player can hover over the different groups (as opposed to hovering over single cards at a time) which gently move upward and 'push' the other groups away, in the same exact manner as happens with choosing a single card. The UI is slightly redesigned to make it clear that the player is being asked to choose trump and a dynamic element lets the player know what color they're about to choose for trump when they're hovered over a color. The special cards go transparent during this process.
-- [ ] Increase the size of the cards during the animation that puts them on the table, for easier reading
 - [ ] Each player gets their own messy pile of cards they've won (rather than one per partnership). Use your judgement as to the location of each
-- [ ] Exiting the score sheet triggers the exact reverse animation of it entering (table un-dims, score sheet slides away) rather than immediately disappearing
-- [ ] Rename "score sheet & log" to just "score sheet"
-- [ ] Remove "copy invite link" feature
-- [ ] Move room code indicator to right side 
 - [ ] Creatively re-imagine the landing page to more closely fit the rest of the theme
-- [ ] Change the "pass" element in the bidding action box to be a bit more subtle
-- [ ] Overlapping invisible cards creates a venn diagram effect that is unnecessarily attention-calling. Brainstorm and implement a way to maintain the transparency effect without the strong overlapping sections
+- [ ] Remove the text from the center of the table and replace it with a very subtle but visible 'x/13' text denoting the number of tricks played in the hand; 
+- [ ] Remove the text in the action box during trick-taking giving messages like "Follow Green." or "No Black: play any card."
+- [ ] Remove the 'bidder' tag from the players that took the bid
+- [ ] 
 
 
 ## Later

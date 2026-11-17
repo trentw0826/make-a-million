@@ -27,6 +27,7 @@ const failures: string[] = [];
 /** Checked once, on the first turn that has an unplayable card. */
 let passedSeatChecked = false;
 let discardChecked = false;
+let cursorChecked = false;
 let blockedCardChecked = false;
 function check(ok: boolean, what: string): void {
   console.log(`${ok ? '✓' : '✗'} ${what}`);
@@ -225,6 +226,20 @@ async function act(page: Page, shoot: Shoot): Promise<boolean> {
         );
         blockedCardChecked = true;
       }
+      if (!cursorChecked) {
+        const box = await card.boundingBox();
+        const cursor =
+          box &&
+          (await page.evaluate(
+            ([x, y]) => {
+              const el = document.elementFromPoint(x, y);
+              return el ? getComputedStyle(el).cursor : null;
+            },
+            [box.x + box.width / 2, box.y + box.height / 2] as const,
+          ));
+        check(cursor === 'pointer', 'the pointer turns to a hand over a card you can play');
+        cursorChecked = true;
+      }
       await card.click(quick);
       return true;
     }
@@ -302,7 +317,7 @@ async function fullHand(browser: Browser, base: string): Promise<void> {
   const corner = page.locator('.table-corner');
   check(
     (await corner.locator('.icon-btn svg').count()) === 3 &&
-      (await corner.getByRole('button', { name: 'Score sheet & log' }).count()) === 1 &&
+      (await corner.getByRole('button', { name: 'Score sheet', exact: true }).count()) === 1 &&
       (await corner.getByRole('button', { name: 'How to play' }).count()) === 1 &&
       (await page.locator('.topbar').getByRole('button', { name: 'How to play' }).count()) === 0,
     'the score sheet, sound and How to play sit as icons in the corner by your seat',
@@ -411,9 +426,9 @@ async function fullHand(browser: Browser, base: string): Promise<void> {
   );
 
   // The score sheet and log wait in a drawer off the table.
-  const drawer = page.getByRole('complementary', { name: 'Score sheet and table log' });
+  const drawer = page.getByRole('complementary', { name: 'Score sheet' });
   check(await drawer.isHidden(), 'the score sheet and log start put away');
-  await page.getByRole('button', { name: 'Score sheet & log' }).click();
+  await page.getByRole('button', { name: 'Score sheet', exact: true }).click();
   check(await drawer.isVisible(), 'the score sheet and log open from the felt');
   await shoot('8-score-sheet');
   check(
@@ -427,6 +442,8 @@ async function fullHand(browser: Browser, base: string): Promise<void> {
   check(!/takes trick|bids \$|passes\./.test(log), 'the log has no per-trick or per-bid lines');
   check(/(made|were set on) the \$\d+k bid/.test(log), 'the log records the result');
   await page.keyboard.press('Escape');
+  // It slides back out before it is gone.
+  await drawer.waitFor({ state: 'hidden', timeout: 2_000 }).catch(() => {});
   check(await drawer.isHidden(), 'Esc puts the score sheet and log away');
   check(
     pageErrors.length === 0,

@@ -51,6 +51,8 @@
   --warn-ink: #7a3e00;
   /* A seat out of the auction fades back to this. */
   --passed-opacity: 0.4;
+  /* How far a card that can't be chosen fades into the felt. */
+  --disabled-veil: 0.55;
 
   /* Type ---------------------------------------------------------------- */
   --font-display: Georgia, "Times New Roman", serif;
@@ -75,6 +77,8 @@
   --card-h: 92px;
   --card-small-w: 54px;
   --card-small-h: 78px;
+  /* Cards on the felt, against the hand's size. */
+  --trick-scale: 1.25;
   --back-w: 30px;
   --back-h: 42px;
   /* Degrees between neighbouring cards in the fanned hand. */
@@ -115,6 +119,7 @@
     --card-h: 80px;
     --card-small-w: 46px;
     --card-small-h: 66px;
+    --trick-scale: 1.1;
   }
 }
 

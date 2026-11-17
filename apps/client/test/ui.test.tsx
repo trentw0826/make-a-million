@@ -1,6 +1,6 @@
 import { createGame, observe, type TableView, tableView } from '@mam/engine';
 import type { RoomView, ServerMessage } from '@mam/protocol';
-import { act, fireEvent, render, screen, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { useEffect } from 'react';
 import { describe, expect, it } from 'vitest';
 import { Shell } from '../src/App';
@@ -109,10 +109,11 @@ describe('top bar', () => {
     expect(toggle).toHaveAttribute('aria-pressed', before ?? 'false');
   });
 
-  it('shows the room code with an invite button', () => {
+  it('shows the room code on the right, with no invite link', () => {
     renderWith(inLobby);
-    expect(document.querySelector('.topbar')).toHaveTextContent('Room ABC123');
-    expect(screen.getAllByRole('button', { name: 'Copy invite link' }).length).toBeGreaterThan(0);
+    const nav = screen.getByRole('navigation', { name: 'Game' });
+    expect(nav).toHaveTextContent(/^Room ABC123/);
+    expect(screen.queryByRole('button', { name: 'Copy invite link' })).toBeNull();
   });
 
   it('leaves the lobby at once', () => {
@@ -208,50 +209,59 @@ describe('lobby', () => {
 describe('score sheet and log drawer', () => {
   const entries = [{ id: 1, hand: 1, text: 'Ann deals.', tone: 'info' as const }];
 
-  it('opens from its button and puts itself away on Esc or its close button', () => {
+  /** The sheet slides out before it is gone. */
+  const gone = () =>
+    waitFor(() => {
+      expect(screen.queryByRole('complementary')).toBeNull();
+      expect(document.querySelector('.drawer-scrim')).toBeNull();
+    });
+
+  it('opens from its button and puts itself away on Esc or its close button', async () => {
     render(<TableDrawer view={dealt} room={room('playing')} log={entries} />);
-    const toggle = screen.getByRole('button', { name: 'Score sheet & log' });
+    const toggle = screen.getByRole('button', { name: 'Score sheet' });
     expect(toggle).toHaveAttribute('aria-expanded', 'false');
     expect(screen.queryByRole('complementary')).toBeNull();
 
     fireEvent.click(toggle);
     expect(toggle).toHaveAttribute('aria-expanded', 'true');
-    const drawer = screen.getByRole('complementary', { name: 'Score sheet and table log' });
+    const drawer = screen.getByRole('complementary', { name: 'Score sheet' });
     expect(drawer).toHaveTextContent('No hands scored yet.');
     expect(drawer).toHaveTextContent('Ann deals.');
 
     fireEvent.keyDown(window, { key: 'Escape' });
-    expect(screen.queryByRole('complementary')).toBeNull();
+    expect(toggle).toHaveAttribute('aria-expanded', 'false');
     expect(toggle).toHaveFocus();
+    await gone();
 
     fireEvent.click(toggle);
-    fireEvent.click(screen.getByRole('button', { name: 'Close the score sheet and log' }));
-    expect(screen.queryByRole('complementary')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Close the score sheet' }));
+    await gone();
   });
 
-  it('dims the table while open, and a click anywhere else puts it away', () => {
+  it('dims the table while open, and a click anywhere else puts it away', async () => {
     render(
       <div>
         <p>The table</p>
         <TableDrawer view={dealt} room={room('playing')} log={entries} />
       </div>,
     );
-    const toggle = screen.getByRole('button', { name: 'Score sheet & log' });
+    const toggle = screen.getByRole('button', { name: 'Score sheet' });
     expect(document.querySelector('.drawer-scrim')).toBeNull();
     fireEvent.click(toggle);
     expect(document.querySelector('.drawer-scrim')).not.toBeNull();
 
     // A press inside the sheet keeps it open.
     fireEvent.pointerDown(screen.getByText('Ann deals.'));
-    expect(screen.getByRole('complementary')).toBeInTheDocument();
+    expect(toggle).toHaveAttribute('aria-expanded', 'true');
 
     fireEvent.pointerDown(document.querySelector('.drawer-scrim') as Element);
-    expect(screen.queryByRole('complementary')).toBeNull();
-    expect(document.querySelector('.drawer-scrim')).toBeNull();
+    expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    await gone();
 
     fireEvent.click(toggle);
     fireEvent.pointerDown(screen.getByText('The table'));
-    expect(screen.queryByRole('complementary')).toBeNull();
+    expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    await gone();
   });
 });
 
@@ -322,7 +332,7 @@ describe('table status', () => {
   it('keeps the score sheet, sound and How to play as icons in the corner', () => {
     renderWith(atTable);
     const corner = document.querySelector('.table-corner') as HTMLElement;
-    for (const name of ['Score sheet & log', 'Mute sounds', 'How to play']) {
+    for (const name of ['Score sheet', 'Mute sounds', 'How to play']) {
       const button = within(corner).getByRole('button', { name });
       expect(button).toHaveClass('icon-btn');
       expect(button.querySelector('svg')).not.toBeNull();

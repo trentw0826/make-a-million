@@ -1,7 +1,6 @@
 import type { Seat } from '@mam/engine';
 import type { Difficulty, RoomView, SeatView } from '@mam/protocol';
 import { LayoutGroup, motion } from 'motion/react';
-import { InviteButton } from '../components/TopBar';
 import { DIFFICULTY_LABELS, DIFFICULTY_ORDER, seatLabel } from '../format';
 import { type Spot, spotOf } from '../spots';
 import { useGame } from '../store';
@@ -29,10 +28,7 @@ export function Lobby({ room }: { room: RoomView }) {
         <h1>
           Room <span className="room-code">{room.code}</span>
         </h1>
-        <div className="lobby-share">
-          <span className="muted">Share the code or the link with your table.</span>
-          <InviteButton code={room.code} />
-        </div>
+        <p className="muted">Share the room code with your table to have them join.</p>
       </header>
 
       <LayoutGroup>

@@ -134,7 +134,12 @@ function BidControls({
         </button>
       </div>
       <div className="bid-bar-end">
-        <button type="button" disabled={!legal.canPass} onClick={() => act({ type: 'pass' })}>
+        <button
+          type="button"
+          className="bid-pass"
+          disabled={!legal.canPass}
+          onClick={() => act({ type: 'pass' })}
+        >
           Pass
         </button>
       </div>

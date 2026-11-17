@@ -170,7 +170,8 @@ input {
 .topbar-room {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 6px;
+  margin-right: 6px;
 }
 .room-code {
   font-family: var(--font-mono);
@@ -406,15 +407,6 @@ input {
   margin-bottom: 4px;
   padding: 0;
   text-align: center;
-}
-.lobby-share {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  align-items: center;
-}
-.lobby-share button {
-  font-size: 0.9em;
 }
 
 /* Table ------------------------------------------------------------------ */
@@ -871,6 +863,12 @@ input {
 .bid-bar-end {
   justify-self: end;
 }
+/* Pass is always there but rarely the point: a quiet outline, not a second button to weigh. */
+.bid-pass {
+  border-color: rgba(255, 255, 255, 0.28);
+  background: transparent;
+  color: var(--on-felt-muted);
+}
 .bid-stepper {
   display: flex;
   align-items: center;
@@ -1096,15 +1094,6 @@ button.card:focus-visible:not([aria-disabled="true"]) {
   fill: currentColor;
   opacity: 0.12;
 }
-/* Money cards wear a gold inner frame. */
-.card-money::after {
-  content: "";
-  position: absolute;
-  inset: 3px;
-  border: 1.5px solid var(--accent-light);
-  border-radius: calc(var(--radius-card) - 2px);
-  pointer-events: none;
-}
 .card-small {
   width: var(--card-small-w);
   height: var(--card-small-h);
@@ -1121,6 +1110,13 @@ button.card:focus-visible:not([aria-disabled="true"]) {
 .card-small .card-sub {
   display: none;
 }
+/* Cards on the felt are larger than in the hand, for reading across the table; a played
+   card grows on its way there. */
+.trick-card .card {
+  width: calc(var(--card-w) * var(--trick-scale));
+  height: calc(var(--card-h) * var(--trick-scale));
+  font-size: calc(var(--trick-scale) * 1em);
+}
 .card-selected,
 button.card-selected:hover:not([aria-disabled="true"]) {
   outline: 3px solid var(--accent);
@@ -1134,9 +1130,18 @@ button.card-selected:hover:not([aria-disabled="true"]) {
 .hand-fan button.card-selected:hover:not([aria-disabled="true"]) {
   transform: none;
 }
-.card-disabled,
-button.card-disabled {
-  opacity: 0.45;
+/* A card that can't be chosen right now fades into the felt. A felt-coloured veil over an
+   opaque card, rather than a see-through card, so where cards overlap in the hand the one
+   underneath doesn't show through. */
+.card-disabled::before {
+  content: "";
+  position: absolute;
+  z-index: 2;
+  inset: -1px;
+  border-radius: inherit;
+  background: var(--felt);
+  opacity: var(--disabled-veil);
+  pointer-events: none;
 }
 .card-star {
   position: absolute;
@@ -1806,18 +1811,6 @@ button.modal-close {
 .modal {
   animation: rise-in 200ms var(--ease-out);
 }
-@keyframes slide-in-right {
-  from {
-    opacity: 0;
-    transform: translateX(40px);
-  }
-}
-.drawer-scrim {
-  animation: fade-in var(--dur-base) var(--ease-out);
-}
-.drawer {
-  animation: slide-in-right var(--dur-base) var(--ease-out);
-}
 
 @keyframes toast-in {
   from {
@@ -1885,8 +1878,6 @@ button.modal-close {
   .card-winning,
   .modal-backdrop,
   .modal,
-  .drawer,
-  .drawer-scrim,
   .toast,
   .delta-float {
     animation: none;
