@@ -3,12 +3,10 @@
 A scratchpad for future fixes, features, and updates
 
 ## Immediate
-- [ ] I don't like the top bar at all that reports "Hand 2Trent bid $225kTrump RedTricks Us 1 – Them 2". Find clean and simple ways to report that information in other ways and remove the top bar
 - [ ] The discard view where all money cards become transparent creates a very jumbled, awkward, and hard-to-read look. Take a look at it and creatively and cleanly re-invent that view to make it easier to understand your options for discarding
 - [ ] Add gentle animations throughout the whole experience to make it feel smoother. As part of that, Include animations that more clearly indicate whose turn it is
 - [ ] Having cards of different sizes on the screen looks funky (hidden cards vs. user cards vs. discarded cards). 
 - [ ] Choose an elegant and clean new approach to fonts throughout the project
-- [ ] Add back the badge denoting 'You'
 
 ## Later
 - [ ] Create a phone-friendly UI

@@ -143,9 +143,15 @@ describe('seatChip', () => {
     expect(seatChip(v, 0)).toEqual({ text: 'No bid yet', kind: 'none' });
   });
 
-  it('goes quiet once the auction is over', () => {
-    const v = view({ phase: 'playing', auction: [{ seat: 1, kind: 'bid', amount: 175_000 }] });
-    expect(seatChip(v, 1)).toBeNull();
+  it('leaves only the bidder a badge once the auction is over: the contract and trump', () => {
+    const v = view({
+      phase: 'playing',
+      auction: [{ seat: 1, kind: 'bid', amount: 175_000 }],
+      contract: { bidder: 1, amount: 175_000 },
+      trump: 'green',
+    });
+    expect(seatChip(v, 1)).toEqual({ text: '$175k', kind: 'contract', trump: 'green' });
+    expect(seatChip(v, 2)).toBeNull();
   });
 });
 

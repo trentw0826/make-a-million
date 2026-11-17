@@ -662,9 +662,8 @@ button.icon-btn {
   color: var(--paper);
   display: grid;
   grid-template-columns: 1fr minmax(320px, 2fr) 1fr;
-  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  grid-template-rows: auto minmax(0, 1fr) auto;
   grid-template-areas:
-    "bar bar bar"
     "score top tools"
     "left trick right"
     "me me me";
@@ -797,26 +796,57 @@ button.icon-btn {
   background: var(--accent);
   color: var(--on-accent);
 }
-.contract-bar {
-  grid-area: bar;
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
+/* The bidder's badge for the rest of the hand: the contract, and trump once named. */
+.chip-contract {
+  display: inline-flex;
   align-items: center;
-  gap: 6px 22px;
-  min-height: 34px;
-  padding: 4px 14px;
-  border-radius: var(--radius-l);
-  background: rgba(0, 0, 0, 0.22);
-  font-size: 0.95em;
-}
-.contract-hand {
-  opacity: 0.7;
-}
-.suit-chip {
-  padding: 1px 10px;
-  border-radius: var(--radius-l);
+  gap: 6px;
   background: var(--paper);
+  color: var(--ink);
+  box-shadow: inset 0 0 0 2px var(--accent);
+}
+.chip-trump {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding-left: 6px;
+  border-left: 1px solid var(--line);
+}
+.chip-trump-glyph {
+  width: 0.85em;
+  height: 0.85em;
+}
+/* Your own seat says so. */
+.you-tag {
+  margin-right: 6px;
+  padding: 1px 8px;
+  border-radius: var(--radius-l);
+  background: var(--team-us);
+  color: var(--on-accent);
+  font-size: 0.85em;
+  font-weight: bold;
+}
+/* Trump, as a faint watermark in the middle of the felt. */
+.trump-mark {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: min(30%, 140px);
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  opacity: 0.14;
+  pointer-events: none;
+  animation: fade-in var(--dur-slow) var(--ease-out);
+}
+.trump-mark svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.scoreboard-hand {
+  font-size: 0.8em;
+  letter-spacing: 0.04em;
+  color: var(--on-felt-muted);
 }
 
 /* Sized to its fan (inline), so it centres under the seat's name. */
@@ -1916,7 +1946,6 @@ button.modal-close {
     grid-template-columns: 1fr 1fr;
     grid-template-rows: auto;
     grid-template-areas:
-      "bar bar"
       "score tools"
       "top top"
       "left right"

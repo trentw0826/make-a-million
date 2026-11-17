@@ -369,6 +369,32 @@ describe('table status', () => {
     }
   });
 
+  it('shows the contract on the bidder, trump on the felt, and the hand on the scoreboard', () => {
+    renderWith([
+      welcome,
+      { type: 'room', room: room('playing') },
+      {
+        type: 'view',
+        view: {
+          ...dealt,
+          phase: 'playing',
+          handNumber: 2,
+          turn: 1,
+          trump: 'red',
+          contract: { bidder: 1, amount: 185_000 },
+          legal: { kind: 'none' },
+        },
+      },
+    ]);
+    const badge = document.querySelector('.seat-left .chip-contract') as HTMLElement;
+    expect(badge).toHaveTextContent('Contract $185kRed');
+    expect(badge.querySelector('[data-trump-suit="red"]')).not.toBeNull();
+    expect(document.querySelector('.trump-mark')).toHaveClass('suit-red');
+    expect(screen.getByRole('region', { name: 'Scores' })).toHaveTextContent(/^Hand 2/);
+    expect(screen.getByRole('region', { name: 'Hand status' })).toHaveClass('visually-hidden');
+    expect(document.querySelector('.me-line .you-tag')).toHaveTextContent('You');
+  });
+
   it('leaves the felt, the bar and the seats unlabelled in play', () => {
     renderWith([
       welcome,

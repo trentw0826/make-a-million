@@ -8,6 +8,7 @@ import {
 } from '@mam/engine';
 import type { RoomView } from '@mam/protocol';
 import { motion, type TargetAndTransition, useReducedMotion } from 'motion/react';
+import { SuitGlyph } from '../art/CardArt';
 import { CardBackArt } from '../art/CardBackArt';
 import { nameOf, SUIT_NAMES } from '../format';
 import { trickSuit } from '../hints';
@@ -148,6 +149,12 @@ export function TrickArea({ me, room, view, plays, completed }: Props) {
           </div>
         );
       })}
+      {/* Trump, once named, as a faint mark in the middle of the felt, under the cards. */}
+      {trump && (
+        <span key={trump} className={`trump-mark suit-${trump}`} aria-hidden="true">
+          <SuitGlyph suit={trump} />
+        </span>
+      )}
       {/* The middle of the felt is left to the cards; what is happening is put in words
           for screen readers only, since sighted players see it in the cards. */}
       <div className="visually-hidden">{caption}</div>

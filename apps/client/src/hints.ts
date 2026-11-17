@@ -101,11 +101,13 @@ export function hasPassed(view: TableView, seat: Seat): boolean {
   return view.phase === 'bidding' && view.auction.some((e) => e.seat === seat && e.kind === 'pass');
 }
 
-export type ChipKind = 'none' | 'bid' | 'high' | 'pass';
+export type ChipKind = 'none' | 'bid' | 'high' | 'pass' | 'contract';
 
 export interface SeatChip {
   readonly text: string;
   readonly kind: ChipKind;
+  /** On the contract badge: trump, once named. */
+  readonly trump?: Suit | null;
 }
 
 /**
@@ -113,7 +115,12 @@ export interface SeatChip {
  * bid yet, the winning bid, a bid since topped, or passed. Only the winning bid stands out.
  */
 export function seatChip(view: TableView, seat: Seat): SeatChip | null {
-  if (view.phase !== 'bidding') return null;
+  // After the auction the bidder keeps a badge for the contract, and trump once named.
+  if (view.phase !== 'bidding') {
+    const c = view.contract;
+    if (!c || c.bidder !== seat || view.phase === 'game-over') return null;
+    return { text: shortMoney(c.amount), kind: 'contract', trump: view.trump };
+  }
   const last = view.auction.findLast((e) => e.seat === seat);
   if (!last) return { text: 'No bid yet', kind: 'none' };
   if (last.kind === 'pass') return { text: 'Passed', kind: 'pass' };

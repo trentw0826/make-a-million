@@ -2,6 +2,7 @@ import { partnerOf, type Seat, type TableView } from '@mam/engine';
 import type { RoomView } from '@mam/protocol';
 import { hasPassed, seatChip } from '../hints';
 import { CardBack } from './CardFace';
+import { SeatBadge } from './SeatBadge';
 import { SeatName } from './SeatName';
 
 interface Props {
@@ -36,7 +37,7 @@ export function SeatPanel({ seat, room, view, position }: Props) {
         )}
       </div>
       <div className="seat-role">
-        {chip && <span className={`seat-chip chip-${chip.kind}`}>{chip.text}</span>}
+        <SeatBadge chip={chip} />
       </div>
       <CardBack count={view.handSizes[seat]} />
     </div>

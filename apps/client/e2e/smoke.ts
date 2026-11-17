@@ -357,7 +357,9 @@ async function fullHand(browser: Browser, base: string): Promise<void> {
   await shoot('2-dealt');
   await checkNoScroll(page, 'the table');
   check(
-    /Bidding opens|High bid/.test((await page.locator('.contract-bar').textContent()) ?? ''),
+    ((await page.locator('.contract-bar').getAttribute('class')) ?? '').includes(
+      'visually-hidden',
+    ) && /Bidding opens|High bid/.test((await page.locator('.contract-bar').textContent()) ?? ''),
     'bidding begins as soon as the cards are dealt',
   );
   await until(() => page.locator('.me.me-turn').isVisible(), 'your turn to bid');
@@ -365,10 +367,11 @@ async function fullHand(browser: Browser, base: string): Promise<void> {
     await page.getByRole('button', { name: /^Bid \$/ }).isVisible(),
     'the table marks your turn to bid',
   );
-  const seatText = (await page.locator('.seat-panel, .me-line').allTextContents()).join(' ');
+  const seatText = (await page.locator('.seat-panel').allTextContents()).join(' ');
   check(
-    !/\b(dealer|Partner|Opponent|You)\b/.test(seatText.replace(/your partner|opponent/g, '')),
-    'seats carry no dealer, partner, opponent or You tags',
+    !/\b(dealer|Partner|Opponent|You)\b/.test(seatText.replace(/your partner|opponent/g, '')) &&
+      (await page.locator('.me-line .you-tag').textContent()) === 'You',
+    'only your own seat is tagged, with You',
   );
   const corner = page.locator('.table-corner');
   check(

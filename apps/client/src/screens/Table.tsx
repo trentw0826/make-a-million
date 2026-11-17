@@ -18,6 +18,7 @@ import { GameOver } from '../components/GameOver';
 import { Hand } from '../components/Hand';
 import { HandResult } from '../components/HandResult';
 import { Scoreboard } from '../components/Scoreboard';
+import { SeatBadge } from '../components/SeatBadge';
 import { SeatPanel } from '../components/SeatPanel';
 import { TableDrawer } from '../components/TableDrawer';
 import { HelpButton, SoundToggle } from '../components/TopBar';
@@ -127,6 +128,8 @@ export function Table({ room, view }: { room: RoomView; view: TableView }) {
   return (
     <main className="table-screen">
       <section className="felt">
+        {/* The hand's status in words, for screen readers; on screen it is shown by the
+            bidder's badge, the trump mark on the felt and the piles. */}
         <ContractBar view={view} room={room} />
         <Scoreboard view={view} room={room} />
         {/* One group per deal: a card you play flies from your hand to the felt, and on to
@@ -199,7 +202,8 @@ export function Table({ room, view }: { room: RoomView; view: TableView }) {
               }}
             />
             <div className="me-line side-us">
-              {myChip && <span className={`seat-chip chip-${myChip.kind}`}>{myChip.text}</span>}
+              <span className="you-tag">You</span>
+              <SeatBadge chip={myChip} />
             </div>
           </div>
           {/* Your tricks lie to your left. */}
