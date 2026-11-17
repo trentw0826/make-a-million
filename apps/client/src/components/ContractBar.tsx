@@ -64,8 +64,6 @@ export function ContractBar({ view, room }: { view: TableView; room: RoomView })
         Bidding opens at <strong>{shortMoney(view.ruleset.bidding.minOpeningBid)}</strong>
       </span>
     );
-  } else if (view.phase === 'misdeal-window') {
-    body = <span>{nameOf(room, view.dealer)} dealt</span>;
   }
 
   return (

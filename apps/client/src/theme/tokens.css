@@ -20,6 +20,9 @@
   --accent-light: #e9c46a;
   --on-accent: #ffffff;
   --on-felt-muted: rgba(255, 255, 255, 0.75);
+  /* Gains and losses written on the felt rather than on paper. */
+  --good-on-felt: #a5e0a8;
+  --bad-on-felt: #f4a39a;
 
   /* Colour: suits and specials ----------------------------------------- */
   --red: #c62828;
@@ -59,6 +62,7 @@
   --shadow-1: 0 1px 3px rgba(0, 0, 0, 0.3);
   --shadow-2: 0 2px 10px rgba(0, 0, 0, 0.4);
   --shadow-lift: 0 10px 18px rgba(0, 0, 0, 0.35);
+  --shadow-drawer: -8px 0 24px rgba(0, 0, 0, 0.35);
   --glow-accent: 0 0 0 3px var(--accent), 0 0 18px 4px rgba(233, 196, 106, 0.55);
 
   /* Cards --------------------------------------------------------------- */
@@ -97,6 +101,16 @@
   --dur-slow: 360ms;
   --ease-out: cubic-bezier(0.2, 0.7, 0.3, 1);
   --dur-hover: 280ms;
+}
+
+/* A short window (a small laptop): smaller cards, so the table still fits without scrolling. */
+@media (max-height: 760px) {
+  :root {
+    --card-w: 56px;
+    --card-h: 80px;
+    --card-small-w: 46px;
+    --card-small-h: 66px;
+  }
 }
 
 @media (max-width: 600px) {

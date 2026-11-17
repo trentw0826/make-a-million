@@ -4,7 +4,7 @@ import { createGame } from '../src/reducer';
 import { Rng } from '../src/rng';
 import { SEATS, type Seat } from '../src/seats';
 import type { GameState } from '../src/state';
-import { act, playRandomGame, readyAll } from './helpers';
+import { act, playRandomGame } from './helpers';
 
 /**
  * Redistribute every card the observer cannot see (other hands, and the widow unless the
@@ -15,7 +15,7 @@ function permuteHidden(state: GameState, seat: Seat, rng: Rng): GameState {
   const hand = state.hand;
   if (!hand) return state;
   const isBidder = hand.contract?.bidder === seat;
-  const widowAside = hand.phase === 'misdeal-window' || hand.phase === 'bidding';
+  const widowAside = hand.phase === 'bidding';
   const others = SEATS.filter((s) => s !== seat);
 
   const pool: number[] = others.flatMap((s) => [...hand.hands[s]]);
@@ -51,7 +51,7 @@ describe('observe', () => {
   });
 
   it('shows the widow and discards to the bidder only', () => {
-    let state = readyAll(createGame({ seed: 'widow-view' }));
+    let state = createGame({ seed: 'widow-view' });
     for (const seat of SEATS) expect(observe(state, seat).widow).toBeNull();
     state = act(state, 1, { type: 'bid', amount: 175_000 });
     for (const seat of [2, 3, 0] as const) state = act(state, seat, { type: 'pass' });
@@ -73,17 +73,26 @@ describe('observe', () => {
     }
   });
 
-  it('reveals misdeal eligibility only to the seat itself', () => {
-    const state = createGame({ seed: 'eligibility' });
-    for (const seat of SEATS) {
-      const obs = observe(state, seat);
-      expect(obs.misdeal.canCall).toBe(state.hand?.misdeal.eligible.includes(seat));
-      expect(Object.keys(obs.misdeal)).toEqual(['pending', 'canCall']);
+  it('reveals misdeal eligibility only to the seat itself, through its own legal moves', () => {
+    for (let i = 0; i < 200; i++) {
+      const state = createGame({ seed: `eligibility-${i}` });
+      for (const seat of SEATS) {
+        const obs = observe(state, seat);
+        const eligible = state.hand?.misdeal.eligible.includes(seat) ?? false;
+        const onTurn = state.hand?.auction.turn === seat;
+        expect(obs.legal).toEqual(
+          onTurn ? expect.objectContaining({ canCallMisdeal: eligible }) : { kind: 'none' },
+        );
+        // Nothing else in the observation says who may call (the ruleset only gives the
+        // threshold).
+        const { ruleset: _ruleset, legal: _legal, ...rest } = obs;
+        expect(JSON.stringify(rest)).not.toMatch(/eligib|misdeal/i);
+      }
     }
   });
 
   it("includes the seat's legal moves", () => {
-    const state = readyAll(createGame({ seed: 'legal' }));
+    const state = createGame({ seed: 'legal' });
     expect(observe(state, 1).legal.kind).toBe('bid');
     expect(observe(state, 0).legal.kind).toBe('none');
   });
@@ -129,15 +138,7 @@ describe('tableView', () => {
       expect(phase).toBe(state.phase === 'game-over' ? 'game-over' : state.hand?.phase);
     }
     expect([...seen].sort()).toEqual(
-      [
-        'bidding',
-        'discarding',
-        'game-over',
-        'hand-complete',
-        'misdeal-window',
-        'naming-trump',
-        'playing',
-      ].sort(),
+      ['bidding', 'discarding', 'game-over', 'hand-complete', 'naming-trump', 'playing'].sort(),
     );
   });
 });

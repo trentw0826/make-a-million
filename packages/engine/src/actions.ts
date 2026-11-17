@@ -1,9 +1,8 @@
 import type { CardId, Suit } from './cards';
 
 export type Action =
+  /** On a first turn in the auction, with Money at or under the threshold: re-deal. */
   | { readonly type: 'callMisdeal' }
-  /** "I'm ready to bid": declines to call a misdeal (or confirms when not eligible). */
-  | { readonly type: 'declineMisdeal' }
   | { readonly type: 'bid'; readonly amount: number }
   | { readonly type: 'pass' }
   | { readonly type: 'discard'; readonly cardIds: readonly CardId[] }

@@ -14,12 +14,27 @@ export const EASE_OUT = [0.2, 0.7, 0.3, 1] as const;
 /** A springy settle for cards: quick, with a little overshoot. */
 export const CARD_SPRING = { type: 'spring', stiffness: 520, damping: 34, mass: 0.9 } as const;
 
-/** How long a finished trick lies on the felt before it is gathered (a new lead cuts it short). */
-export const TRICK_HOLD_MS = 1100;
-/** How long gathering a trick to its winner takes. */
-export const TRICK_SWEEP_MS = 350;
 /** How long a played card takes to reach the felt. */
 export const TRICK_ENTER_MS = 320;
+/** After it touches down, how long a played card slides before friction stops it. */
+export const TRICK_SKID_MS = 300;
+/** How long a finished trick lies still on the felt, once its last card has come to rest. */
+export const TRICK_DIGEST_MS = 900;
+/**
+ * How long a finished trick stays on the felt before it is gathered, counted from its last
+ * card being played: that card's arrival, then time to take the trick in. The server rests
+ * longer than this and the sweep together before a bot leads (`trickPauseMs`), so only a
+ * human leading straight away cuts it short.
+ */
+export const TRICK_HOLD_MS = TRICK_ENTER_MS + TRICK_SKID_MS + TRICK_DIGEST_MS;
+/** How long gathering a trick to its winner takes. */
+export const TRICK_SWEEP_MS = 350;
+/** How far it slides, in px. */
+export const TRICK_SKID_PX = 16;
+/** A thrown card's flight: it leaves the hand gently and is still moving when it lands. */
+export const FLIGHT_EASE = [0.35, 0.25, 0.65, 0.85] as const;
+/** Sliding to a stop: fast at first, then friction takes it to rest. */
+export const SKID_EASE = [0.15, 0.6, 0.35, 1] as const;
 
 /** How long a sum takes to count up on the hand result. */
 export const COUNT_UP_MS = 900;

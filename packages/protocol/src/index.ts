@@ -35,7 +35,6 @@ export const RoomCodeSchema = z
 /** Mirrors the engine's Action type; the engine still validates legality. */
 export const ActionSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('callMisdeal') }),
-  z.object({ type: z.literal('declineMisdeal') }),
   z.object({ type: z.literal('bid'), amount: z.number().int().nonnegative() }),
   z.object({ type: z.literal('pass') }),
   z.object({ type: z.literal('discard'), cardIds: z.array(CardIdSchema).length(3).readonly() }),

@@ -56,7 +56,7 @@ function puzzle(
         : never,
       widow: cards('B1', 'B2', 'B3'),
       discards: cards('B1', 'B2', 'B3'),
-      misdeal: { pending: [], eligible: [] },
+      misdeal: { eligible: [] },
       auction: {
         entries: [{ seat: 0, kind: 'bid', amount: 175_000 }],
         passed: [1, 2, 3],

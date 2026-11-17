@@ -7,6 +7,9 @@ import { Shell } from '../src/App';
 import { ContractBar } from '../src/components/ContractBar';
 import { EventLog } from '../src/components/EventLog';
 import { Hand, partOffset } from '../src/components/Hand';
+import { Scoreboard } from '../src/components/Scoreboard';
+import { TableDrawer } from '../src/components/TableDrawer';
+import { TrickPile } from '../src/components/TrickPile';
 import { GameProvider, useGame } from '../src/store';
 
 /** Nothing listens here, so every send fails and shows the "Not connected" toast. */
@@ -47,8 +50,8 @@ function room(phase: RoomView['phase']): RoomView {
 }
 
 const welcome: ServerMessage = { type: 'welcome', playerId: 'p1', token: 't', name: 'Ann' };
-/** A fresh deal: every seat must confirm it is ready to bid. */
-const dealt = tableView(observe(createGame({ seed: 'ui' }), 0));
+/** A fresh deal by seat 3, so Ann (seat 0) opens the bidding. */
+const dealt = tableView(observe(createGame({ seed: 'ui', dealer: 3 }), 0));
 const atTable: readonly ServerMessage[] = [
   welcome,
   { type: 'room', room: room('playing') },
@@ -129,9 +132,9 @@ describe('top bar', () => {
 });
 
 describe('keyboard', () => {
-  it('Enter confirms Ready to bid', () => {
+  it('Enter places the bid shown', () => {
     renderWith(atTable);
-    expect(screen.getByRole('button', { name: 'Ready to bid' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^Bid \$/ })).toBeInTheDocument();
     fireEvent.keyDown(document.body, { key: 'Enter' });
     expect(screen.getByText(NOT_CONNECTED)).toBeInTheDocument();
   });
@@ -160,6 +163,69 @@ describe('table log', () => {
     expect(earlier?.querySelector('summary')).toHaveTextContent('made the $185k bid');
     expect(screen.getByRole('heading', { name: 'Hand 2' })).toBeInTheDocument();
     expect(screen.getByText('Bot 2 deals.')).toBeVisible();
+  });
+});
+
+describe('scoreboard', () => {
+  it("shows each side's total on the felt, our side first", () => {
+    const view: TableView = { ...dealt, team: 1, scores: [-40_000, 250_000] };
+    render(<Scoreboard view={view} room={room('playing')} />);
+    const totals = [...document.querySelectorAll('.scoreboard .total')].map((t) => t.textContent);
+    expect(totals[0]).toMatch(/^Us\$250,000/);
+    expect(totals[1]).toMatch(/^Them−\$40,000/);
+    expect(screen.getByText('to $1,000,000')).toBeInTheDocument();
+  });
+});
+
+describe('score sheet and log drawer', () => {
+  const entries = [{ id: 1, hand: 1, text: 'Ann deals.', tone: 'info' as const }];
+
+  it('opens from its button and puts itself away on Esc or its close button', () => {
+    render(<TableDrawer view={dealt} room={room('playing')} log={entries} />);
+    const toggle = screen.getByRole('button', { name: 'Score sheet & log' });
+    expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    expect(screen.queryByRole('complementary')).toBeNull();
+
+    fireEvent.click(toggle);
+    expect(toggle).toHaveAttribute('aria-expanded', 'true');
+    const drawer = screen.getByRole('complementary', { name: 'Score sheet and table log' });
+    expect(drawer).toHaveTextContent('No hands scored yet.');
+    expect(drawer).toHaveTextContent('Ann deals.');
+
+    fireEvent.keyDown(window, { key: 'Escape' });
+    expect(screen.queryByRole('complementary')).toBeNull();
+    expect(toggle).toHaveFocus();
+
+    fireEvent.click(toggle);
+    fireEvent.click(screen.getByRole('button', { name: 'Close the score sheet and log' }));
+    expect(screen.queryByRole('complementary')).toBeNull();
+  });
+});
+
+describe('trick piles', () => {
+  it('shows each taken trick face down, and nothing of what is in it', () => {
+    render(<TrickPile side="them" count={2} incoming={null} />);
+    const pile = screen.getByRole('img', { name: 'Opponents: 2 tricks taken' });
+    expect(pile.querySelectorAll('.pile-card')).toHaveLength(8);
+    expect(pile.querySelector('[data-card-id]')).toBeNull();
+  });
+
+  it('draws a trick being gathered in the pile already, turning over', () => {
+    const incoming = [
+      { seat: 0, cardId: 3 },
+      { seat: 1, cardId: 7 },
+      { seat: 2, cardId: 9 },
+      { seat: 3, cardId: 12 },
+    ] as const;
+    render(<TrickPile side="us" count={1} incoming={incoming} />);
+    const pile = screen.getByRole('img', { name: 'Your side: 2 tricks taken' });
+    expect(pile.querySelectorAll('.pile-card.trick-sweep .card-3d')).toHaveLength(4);
+    expect(pile.querySelectorAll('.pile-card:not(.trick-sweep)')).toHaveLength(4);
+  });
+
+  it('says one trick, not one tricks', () => {
+    render(<TrickPile side="us" count={1} incoming={null} />);
+    expect(screen.getByRole('img', { name: 'Your side: 1 trick taken' })).toBeInTheDocument();
   });
 });
 

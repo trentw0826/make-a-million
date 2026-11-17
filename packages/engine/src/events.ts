@@ -14,7 +14,6 @@ export type GameEvent =
       readonly redeals: number;
     }
   | { readonly type: 'misdealCalled'; readonly seat: Seat }
-  | { readonly type: 'readyToBid'; readonly seat: Seat }
   | { readonly type: 'biddingStarted'; readonly opener: Seat }
   | { readonly type: 'bid'; readonly seat: Seat; readonly amount: number }
   | { readonly type: 'pass'; readonly seat: Seat }

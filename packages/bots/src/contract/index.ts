@@ -266,41 +266,25 @@ export function decideBid(
     : { type: 'pass' };
 }
 
-/** Call a misdeal when this hand is worth less than an average fresh deal. */
+/**
+ * On a first turn to bid with a weak enough hand: call a misdeal when going on with this
+ * hand (bidding the minimum or passing, whichever is worth more from the auction as it
+ * stands) is worth less than an average fresh deal. Null: go on and bid or pass.
+ */
 export function decideMisdeal(
   obs: Observation,
   rng: Rng,
   opts: ContractOptions,
   deadline = Number.POSITIVE_INFINITY,
-): Action {
+): Action | null {
   const legal = obs.legal;
-  if (legal.kind !== 'misdeal' || !legal.canCall) return { type: 'declineMisdeal' };
-  const { minOpeningBid, raiseIncrement, bidStep } = obs.ruleset.bidding;
-  const opener = ((obs.dealer + 1) % 4) as Seat;
-  const belief = buildBelief(obs);
-  let keep = 0;
-  let n = 0;
-  for (let i = 0; i < opts.bidWorlds; i++) {
-    if (i >= MIN_WORLDS && Date.now() > deadline) break;
-    n += 1;
-    const deal = toDeal(obs, belief.sample(rng));
-    const ceilings = new Map<Seat, number>();
-    for (const s of [0, 1, 2, 3] as Seat[])
-      ceilings.set(s, modelCeiling(deal, s, obs, bidStep, opts));
-    const outcome = predictAuction(ceilings, null, minOpeningBid, raiseIncrement, bidStep) ?? {
-      seat: opener,
-      price: minOpeningBid,
-    };
-    keep += calibrated(
-      utilityFor(obs, outcome.seat, outcome.price, opts.utility),
-      teamOf(outcome.seat),
-      opts,
-    )(playoutDeclare(deal, outcome.seat));
-  }
-  keep /= n;
+  if (legal.kind !== 'bid' || !legal.canCallMisdeal) return null;
+  const e = evaluateBid(obs, rng, opts, deadline);
+  if (!e) return null;
+  const keep = legal.canPass ? Math.max(e.declare, e.pass) : e.declare;
   const redeal =
     opts.utility === 'equity' ? startEquity(ME_TABLE, obs.scores, teamOf(obs.seat), obs.dealer) : 0;
-  return keep < redeal ? { type: 'callMisdeal' } : { type: 'declineMisdeal' };
+  return keep < redeal ? { type: 'callMisdeal' } : null;
 }
 
 interface Candidate {

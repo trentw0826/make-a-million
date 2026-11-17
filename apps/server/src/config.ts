@@ -16,6 +16,12 @@ export interface ServerConfig {
    * deliver it on time; past that it stops searching and plays its best move so far.
    */
   readonly botDeadlineMarginMs: number;
+  /**
+   * After a trick is taken, how long the table rests before the next bot's turn begins, so
+   * everyone can see the finished trick before it is gathered (the bot's own reply time
+   * follows).
+   */
+  readonly trickPauseMs: number;
   /** Delay before a bot confirms the hand result when no human is present. */
   readonly botContinueDelayMs: number;
   /**
@@ -41,6 +47,7 @@ export const DEFAULT_CONFIG: ServerConfig = {
   roomIdleMs: Number(env.ROOM_IDLE_MS ?? 10 * 60_000),
   botDelayMs: { easy: 700, normal: 900, hard: 1500 },
   botDeadlineMarginMs: 200,
+  trickPauseMs: 1_500,
   botContinueDelayMs: 4_000,
   handResultMs: 20_000,
   takeoverDifficulty: 'normal',
@@ -57,6 +64,7 @@ export function testConfig(overrides: Partial<ServerConfig> = {}): ServerConfig 
     botDelayMs: { easy: 1, normal: 1, hard: 1 },
     botWorkers: 0,
     botContinueDelayMs: 1,
+    trickPauseMs: 0,
     ...overrides,
   };
 }

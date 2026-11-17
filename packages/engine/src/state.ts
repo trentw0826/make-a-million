@@ -3,13 +3,7 @@ import type { RngState } from './rng';
 import type { Ruleset } from './ruleset';
 import type { Seat, Team } from './seats';
 
-export type HandPhase =
-  | 'misdeal-window'
-  | 'bidding'
-  | 'discarding'
-  | 'naming-trump'
-  | 'playing'
-  | 'hand-complete';
+export type HandPhase = 'bidding' | 'discarding' | 'naming-trump' | 'playing' | 'hand-complete';
 
 export type Phase = HandPhase | 'game-over';
 
@@ -67,10 +61,12 @@ export interface HandResult {
   readonly tricks: readonly TrickSummary[];
 }
 
-export interface MisdealWindow {
-  /** Seats that have not yet confirmed they are ready to bid. */
-  readonly pending: readonly Seat[];
-  /** Seats whose Money is at or under the threshold. Private: never sent to other seats. */
+export interface MisdealState {
+  /**
+   * Seats that may still call a misdeal: their Money is at or under the threshold and they
+   * have not yet bid or passed in this auction. Private: a seat only ever learns whether
+   * it is in this list itself.
+   */
   readonly eligible: readonly Seat[];
 }
 
@@ -100,13 +96,13 @@ export interface HandState {
   readonly widow: readonly CardId[];
   /** The bidder's three discards; out of play for the rest of the hand. */
   readonly discards: readonly CardId[];
-  readonly misdeal: MisdealWindow;
+  readonly misdeal: MisdealState;
   readonly auction: Auction;
   readonly contract: Contract | null;
   readonly trump: Suit | null;
   readonly tricks: readonly Trick[];
   readonly currentTrick: Trick | null;
-  /** The seat that must act next; null when several seats act (misdeal window, hand-complete). */
+  /** The seat that must act next; null when several seats act (hand-complete). */
   readonly turn: Seat | null;
   readonly result: HandResult | null;
   /**

@@ -80,18 +80,20 @@ async function startServer(port: number): Promise<ChildProcess> {
  */
 const WATCH_CLASSES = `
   window.__seen = new Set();
-  window.__moves = { deal: [], trick: [], mine: [] };
+  window.__moves = { deal: [], trick: [], mine: [], skid: [] };
   const tracked = new WeakSet();
   new MutationObserver(function () {
     for (const name of ['trick-enter', 'trick-sweep', 'card-winning']) {
       if (document.querySelector('.' + name)) window.__seen.add(name);
     }
-    for (const el of document.querySelectorAll('.hand .card-3d, .trick-enter')) {
+    for (const el of document.querySelectorAll('.hand .card-3d, .trick-enter, .trick-skid')) {
       if (tracked.has(el)) continue;
       tracked.add(el);
-      const kind = el.classList.contains('card-3d')
-        ? 'deal'
-        : el.closest('.trick-mine') ? 'mine' : 'trick';
+      const kind = el.classList.contains('trick-skid')
+        ? 'skid'
+        : el.classList.contains('card-3d')
+          ? 'deal'
+          : el.closest('.trick-mine') ? 'mine' : 'trick';
       requestAnimationFrame(function () {
         const first = getComputedStyle(el).transform;
         setTimeout(function () {
@@ -109,8 +111,11 @@ const seenClasses = (page: Page) =>
 const cardMoves = (page: Page) =>
   page.evaluate(
     () =>
-      (window as unknown as { __moves: { deal: boolean[]; trick: boolean[]; mine: boolean[] } })
-        .__moves,
+      (
+        window as unknown as {
+          __moves: { deal: boolean[]; trick: boolean[]; mine: boolean[]; skid: boolean[] };
+        }
+      ).__moves,
   );
 
 /**
@@ -147,11 +152,6 @@ async function act(page: Page, shoot: Shoot): Promise<boolean> {
   const quick = { timeout: 2_000 };
   try {
     if (!(await page.locator('.action-turn').isVisible())) return false;
-    const ready = page.getByRole('button', { name: 'Ready to bid' });
-    if (await ready.isVisible()) {
-      await ready.click(quick);
-      return true;
-    }
     const pass = page.getByRole('button', { name: 'Pass', exact: true });
     if (await pass.isVisible()) {
       await shoot('3-bidding');
@@ -253,7 +253,26 @@ async function fullHand(browser: Browser, base: string): Promise<void> {
 
   await openTable(page, base);
   await shoot('2-dealt');
-  check(await page.locator('.me.me-turn').isVisible(), 'the table marks your turn after the deal');
+  check(
+    /Bidding opens|High bid/.test((await page.locator('.contract-bar').textContent()) ?? ''),
+    'bidding begins as soon as the cards are dealt',
+  );
+  await until(() => page.locator('.me.me-turn').isVisible(), 'your turn to bid');
+  check(
+    await page.getByRole('button', { name: /^Bid \$/ }).isVisible(),
+    'the table marks your turn to bid',
+  );
+  const seatText = (await page.locator('.seat-panel, .me-line').allTextContents()).join(' ');
+  check(
+    !/\b(dealer|Partner|Opponent|You)\b/.test(seatText.replace(/your partner|opponent/g, '')),
+    'seats carry no dealer, partner, opponent or You tags',
+  );
+  check(
+    (await page.locator('.table-corner').getByRole('button', { name: 'How to play' }).count()) ===
+      1 &&
+      (await page.locator('.topbar').getByRole('button', { name: 'How to play' }).count()) === 0,
+    'How to play and sound sit in the corner by your seat at the table',
+  );
 
   // Leaving mid-game asks first.
   await page.getByRole('button', { name: 'Leave', exact: true }).click();
@@ -309,11 +328,7 @@ async function fullHand(browser: Browser, base: string): Promise<void> {
   check(moves.deal.some(Boolean), 'the deal flies cards into the hand');
   check(moves.trick.some(Boolean), "the others' cards fly onto the felt");
   check(moves.mine.some(Boolean), 'your card flies from your hand to the felt');
-
-  const log = (await page.locator('.event-log').textContent()) ?? '';
-  check((log.match(/Auction:/g) ?? []).length === 1, 'the log sums up the auction in one line');
-  check(!/takes trick|bids \$|passes\./.test(log), 'the log has no per-trick or per-bid lines');
-  check(/(made|were set on) the \$\d+k bid/.test(log), 'the log records the result');
+  check(moves.skid.some(Boolean), 'played cards slide to a stop on the felt');
 
   check(await result.getByRole('timer').isVisible(), 'the result counts down to the next hand');
   await until(
@@ -321,13 +336,59 @@ async function fullHand(browser: Browser, base: string): Promise<void> {
     'the bots ready up',
   );
   await shoot('6b-result-ready');
+  // By now the last trick has been gathered too: every trick lies in a pile, face down.
+  const piled = async () =>
+    (await page
+      .locator('.trick-pile')
+      .evaluateAll((piles) =>
+        piles.map((p) =>
+          Number(/(\d+) tricks? taken/.exec(p.getAttribute('aria-label') ?? '')?.[1]),
+        ),
+      )) as number[];
+  const counts = await piled();
+  check(
+    counts.length === 2 && counts.reduce((a, b) => a + b, 0) === 13,
+    `the taken tricks lie in two piles (${counts.join(' + ')})`,
+  );
+  check(
+    (await page.locator('.trick-pile .pile-card').count()) === 52 &&
+      (await page.locator('.trick-pile [data-card-id]').count()) === 0,
+    'every card in the piles is face down',
+  );
   await page.getByRole('button', { name: 'Ready' }).click();
   await until(() => result.isHidden(), 'the next hand');
   await shoot('7-next-hand');
   check(
-    (await page.locator('.event-log details').count()) === 1,
-    'the finished hand folds up in the log',
+    (await page.locator('.trick-pile .pile-card').count()) === 0,
+    'a new hand starts with no piles',
   );
+  check(
+    await page.evaluate(
+      () =>
+        document.documentElement.scrollHeight <= window.innerHeight &&
+        document.documentElement.scrollWidth <= window.innerWidth,
+    ),
+    'the table fits the window without scrolling',
+  );
+
+  // The score sheet and log wait in a drawer off the table.
+  const drawer = page.getByRole('complementary', { name: 'Score sheet and table log' });
+  check(await drawer.isHidden(), 'the score sheet and log start put away');
+  await page.getByRole('button', { name: 'Score sheet & log' }).click();
+  check(await drawer.isVisible(), 'the score sheet and log open from the felt');
+  await shoot('8-score-sheet');
+  check(
+    (await drawer.locator('.sheet tbody tr').count()) === 1,
+    'the score sheet has a line for the hand',
+  );
+  const folded = drawer.locator('.event-log details');
+  check((await folded.count()) === 1, 'the finished hand folds up in the log');
+  const log = (await folded.textContent()) ?? '';
+  check((log.match(/Auction:/g) ?? []).length === 1, 'the log sums up the auction in one line');
+  check(!/takes trick|bids \$|passes\./.test(log), 'the log has no per-trick or per-bid lines');
+  check(/(made|were set on) the \$\d+k bid/.test(log), 'the log records the result');
+  await page.keyboard.press('Escape');
+  check(await drawer.isHidden(), 'Esc puts the score sheet and log away');
   check(
     pageErrors.length === 0,
     `the page threw no errors${pageErrors.length ? `: ${pageErrors.join('; ')}` : ''}`,
@@ -353,7 +414,7 @@ async function reducedMotion(browser: Browser, base: string): Promise<void> {
     'reduced motion: cards are not dealt in',
   );
   check(
-    moves.trick.length > 0 && ![...moves.trick, ...moves.mine].some(Boolean),
+    moves.trick.length > 0 && ![...moves.trick, ...moves.mine, ...moves.skid].some(Boolean),
     'reduced motion: trick cards do not slide',
   );
   await page.getByRole('button', { name: 'How to play', exact: true }).click();

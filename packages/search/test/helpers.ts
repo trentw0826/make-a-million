@@ -14,13 +14,11 @@ import {
 import type { LeafUtility } from '../src/play/solver';
 import type { PlayState } from '../src/play/state';
 
-/** A simple legal policy: decline misdeals, open at the minimum, random play. */
+/** A simple legal policy: never call a misdeal, open at the minimum, random play. */
 export function randomAction(state: GameState, seat: Seat, rng: Rng): Action {
   const legal = legalMoves(state, seat);
   const hand = state.hand?.hands[seat] ?? [];
   switch (legal.kind) {
-    case 'misdeal':
-      return { type: 'declineMisdeal' };
     case 'bid':
       if (!legal.canPass) return { type: 'bid', amount: legal.minBid };
       return rng.next() < 0.3 ? { type: 'bid', amount: legal.minBid } : { type: 'pass' };

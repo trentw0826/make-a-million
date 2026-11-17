@@ -46,8 +46,10 @@ describe('BotPool', () => {
 
   it('runs cheap bots inline', async () => {
     const pool = new BotPool(0, silentLogger);
-    const obs = observe(createGame({ seed: 'inline' }), 0);
-    expect(await pool.decide('normal', obs, 1)).toEqual({ type: 'declineMisdeal' });
+    // Dealer 0: seat 1 opens the auction.
+    const obs = observe(createGame({ seed: 'inline', dealer: 0 }), 1);
+    const action = await pool.decide('normal', obs, 1);
+    expect(['bid', 'callMisdeal']).toContain(action?.type);
     await pool.close();
   });
 });

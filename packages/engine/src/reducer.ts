@@ -32,7 +32,7 @@ export function createGame(options: CreateGameOptions): GameState {
     ruleset: options.ruleset ?? DEFAULT_RULESET,
     seed,
     rngState: seedToState(options.seed),
-    phase: 'misdeal-window',
+    phase: 'bidding',
     scores: options.scores ? [options.scores[0], options.scores[1]] : [0, 0],
     ...(options.scores ? { initialScores: [options.scores[0], options.scores[1]] as const } : {}),
     dealer: options.dealer ?? 0,
@@ -61,13 +61,8 @@ export function applyAction(state: GameState, seat: Seat, action: Action): Apply
       startHand(draft, hand.dealer, hand.handNumber, hand.redeals + 1, events);
       break;
     }
-    case 'declineMisdeal': {
-      hand.misdeal = { ...hand.misdeal, pending: hand.misdeal.pending.filter((s) => s !== seat) };
-      events.push({ type: 'readyToBid', seat });
-      if (hand.misdeal.pending.length === 0) beginBidding(hand, events);
-      break;
-    }
     case 'bid': {
+      firstCallMade(hand, seat);
       const auction = hand.auction as Mutable<Auction>;
       auction.entries = [...auction.entries, { seat, kind: 'bid', amount: action.amount }];
       auction.highBid = { bidder: seat, amount: action.amount };
@@ -76,6 +71,7 @@ export function applyAction(state: GameState, seat: Seat, action: Action): Apply
       break;
     }
     case 'pass': {
+      firstCallMade(hand, seat);
       const auction = hand.auction as Mutable<Auction>;
       auction.entries = [...auction.entries, { seat, kind: 'pass' }];
       auction.passed = [...auction.passed, seat];
@@ -134,6 +130,12 @@ export function applyActionOrThrow(
 
 type Mutable<T> = { -readonly [K in keyof T]: T[K] };
 
+/** A seat has bid or passed: its chance to call a misdeal has gone. */
+function firstCallMade(hand: Mutable<HandState>, seat: Seat): void {
+  if (!hand.misdeal.eligible.includes(seat)) return;
+  hand.misdeal = { eligible: hand.misdeal.eligible.filter((s) => s !== seat) };
+}
+
 /** The game's phase follows the hand's, except once the game is over. */
 function syncPhase(draft: Mutable<GameState>): void {
   if (draft.phase !== 'game-over' && draft.hand) draft.phase = draft.hand.phase;
@@ -176,35 +178,27 @@ function startHand(
     handNumber,
     dealer,
     redeals,
-    phase: 'misdeal-window',
+    phase: 'bidding',
     hands: [sortHand(hands[0]), sortHand(hands[1]), sortHand(hands[2]), sortHand(hands[3])],
     widow,
     discards: [],
-    misdeal: { pending: [...SEATS], eligible },
+    misdeal: { eligible },
     auction: { entries: [], passed: [], turn: opener, highBid: null },
     contract: null,
     trump: null,
     tricks: [],
     currentTrick: null,
-    turn: null,
+    turn: opener,
     result: null,
     continuePending: [],
   };
 
   draft.dealer = dealer;
   draft.hand = hand;
-  draft.phase = 'misdeal-window';
+  draft.phase = 'bidding';
+  // Bidding begins with the deal; a misdeal is called on a first turn in the auction.
   events.push({ type: 'handStarted', handNumber, dealer, redeals });
-
-  // With misdeals disabled nobody has anything to call, so go straight to bidding.
-  if (!misdeal.enabled) beginBidding(hand, events);
-}
-
-function beginBidding(hand: Mutable<HandState>, events: GameEvent[]): void {
-  hand.misdeal = { pending: [], eligible: [] };
-  hand.phase = 'bidding';
-  hand.turn = hand.auction.turn;
-  events.push({ type: 'biddingStarted', opener: hand.auction.turn });
+  events.push({ type: 'biddingStarted', opener });
 }
 
 function advanceAuction(

@@ -39,7 +39,7 @@ for (let g = 0; g < count; g++) {
   const deal = { hands: hand0.hands, widow: hand0.widow };
   const estimates = SEATS.map((s) => (playoutDeclare(deal, s)[teamOf(s)] as number) * 1000);
   let step = 0;
-  while (state.hand && (state.hand.phase === 'misdeal-window' || state.hand.phase === 'bidding')) {
+  while (state.hand && state.hand.phase === 'bidding') {
     const seat = SEATS.find((s) => legalMoves(state, s).kind !== 'none');
     if (seat === undefined) break;
     const obs = observe(state, seat);

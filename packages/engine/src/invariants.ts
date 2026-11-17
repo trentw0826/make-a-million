@@ -9,7 +9,7 @@ export function allCardsInPlay(state: GameState): CardId[] {
   if (!hand) return [];
   // Until the auction ends the widow is set aside; afterwards its cards are in the
   // bidder's hand or among the discards.
-  const widowAside = hand.phase === 'misdeal-window' || hand.phase === 'bidding';
+  const widowAside = hand.phase === 'bidding';
   return [
     ...hand.hands.flat(),
     ...(widowAside ? hand.widow : []),

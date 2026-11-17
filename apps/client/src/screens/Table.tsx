@@ -3,21 +3,25 @@ import {
   cardById,
   isNumberCard,
   nextSeat,
+  otherTeam,
   partnerOf,
   type TableView,
+  teamOf,
 } from '@mam/engine';
 import type { RoomView } from '@mam/protocol';
 import { LayoutGroup } from 'motion/react';
 import { useEffect, useState } from 'react';
 import { ActionBar } from '../components/ActionBar';
 import { ContractBar } from '../components/ContractBar';
-import { EventLog } from '../components/EventLog';
 import { GameOver } from '../components/GameOver';
 import { Hand } from '../components/Hand';
 import { HandResult } from '../components/HandResult';
-import { ScoreSheet } from '../components/ScoreSheet';
+import { Scoreboard } from '../components/Scoreboard';
 import { SeatPanel } from '../components/SeatPanel';
+import { TableDrawer } from '../components/TableDrawer';
+import { HelpButton, SoundToggle } from '../components/TopBar';
 import { TrickArea } from '../components/TrickArea';
+import { TrickPile } from '../components/TrickPile';
 import { blockedReason, isMyTurn, seatChip } from '../hints';
 import { sound } from '../sound/player';
 import { spotOf } from '../spots';
@@ -88,21 +92,34 @@ export function Table({ room, view }: { room: RoomView; view: TableView }) {
   const myChip = seatChip(view, me);
   const dealKey = `${view.handNumber}-${view.redeals}`;
 
+  // Each side's taken tricks. The view counts a trick as soon as it is won, but until it is
+  // gathered it lies on the felt; while it is gathered, it flies into its pile.
+  const pile = (team: 0 | 1) => {
+    const ours = completed !== null && teamOf(completed.winner) === team;
+    return {
+      count: Math.max(0, view.trickCounts[team] - (ours ? 1 : 0)),
+      incoming: ours && completed?.stage === 'sweep' ? completed.plays : null,
+    };
+  };
+
   return (
     <main className="table-screen">
-      <aside className="side">
-        <ScoreSheet view={view} room={room} />
-        <EventLog entries={state.log} />
-      </aside>
-
       <section className="felt">
         <ContractBar view={view} room={room} />
-        <SeatPanel seat={partnerOf(me)} room={room} view={view} position="top" />
-        <SeatPanel seat={nextSeat(me)} room={room} view={view} position="left" />
-        <SeatPanel seat={nextSeat(partnerOf(me))} room={room} view={view} position="right" />
-        {/* One group per deal: a card you play flies from your hand to the felt, and ids
-            never carry over from an earlier deal. */}
+        <Scoreboard view={view} room={room} />
+        <div className="felt-tools">
+          <TableDrawer view={view} room={room} log={state.log} />
+        </div>
+        {/* One group per deal: a card you play flies from your hand to the felt, and on to
+            the winners' pile, and ids never carry over from an earlier deal. */}
         <LayoutGroup id={dealKey}>
+          <SeatPanel seat={partnerOf(me)} room={room} view={view} position="top" />
+          {/* The opponents' tricks lie to the left of the player on your left. */}
+          <div className="left-side">
+            <TrickPile side="them" {...pile(otherTeam(view.team))} />
+            <SeatPanel seat={nextSeat(me)} room={room} view={view} position="left" />
+          </div>
+          <SeatPanel seat={nextSeat(partnerOf(me))} room={room} view={view} position="right" />
           <TrickArea
             me={me}
             room={room}
@@ -140,14 +157,17 @@ export function Table({ room, view }: { room: RoomView; view: TableView }) {
               }}
             />
             <div className="me-line side-us">
-              <span className="side-dot" aria-hidden="true" />
-              You
-              {view.dealer === me && <span className="tag">dealer</span>}
               {view.contract?.bidder === me && <span className="tag">bidder</span>}
               {myChip && <span className={`seat-chip chip-${myChip.kind}`}>{myChip.text}</span>}
             </div>
           </div>
+          {/* Your side's tricks lie to your left. */}
+          <TrickPile side="us" {...pile(view.team)} />
         </LayoutGroup>
+        <div className="table-corner">
+          <SoundToggle />
+          <HelpButton />
+        </div>
       </section>
 
       {view.phase === 'hand-complete' && view.result && (

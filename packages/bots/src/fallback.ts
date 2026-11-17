@@ -9,8 +9,6 @@ export function fallbackAction(obs: Pick<Observation, 'legal' | 'hand'>): Action
   switch (legal.kind) {
     case 'none':
       return null;
-    case 'misdeal':
-      return { type: 'declineMisdeal' };
     case 'bid':
       return legal.canPass ? { type: 'pass' } : { type: 'bid', amount: legal.minBid };
     case 'discard': {

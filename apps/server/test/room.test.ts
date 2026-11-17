@@ -135,9 +135,11 @@ describe('play', () => {
     expect(Object.keys(view.view)).not.toContain('tricks');
     expect(view.view.trickCounts).toEqual([0, 0]);
 
-    // Misdeal window: the three bots confirm after their fixed delays; Ann has not.
+    // Bidding opens with the deal: the bots call in turn after their fixed delays, and
+    // every seat gets a turn before the auction can end, so it comes round to Ann.
     await vi.advanceTimersByTimeAsync(10);
-    expect(h.room.game?.hand?.misdeal.pending).toEqual([0]);
+    expect(h.room.game?.hand?.phase).toBe('bidding');
+    expect(h.room.game?.hand?.turn).toBe(0);
   });
 
   it('plays a whole game with one human and three bots', async () => {
@@ -151,6 +153,41 @@ describe('play', () => {
     expect(h.room.phase).toBe('finished');
     expect(h.room.game?.winner).not.toBeNull();
     expect(h.last('ann', 'room')).toMatchObject({ room: { phase: 'finished' } });
+  });
+
+  it('rests after each trick before a bot leads the next one', async () => {
+    const h = harness({ trickPauseMs: 10_000 });
+    readyRoom(h);
+    h.room.start('ann');
+    // Play on until a bot has won a trick and must lead; the pause holds the table there.
+    const waitingOnBotLead = () => {
+      const hand = h.room.game?.hand;
+      return (
+        hand?.phase === 'playing' &&
+        hand.tricks.length > 0 &&
+        (hand.currentTrick?.plays.length ?? 0) === 0 &&
+        hand.turn !== null &&
+        hand.turn !== 0
+      );
+    };
+    for (let i = 0; i < 2_000 && !waitingOnBotLead(); i++) {
+      await vi.advanceTimersByTimeAsync(5);
+      if (!waitingOnBotLead()) humanActs(h, 'ann');
+    }
+    expect(waitingOnBotLead()).toBe(true);
+    const tricks = h.room.game?.hand?.tricks.length;
+    const leader = h.room.game?.hand?.turn;
+
+    // Nothing is played while the table rests (bots otherwise reply within 1 ms here)...
+    await vi.advanceTimersByTimeAsync(9_000);
+    expect(h.room.game?.hand?.currentTrick?.plays ?? []).toHaveLength(0);
+    // ...then the bot leads, after its usual reply time (and the others follow).
+    await vi.advanceTimersByTimeAsync(1_100);
+    const next =
+      h.room.game?.hand?.tricks.length === tricks
+        ? h.room.game?.hand?.currentTrick
+        : h.room.game?.hand?.tricks.at(-1);
+    expect(next?.plays[0]?.seat).toBe(leader);
   });
 
   it('rejects illegal human actions and re-sends the view', async () => {
@@ -260,7 +297,7 @@ describe('hand result', () => {
     expect(h.room.game?.phase).toBe('hand-complete');
     await vi.advanceTimersByTimeAsync(1_100);
     expect(h.room.game?.hand?.handNumber).toBe(2);
-    expect(h.room.game?.hand?.phase).toBe('misdeal-window');
+    expect(h.room.game?.hand?.phase).toBe('bidding');
   });
 
   it('does not let one human close the result for another', async () => {
