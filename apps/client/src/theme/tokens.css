@@ -70,7 +70,6 @@
   --shadow-drawer: -8px 0 24px rgba(0, 0, 0, 0.35);
   /* Dims what lies behind a panel that sits over the table without blocking it. */
   --scrim-light: rgba(0, 0, 0, 0.35);
-  --glow-accent: 0 0 0 3px var(--accent), 0 0 18px 4px rgba(233, 196, 106, 0.55);
 
   /* Cards --------------------------------------------------------------- */
   --card-w: 64px;

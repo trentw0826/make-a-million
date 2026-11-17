@@ -402,7 +402,7 @@ async function fullHand(browser: Browser, base: string): Promise<void> {
   const seen = await seenClasses(page);
   check(seen.includes('trick-enter'), 'played cards slide in');
   check(seen.includes('trick-sweep'), 'taken tricks sweep to the winner');
-  check(seen.includes('card-winning'), 'the winning card is highlighted');
+  check(seen.includes('card-winning'), 'the winning card is marked (for screen readers)');
   const moves = await cardMoves(page);
   check(moves.deal.some(Boolean), 'the deal flies cards into the hand');
   check(moves.trick.some(Boolean), "the others' cards fly onto the felt");

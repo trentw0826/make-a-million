@@ -504,14 +504,16 @@ describe('table status', () => {
     expect(document.querySelector('.action-bar')).toHaveClass('action-hidden');
   });
 
-  it('drops your bid from under your hand once you are outbid', () => {
+  it('keeps your outbid bid under your hand, as a quiet outline', () => {
     const auction = (entries: TableView['auction']): readonly ServerMessage[] => [
       welcome,
       { type: 'room', room: room('playing') },
       { type: 'view', view: { ...dealt, turn: 1, legal: { kind: 'none' }, auction: entries } },
     ];
     const { unmount } = renderWith(auction([{ seat: 0, kind: 'bid', amount: 175_000 }]));
-    expect(document.querySelector('.me-line')).toHaveTextContent('$175k');
+    expect(
+      within(document.querySelector('.me-line') as HTMLElement).getByText('Winning bid: $175k'),
+    ).toHaveClass('chip-high');
     unmount();
     renderWith(
       auction([
@@ -519,10 +521,13 @@ describe('table status', () => {
         { seat: 1, kind: 'bid', amount: 180_000 },
       ]),
     );
-    expect(document.querySelector('.me-line')).not.toHaveTextContent('$175k');
+    expect(
+      within(document.querySelector('.me-line') as HTMLElement).getByText('Bid: $175k'),
+    ).toHaveClass('chip-bid');
+    expect(screen.getAllByText('No bid yet')).toHaveLength(2);
   });
 
-  it('fades a seat that has passed, leaving its Pass chip clear', () => {
+  it('fades a seat that has passed, leaving its Passed badge readable', () => {
     const bidding: TableView = {
       ...dealt,
       phase: 'bidding',
@@ -535,7 +540,7 @@ describe('table status', () => {
       <SeatPanel seat={1} room={room('playing')} view={bidding} position="left" />,
     );
     expect(document.querySelector('.seat-panel')).toHaveClass('seat-passed');
-    expect(screen.getByText('Pass')).toBeInTheDocument();
+    expect(screen.getByText('Passed')).toHaveClass('chip-pass');
     rerender(<SeatPanel seat={2} room={room('playing')} view={bidding} position="top" />);
     expect(document.querySelector('.seat-panel')).not.toHaveClass('seat-passed');
   });

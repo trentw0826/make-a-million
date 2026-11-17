@@ -101,7 +101,7 @@ export function hasPassed(view: TableView, seat: Seat): boolean {
   return view.phase === 'bidding' && view.auction.some((e) => e.seat === seat && e.kind === 'pass');
 }
 
-export type ChipKind = 'bid' | 'high' | 'pass';
+export type ChipKind = 'none' | 'bid' | 'high' | 'pass';
 
 export interface SeatChip {
   readonly text: string;
@@ -109,16 +109,18 @@ export interface SeatChip {
 }
 
 /**
- * What a seat has said, shown beside it: its latest call in the auction, as spoken aloud at
- * a real table.
+ * Where a seat stands in the auction, shown under it for as long as the auction runs: no
+ * bid yet, the winning bid, a bid since topped, or passed. Only the winning bid stands out.
  */
 export function seatChip(view: TableView, seat: Seat): SeatChip | null {
   if (view.phase !== 'bidding') return null;
   const last = view.auction.findLast((e) => e.seat === seat);
-  if (!last) return null;
-  if (last.kind === 'pass') return { text: 'Pass', kind: 'pass' };
-  const high = highBid(view.auction);
-  return { text: shortMoney(last.amount), kind: high?.seat === seat ? 'high' : 'bid' };
+  if (!last) return { text: 'No bid yet', kind: 'none' };
+  if (last.kind === 'pass') return { text: 'Passed', kind: 'pass' };
+  const amount = shortMoney(last.amount);
+  return highBid(view.auction)?.seat === seat
+    ? { text: `Winning bid: ${amount}`, kind: 'high' }
+    : { text: `Bid: ${amount}`, kind: 'bid' };
 }
 
 /** "you", "your partner" or "opponent", as `seat` is seen from `me`. */
