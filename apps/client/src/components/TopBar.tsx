@@ -5,46 +5,6 @@ import { Icon } from './Icon';
 import { Modal } from './Modal';
 import { Wordmark } from './Wordmark';
 
-export function inviteUrl(code: string): string {
-  return `${window.location.origin}${window.location.pathname}#/room/${code}`;
-}
-
-/** Copies the room's invite link, or shows it for copying by hand without a clipboard. */
-export function InviteButton({ code, className }: { code: string; className?: string }) {
-  const { dispatch } = useGame();
-  const [manual, setManual] = useState<string | null>(null);
-
-  const copy = async () => {
-    const url = inviteUrl(code);
-    try {
-      await navigator.clipboard.writeText(url);
-      dispatch({ kind: 'toast', toast: { kind: 'info', text: 'Invite link copied.' } });
-    } catch {
-      // No clipboard (an insecure origin, or permission refused): show the link instead.
-      setManual(url);
-    }
-  };
-
-  return (
-    <>
-      <button type="button" className={className} onClick={() => void copy()}>
-        Copy invite link
-      </button>
-      {manual && (
-        <Modal title="Invite link" onClose={() => setManual(null)}>
-          <p>Send this link to the other players:</p>
-          <input
-            readOnly
-            value={manual}
-            aria-label="Invite link"
-            onFocus={(e) => e.currentTarget.select()}
-          />
-        </Modal>
-      )}
-    </>
-  );
-}
-
 /** Turns the game's sounds off and on; the choice is kept for next time. */
 export function SoundToggle() {
   const [muted, setMuted] = useState(sound.isMuted);
@@ -92,7 +52,8 @@ export function HelpButton({ icon = false }: { icon?: boolean }) {
 }
 
 /**
- * Shown on every screen: the room, an invite link, sound, How to play, and Leave. At the
+ * Shown on every screen: the brand on the left; the room code, sound, How to play and Leave
+ * on the right. At the
  * table, sound and How to play sit in the felt's corner instead, by the player's seat.
  */
 export function TopBar() {
@@ -116,15 +77,12 @@ export function TopBar() {
           <Wordmark />
         </span>
       )}
-      {room && (
-        <div className="topbar-room">
-          <span>
+      <nav className="topbar-actions" aria-label="Game">
+        {room && (
+          <span className="topbar-room">
             Room <strong className="room-code">{room.code}</strong>
           </span>
-          <InviteButton code={room.code} className="ghost small" />
-        </div>
-      )}
-      <nav className="topbar-actions" aria-label="Game">
+        )}
         {!atTable && (
           <>
             <SoundToggle />

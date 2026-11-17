@@ -1,6 +1,6 @@
 import { createGame, observe, type TableView, tableView } from '@mam/engine';
 import type { RoomView, ServerMessage } from '@mam/protocol';
-import { act, fireEvent, render, screen, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { useEffect } from 'react';
 import { describe, expect, it } from 'vitest';
 import { Shell } from '../src/App';
@@ -109,10 +109,11 @@ describe('top bar', () => {
     expect(toggle).toHaveAttribute('aria-pressed', before ?? 'false');
   });
 
-  it('shows the room code with an invite button', () => {
+  it('shows the room code on the right, with no invite link', () => {
     renderWith(inLobby);
-    expect(document.querySelector('.topbar')).toHaveTextContent('Room ABC123');
-    expect(screen.getAllByRole('button', { name: 'Copy invite link' }).length).toBeGreaterThan(0);
+    const nav = screen.getByRole('navigation', { name: 'Game' });
+    expect(nav).toHaveTextContent(/^Room ABC123/);
+    expect(screen.queryByRole('button', { name: 'Copy invite link' })).toBeNull();
   });
 
   it('leaves the lobby at once', () => {
@@ -196,7 +197,8 @@ describe('lobby', () => {
     expect(chair(3)).toHaveClass('chair-bottom', 'chair-mine', 'side-us');
     expect(chair(1)).toHaveClass('chair-top', 'chair-empty', 'side-us');
     expect(chair(2)).toHaveClass('chair-right', 'side-them');
-    expect(chair(2)).toHaveTextContent('Bot 2 · Hard');
+    expect(chair(2)).toHaveTextContent('Bot 2 Hard');
+    expect(within(chair(2)).getByText('Hard')).toHaveClass('seat-difficulty');
     expect(chair(4)).toHaveClass('chair-left', 'side-them');
     // The host fills an empty chair with a bot of the chosen strength.
     expect(within(chair(4)).getByRole('button', { name: '+ Bot · Hard' })).toBeInTheDocument();
@@ -208,57 +210,66 @@ describe('lobby', () => {
 describe('score sheet and log drawer', () => {
   const entries = [{ id: 1, hand: 1, text: 'Ann deals.', tone: 'info' as const }];
 
-  it('opens from its button and puts itself away on Esc or its close button', () => {
+  /** The sheet slides out before it is gone. */
+  const gone = () =>
+    waitFor(() => {
+      expect(screen.queryByRole('complementary')).toBeNull();
+      expect(document.querySelector('.drawer-scrim')).toBeNull();
+    });
+
+  it('opens from its button and puts itself away on Esc or its close button', async () => {
     render(<TableDrawer view={dealt} room={room('playing')} log={entries} />);
-    const toggle = screen.getByRole('button', { name: 'Score sheet & log' });
+    const toggle = screen.getByRole('button', { name: 'Score sheet' });
     expect(toggle).toHaveAttribute('aria-expanded', 'false');
     expect(screen.queryByRole('complementary')).toBeNull();
 
     fireEvent.click(toggle);
     expect(toggle).toHaveAttribute('aria-expanded', 'true');
-    const drawer = screen.getByRole('complementary', { name: 'Score sheet and table log' });
+    const drawer = screen.getByRole('complementary', { name: 'Score sheet' });
     expect(drawer).toHaveTextContent('No hands scored yet.');
     expect(drawer).toHaveTextContent('Ann deals.');
 
     fireEvent.keyDown(window, { key: 'Escape' });
-    expect(screen.queryByRole('complementary')).toBeNull();
+    expect(toggle).toHaveAttribute('aria-expanded', 'false');
     expect(toggle).toHaveFocus();
+    await gone();
 
     fireEvent.click(toggle);
-    fireEvent.click(screen.getByRole('button', { name: 'Close the score sheet and log' }));
-    expect(screen.queryByRole('complementary')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Close the score sheet' }));
+    await gone();
   });
 
-  it('dims the table while open, and a click anywhere else puts it away', () => {
+  it('dims the table while open, and a click anywhere else puts it away', async () => {
     render(
       <div>
         <p>The table</p>
         <TableDrawer view={dealt} room={room('playing')} log={entries} />
       </div>,
     );
-    const toggle = screen.getByRole('button', { name: 'Score sheet & log' });
+    const toggle = screen.getByRole('button', { name: 'Score sheet' });
     expect(document.querySelector('.drawer-scrim')).toBeNull();
     fireEvent.click(toggle);
     expect(document.querySelector('.drawer-scrim')).not.toBeNull();
 
     // A press inside the sheet keeps it open.
     fireEvent.pointerDown(screen.getByText('Ann deals.'));
-    expect(screen.getByRole('complementary')).toBeInTheDocument();
+    expect(toggle).toHaveAttribute('aria-expanded', 'true');
 
     fireEvent.pointerDown(document.querySelector('.drawer-scrim') as Element);
-    expect(screen.queryByRole('complementary')).toBeNull();
-    expect(document.querySelector('.drawer-scrim')).toBeNull();
+    expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    await gone();
 
     fireEvent.click(toggle);
     fireEvent.pointerDown(screen.getByText('The table'));
-    expect(screen.queryByRole('complementary')).toBeNull();
+    expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    await gone();
   });
 });
 
 describe('trick piles', () => {
   it('shows each taken trick face down, and nothing of what is in it', () => {
-    render(<TrickPile side="them" count={2} incoming={null} />);
-    const pile = screen.getByRole('img', { name: 'Opponents: 2 tricks taken' });
+    render(<TrickPile owner="Bot 2's" side="them" count={2} incoming={null} />);
+    const pile = screen.getByRole('img', { name: "Bot 2's: 2 tricks taken" });
     expect(pile.querySelectorAll('.pile-card')).toHaveLength(8);
     expect(pile.querySelector('[data-card-id]')).toBeNull();
   });
@@ -270,15 +281,44 @@ describe('trick piles', () => {
       { seat: 2, cardId: 9 },
       { seat: 3, cardId: 12 },
     ] as const;
-    render(<TrickPile side="us" count={1} incoming={incoming} />);
-    const pile = screen.getByRole('img', { name: 'Your side: 2 tricks taken' });
+    render(<TrickPile owner="Your" side="us" count={1} incoming={incoming} />);
+    const pile = screen.getByRole('img', { name: 'Your: 2 tricks taken' });
     expect(pile.querySelectorAll('.pile-card.trick-sweep .card-3d')).toHaveLength(4);
     expect(pile.querySelectorAll('.pile-card:not(.trick-sweep)')).toHaveLength(4);
   });
 
   it('says one trick, not one tricks', () => {
-    render(<TrickPile side="us" count={1} incoming={null} />);
-    expect(screen.getByRole('img', { name: 'Your side: 1 trick taken' })).toBeInTheDocument();
+    render(<TrickPile owner="Your" side="us" count={1} incoming={null} />);
+    expect(screen.getByRole('img', { name: 'Your: 1 trick taken' })).toBeInTheDocument();
+  });
+});
+
+describe('trick piles at the table', () => {
+  it("lays each player's pile on their left as they face the table", () => {
+    renderWith([
+      welcome,
+      { type: 'room', room: room('playing') },
+      {
+        type: 'view',
+        view: {
+          ...dealt,
+          phase: 'playing',
+          trump: 'red',
+          contract: { bidder: 1, amount: 175_000 },
+          trickCounts: [3, 2],
+          tricksWon: [1, 2, 2, 0],
+        },
+      },
+    ]);
+    const pile = (name: string) => screen.getByRole('img', { name });
+    expect(pile('Your: 1 trick taken')).toHaveClass('pile-me', 'pile-us');
+    expect(pile("Bot 2's: 2 tricks taken")).toHaveClass('pile-left', 'pile-them');
+    expect(pile("Bot 3's: 2 tricks taken")).toHaveClass('pile-top', 'pile-us');
+    expect(pile("Bot 4's: 0 tricks taken")).toHaveClass('pile-right', 'pile-them');
+    // Your partner's pile is to their right on screen; the right player's is below them.
+    expect(document.querySelector('.top-side')?.lastElementChild).toHaveClass('pile-top');
+    expect(document.querySelector('.right-side')?.lastElementChild).toHaveClass('pile-right');
+    expect(document.querySelector('.left-side')?.firstElementChild).toHaveClass('pile-left');
   });
 });
 
@@ -322,11 +362,112 @@ describe('table status', () => {
   it('keeps the score sheet, sound and How to play as icons in the corner', () => {
     renderWith(atTable);
     const corner = document.querySelector('.table-corner') as HTMLElement;
-    for (const name of ['Score sheet & log', 'Mute sounds', 'How to play']) {
+    for (const name of ['Score sheet', 'Mute sounds', 'How to play']) {
       const button = within(corner).getByRole('button', { name });
       expect(button).toHaveClass('icon-btn');
       expect(button.querySelector('svg')).not.toBeNull();
     }
+  });
+
+  it('shows the contract on the bidder, trump on the felt, and the hand on the scoreboard', () => {
+    renderWith([
+      welcome,
+      { type: 'room', room: room('playing') },
+      {
+        type: 'view',
+        view: {
+          ...dealt,
+          phase: 'playing',
+          handNumber: 2,
+          turn: 1,
+          trump: 'red',
+          contract: { bidder: 1, amount: 185_000 },
+          legal: { kind: 'none' },
+        },
+      },
+    ]);
+    const badge = document.querySelector('.seat-left .chip-contract') as HTMLElement;
+    expect(badge).toHaveTextContent('Contract $185kRed');
+    expect(badge.querySelector('[data-trump-suit="red"]')).not.toBeNull();
+    expect(document.querySelector('.trump-mark')).toHaveClass('suit-red');
+    expect(screen.getByRole('region', { name: 'Scores' })).toHaveTextContent(/^Hand 2/);
+    expect(screen.getByRole('region', { name: 'Hand status' })).toHaveClass('visually-hidden');
+    expect(document.querySelector('.me-line .you-tag')).toHaveTextContent('You');
+  });
+
+  it('points the turn marker at the seat the table waits on', () => {
+    renderWith([
+      welcome,
+      { type: 'room', room: room('playing') },
+      { type: 'view', view: { ...dealt, turn: 2, legal: { kind: 'none' } } },
+    ]);
+    const marker = document.querySelector('.turn-marker') as HTMLElement;
+    // Bot 3 sits across the table: the marker is at the top of the felt, pointing up.
+    expect(marker.style.top).toBe('3%');
+    expect(marker.style.transform).toMatch(/rotate\(-?180deg\)/);
+  });
+
+  it('leaves the felt, the bar and the seats unlabelled in play', () => {
+    renderWith([
+      welcome,
+      { type: 'room', room: room('playing') },
+      {
+        type: 'view',
+        view: {
+          ...dealt,
+          phase: 'playing',
+          turn: 0,
+          trump: 'red',
+          contract: { bidder: 1, amount: 175_000 },
+          trickCounts: [3, 2],
+          legal: { kind: 'play', cardIds: dealt.hand },
+        },
+      },
+    ]);
+    expect(document.querySelector('.trick-area')).not.toHaveTextContent(/\d+\/13/);
+    expect(document.querySelector('.seat-left')).not.toHaveTextContent('bidder');
+    expect(document.querySelector('.action-bar')).toHaveClass('action-hidden');
+    expect(screen.getByText(/^Your turn\./)).toHaveClass('visually-hidden');
+  });
+
+  it('names trump from the hand: a color rises under the pointer and shows in the bar', () => {
+    renderWith([
+      welcome,
+      { type: 'room', room: room('playing') },
+      {
+        type: 'view',
+        view: {
+          ...dealt,
+          phase: 'naming-trump',
+          turn: 0,
+          contract: { bidder: 0, amount: 175_000 },
+          // Red 1, Red 2, Green 1, the Tiger.
+          hand: [0, 1, 39, 52],
+          legal: { kind: 'trump', suits: ['red', 'yellow', 'black', 'green'] },
+        },
+      },
+    ]);
+    const bar = document.querySelector('.trump-bar') as HTMLElement;
+    expect(bar.querySelector('.trump-badge')).toHaveTextContent(/^Choose\s+a color\s+as trump$/);
+    // Yellow and Black aren't in the hand, so they can still be named from the bar.
+    expect(within(bar).getByRole('button', { name: 'Yellow' })).toBeInTheDocument();
+    expect(within(bar).queryByRole('button', { name: 'Red' })).toBeNull();
+
+    const slot = (id: number) =>
+      document.querySelector(`[data-card-id="${id}"]`)?.closest('.hand-slot') as HTMLElement;
+    const fan = (id: number) => slot(id).querySelector('.hand-fan') as HTMLElement;
+    fireEvent.pointerEnter(slot(1), { pointerType: 'mouse' });
+    expect(fan(0).style.getPropertyValue('--raise')).toBe('1');
+    expect(fan(1).style.getPropertyValue('--raise')).toBe('1');
+    expect(fan(39).style.getPropertyValue('--raise')).toBe('0');
+    expect(Number(fan(39).style.getPropertyValue('--part'))).toBeGreaterThan(0);
+    expect(bar.querySelector('.trump-badge')).toHaveTextContent(/^Choose\s+red\s+as trump$/);
+    expect(bar.querySelector('.trump-word')).toHaveClass('suit-red');
+
+    // The Tiger has no color: it fades back and can't be chosen.
+    expect(document.querySelector('[data-card-id="52"]')).toHaveClass('card-disabled');
+    fireEvent.click(screen.getByRole('button', { name: /Green/ }));
+    expect(screen.getByText(NOT_CONNECTED)).toBeInTheDocument();
   });
 
   it("doesn't tag your own seat as the bidder", () => {
@@ -341,30 +482,129 @@ describe('table status', () => {
     expect(document.querySelector('.me-line')).not.toHaveTextContent('bidder');
   });
 
-  it('asks for the discard in two words, with the rules behind a ?', () => {
+  it('asks for the discard on the button itself, counting down, with the rules behind a ?', () => {
     const discarding: TableView = {
       ...dealt,
       phase: 'discarding',
-      legal: { kind: 'discard', requiredNumberCards: 2, forbiddenIds: [] },
+      legal: { kind: 'discard', requiredNumberCards: 0, forbiddenIds: [] },
     };
-    render(
+    const bar = (selected: ReadonlySet<number>) => (
       <GameProvider url={URL}>
         <ActionBar
           view={discarding}
           room={room('playing')}
-          selected={new Set()}
+          selected={selected}
           onClearSelection={() => {}}
         />
-      </GameProvider>,
+      </GameProvider>
     );
-    const bar = document.querySelector('.action-bar') as HTMLElement;
-    expect(bar).toHaveTextContent(/^Your turn\.Discard 3Discard\?/);
+    const { rerender } = render(bar(new Set()));
+    expect(document.querySelector('.action-bar')).toHaveTextContent(
+      /^Your turn\.Discard \(3 left\)\?/,
+    );
+    expect(screen.getByRole('button', { name: 'Discard (3 left)' })).toBeDisabled();
     const tip = screen.getByRole('button', { name: 'Discard rules' });
     expect(tip).toHaveAccessibleDescription(/Number cards must go before Money/);
-    expect(screen.getByRole('button', { name: 'Discard' })).toBeDisabled();
+    rerender(bar(new Set([1, 2])));
+    expect(screen.getByRole('button', { name: 'Discard (1 left)' })).toBeDisabled();
+    rerender(bar(new Set([1, 2, 3])));
+    expect(screen.getByRole('button', { name: 'Discard' })).toBeEnabled();
   });
 
-  it('fades a seat that has passed, leaving its Pass chip clear', () => {
+  it('sets the kept cards apart and lays picked discards out on the felt', async () => {
+    renderWith([
+      welcome,
+      { type: 'room', room: room('playing') },
+      {
+        type: 'view',
+        view: {
+          ...dealt,
+          phase: 'discarding',
+          turn: 0,
+          contract: { bidder: 0, amount: 175_000 },
+          // Red 1, 2, 3, Red $40k, the Tiger, Green 1: four number cards, so Money stays.
+          hand: [0, 1, 2, 12, 52, 39],
+          legal: { kind: 'discard', requiredNumberCards: 3, forbiddenIds: [52] },
+        },
+      },
+    ]);
+    const handIds = () =>
+      [...document.querySelectorAll('.hand [data-card-id]')].map((c) =>
+        Number(c.getAttribute('data-card-id')),
+      );
+    // The Red $40k and the Tiger must be kept: they close the hand, set apart.
+    expect(handIds().slice(-2)).toEqual([12, 52]);
+    expect(document.querySelector('[data-card-id="12"]')?.closest('.hand-slot')).toHaveClass(
+      'kept-start',
+    );
+
+    const tray = screen.getByRole('region', { name: 'Your discards' });
+    fireEvent.click(document.querySelector('.hand [data-card-id="1"]') as Element);
+    // It flies to the tray (in jsdom the hand's copy lingers, as its exit never runs).
+    await waitFor(() => expect(tray.querySelector('[data-card-id="1"]')).not.toBeNull());
+    expect(screen.getByRole('button', { name: 'Discard (2 left)' })).toBeDisabled();
+
+    fireEvent.click(tray.querySelector('[data-card-id="1"]') as Element);
+    expect(tray.querySelector('[data-card-id="1"]')).toBeNull();
+    expect(handIds()).toContain(1);
+    expect(screen.getByRole('button', { name: 'Discard (3 left)' })).toBeDisabled();
+  });
+
+  it('puts the bid amount on the button, − and + beside it, and Pass to the right', () => {
+    renderWith(atTable);
+    const stepper = document.querySelector('.bid-stepper') as HTMLElement;
+    expect(
+      within(stepper)
+        .getAllByRole('button')
+        .map((b) => b.getAttribute('aria-label') ?? b.textContent),
+    ).toEqual(['lower bid', 'Bid $175k', 'raise bid']);
+    fireEvent.click(screen.getByRole('button', { name: 'raise bid' }));
+    expect(within(stepper).getByRole('button', { name: 'Bid $180k' })).toBeInTheDocument();
+    expect(document.querySelector('.bid-amount')).toBeNull();
+    expect(document.querySelector('.bid-bar-end')).toContainElement(
+      screen.getByRole('button', { name: 'Pass' }),
+    );
+  });
+
+  it('says nothing while you wait, keeping the empty bar through the auction', () => {
+    const waiting = (phase: TableView['phase']): readonly ServerMessage[] => [
+      welcome,
+      { type: 'room', room: room('playing') },
+      { type: 'view', view: { ...dealt, phase, turn: 1, legal: { kind: 'none' } } },
+    ];
+    const { unmount } = renderWith(waiting('bidding'));
+    expect(document.querySelector('.action-bar')).toHaveClass('action-idle');
+    expect(document.querySelector('.action-bar')).toBeEmptyDOMElement();
+    expect(screen.getByText('Waiting for Bot 2 to bid…')).toHaveClass('visually-hidden');
+    unmount();
+    renderWith(waiting('playing'));
+    expect(document.querySelector('.action-bar')).toHaveClass('action-hidden');
+  });
+
+  it('keeps your outbid bid under your hand, as a quiet outline', () => {
+    const auction = (entries: TableView['auction']): readonly ServerMessage[] => [
+      welcome,
+      { type: 'room', room: room('playing') },
+      { type: 'view', view: { ...dealt, turn: 1, legal: { kind: 'none' }, auction: entries } },
+    ];
+    const { unmount } = renderWith(auction([{ seat: 0, kind: 'bid', amount: 175_000 }]));
+    expect(
+      within(document.querySelector('.me-line') as HTMLElement).getByText('Winning bid: $175k'),
+    ).toHaveClass('chip-high');
+    unmount();
+    renderWith(
+      auction([
+        { seat: 0, kind: 'bid', amount: 175_000 },
+        { seat: 1, kind: 'bid', amount: 180_000 },
+      ]),
+    );
+    expect(
+      within(document.querySelector('.me-line') as HTMLElement).getByText('Bid: $175k'),
+    ).toHaveClass('chip-bid');
+    expect(screen.getAllByText('No bid yet')).toHaveLength(2);
+  });
+
+  it('fades a seat that has passed, leaving its Passed badge readable', () => {
     const bidding: TableView = {
       ...dealt,
       phase: 'bidding',
@@ -377,7 +617,7 @@ describe('table status', () => {
       <SeatPanel seat={1} room={room('playing')} view={bidding} position="left" />,
     );
     expect(document.querySelector('.seat-panel')).toHaveClass('seat-passed');
-    expect(screen.getByText('Pass')).toBeInTheDocument();
+    expect(screen.getByText('Passed')).toHaveClass('chip-pass');
     rerender(<SeatPanel seat={2} room={room('playing')} view={bidding} position="top" />);
     expect(document.querySelector('.seat-panel')).not.toHaveClass('seat-passed');
   });

@@ -1,11 +1,15 @@
 import type { TableView } from '@mam/engine';
 import type { RoomView } from '@mam/protocol';
+import { AnimatePresence, motion } from 'motion/react';
 import { useEffect, useId, useRef, useState } from 'react';
 import type { LogEntry } from '../state';
+import { EASE_OUT } from '../theme/motion';
 import { EventLog } from './EventLog';
 import { Icon } from './Icon';
 import { isModalOpen } from './Modal';
 import { ScoreSheet } from './ScoreSheet';
+
+const DRAWER_S = 0.22;
 
 interface Props {
   readonly view: TableView;
@@ -55,32 +59,55 @@ export function TableDrawer({ view, room, log }: Props) {
         ref={toggle}
         type="button"
         className="ghost small icon-btn drawer-toggle"
-        aria-label="Score sheet & log"
-        title="Score sheet & log"
+        aria-label="Score sheet"
+        title="Score sheet"
         aria-expanded={open}
         aria-controls={id}
         onClick={() => setOpen((o) => !o)}
       >
         <Icon name="sheet" />
       </button>
-      {open && <div className="drawer-scrim" aria-hidden="true" />}
-      {open && (
-        <aside ref={drawer} id={id} className="drawer" aria-label="Score sheet and table log">
-          <button
-            type="button"
-            className="drawer-close"
-            aria-label="Close the score sheet and log"
-            onClick={() => {
-              setOpen(false);
-              toggle.current?.focus();
-            }}
+      {/* It leaves the way it came: the sheet slides back out and the table brightens. */}
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            key="scrim"
+            className="drawer-scrim"
+            aria-hidden="true"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: DRAWER_S, ease: EASE_OUT }}
+          />
+        )}
+        {open && (
+          <motion.aside
+            key="sheet"
+            ref={drawer}
+            id={id}
+            className="drawer"
+            aria-label="Score sheet"
+            initial={{ opacity: 0, x: 40 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 40 }}
+            transition={{ duration: DRAWER_S, ease: EASE_OUT }}
           >
-            ✕
-          </button>
-          <ScoreSheet view={view} room={room} />
-          <EventLog entries={log} />
-        </aside>
-      )}
+            <button
+              type="button"
+              className="drawer-close"
+              aria-label="Close the score sheet"
+              onClick={() => {
+                setOpen(false);
+                toggle.current?.focus();
+              }}
+            >
+              ✕
+            </button>
+            <ScoreSheet view={view} room={room} />
+            <EventLog entries={log} />
+          </motion.aside>
+        )}
+      </AnimatePresence>
     </>
   );
 }

@@ -9,12 +9,29 @@ import { Table } from './screens/Table';
 import { GameProvider, useGame } from './store';
 import { useHelpKey } from './useHotkeys';
 
+/** The screen for where the player is; each fades in as it takes over the window. */
 function Screen() {
   const { state } = useGame();
   const { room, view } = state;
-  if (!room) return <Home />;
-  if (room.phase === 'lobby' || !view || room.yourSeat === null) return <Lobby room={room} />;
-  return <Table room={room} view={view} />;
+  if (!room) {
+    return (
+      <div key="home" className="screen">
+        <Home />
+      </div>
+    );
+  }
+  if (room.phase === 'lobby' || !view || room.yourSeat === null) {
+    return (
+      <div key="lobby" className="screen">
+        <Lobby room={room} />
+      </div>
+    );
+  }
+  return (
+    <div key="table" className="screen">
+      <Table room={room} view={view} />
+    </div>
+  );
 }
 
 /** Everything inside the provider; exported so tests can seed the store first. */

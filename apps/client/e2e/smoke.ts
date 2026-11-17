@@ -21,11 +21,40 @@ const ROOT = path.resolve(import.meta.dirname, '../../..');
 const OUT = path.join(import.meta.dirname, 'out');
 const CHROMIUM = process.env.CHROMIUM_PATH ?? '/usr/bin/chromium';
 const HAND_TIMEOUT_MS = 4 * 60_000;
-const VIEWPORT = { width: 1280, height: 860 };
+/** E2E_VIEWPORT=1366x768 tries another window size. */
+const VIEWPORT = (() => {
+  const [w, h] = (process.env.E2E_VIEWPORT ?? '1280x860').split('x').map(Number);
+  return { width: w ?? 1280, height: h ?? 860 };
+})();
+
+/** Nothing on screen scrolls: not the page, not the felt, not an open dialog. */
+async function checkNoScroll(page: Page, where: string): Promise<void> {
+  const over = await page.evaluate(() => {
+    const out: string[] = [];
+    const root = document.scrollingElement ?? document.documentElement;
+    if (root.scrollHeight > window.innerHeight + 1)
+      out.push(`page +${root.scrollHeight - window.innerHeight}px`);
+    for (const sel of ['.felt', '.modal']) {
+      for (const el of document.querySelectorAll(sel)) {
+        if (el.scrollHeight > el.clientHeight + 1)
+          out.push(`${sel} +${el.scrollHeight - el.clientHeight}px`);
+      }
+    }
+    return out;
+  });
+  check(
+    over.length === 0,
+    `${where} fits the window without scrolling${over.length ? ` (${over.join(', ')})` : ''}`,
+  );
+}
 
 const failures: string[] = [];
 /** Checked once, on the first turn that has an unplayable card. */
 let passedSeatChecked = false;
+let discardChecked = false;
+let cursorChecked = false;
+let trumpChecked = false;
+let trayChecked = false;
 let blockedCardChecked = false;
 function check(ok: boolean, what: string): void {
   console.log(`${ok ? '✓' : '✗'} ${what}`);
@@ -126,6 +155,9 @@ const cardMoves = (page: Page) =>
 async function openTable(page: Page, base: string): Promise<void> {
   await page.goto(base);
   await page.getByLabel('Your name').fill('Tester');
+  await sleep(1_200); // let the showcase cards land
+  await page.screenshot({ path: path.join(OUT, '0-home.png') });
+  await checkNoScroll(page, 'the home page');
   await page.getByRole('button', { name: 'Create a room' }).click();
   await page.getByRole('button', { name: 'Sit here' }).first().click();
   const addHard = page.getByRole('button', { name: '+ Bot · Hard' });
@@ -142,12 +174,16 @@ async function openTable(page: Page, base: string): Promise<void> {
   await addHard.first().click();
   await until(async () => (await addHard.count()) === 2, 'a Hard bot seated');
   await page.screenshot({ path: path.join(OUT, '0-lobby.png') });
+  await checkNoScroll(page, 'the lobby');
   for (let left = 2; left > 0; left--) {
     await until(async () => (await addNormal.count()) === left, `${left} empty seats`);
     await addNormal.first().click();
   }
   await until(async () => (await addNormal.count()) === 0, 'a full table');
-  check((await page.getByText(/Bot \d · Hard/).count()) === 1, 'a seat shows "Bot · Hard"');
+  check(
+    (await page.locator('.chair-name', { hasText: /^Bot \d Hard$/ }).count()) === 1,
+    'a seat shows "Bot 2 Hard", its strength in quiet type',
+  );
   await page.getByRole('button', { name: 'Start game' }).click();
   await page.locator('.felt').waitFor();
 }
@@ -158,7 +194,8 @@ type Shoot = (name: string) => Promise<void>;
 async function act(page: Page, shoot: Shoot): Promise<boolean> {
   const quick = { timeout: 2_000 };
   try {
-    if (!(await page.locator('.action-turn').isVisible())) return false;
+    // The gold ring round your seat says the table is waiting on you.
+    if (!(await page.locator('.me.me-turn').isVisible())) return false;
     const pass = page.getByRole('button', { name: 'Pass', exact: true });
     if (await pass.isVisible()) {
       await shoot('3-bidding');
@@ -180,26 +217,82 @@ async function act(page: Page, shoot: Shoot): Promise<boolean> {
       else await page.getByRole('button', { name: /^Bid \$/ }).click(quick);
       return true;
     }
-    const discard = page.getByRole('button', { name: 'Discard', exact: true });
+    // The button counts down, "Discard (3 left)", until three cards are chosen.
+    const discard = page.getByRole('button', { name: /^Discard( \(\d left\))?$/ });
     if (await discard.isVisible()) {
+      if (!discardChecked) {
+        check(
+          (await discard.textContent()) === 'Discard (3 left)',
+          'the discard button counts the cards still to choose',
+        );
+        discardChecked = true;
+      }
       await shoot('4-discard');
+      // The fanned cards overlap, so a pointer click can land on a neighbour; choose by
+      // the card's own click, as a keyboard or screen reader would.
       for (let i = 0; i < 3; i++) {
         await page
-          .locator('.hand button.card:not([aria-disabled])[aria-pressed="false"]')
+          .locator(
+            '.hand .hand-present:not([inert]) button.card:not([aria-disabled])[aria-pressed="false"]',
+          )
           .first()
-          .click(quick);
+          .dispatchEvent('click');
+        await sleep(450); // the card flies to the discard tray before the next pick
       }
-      await discard.click(quick);
+      if (!trayChecked) {
+        check(
+          (await page.locator('.discard-tray .discard-card').count()) === 3,
+          'picked discards are laid out in the tray on the felt',
+        );
+        await shoot('4c-discard-tray');
+        trayChecked = true;
+      }
+      await page.getByRole('button', { name: 'Discard', exact: true }).click(quick);
       return true;
+    }
+    // Trump is named from the hand: point at a color, read it in the bar, click.
+    if (await page.locator('.trump-bar').isVisible()) {
+      const colored = page
+        .locator('.hand .hand-present:not([inert]) button.card:not([aria-disabled])')
+        .first();
+      if ((await colored.count()) > 0) {
+        await colored.hover(quick);
+        await sleep(350);
+        if (!trumpChecked) {
+          const raised = await page.locator('.hand-fan-hovered').count();
+          const preview = (await page.locator('.trump-word').textContent()) ?? '';
+          const ofColor = await page
+            .locator(`.hand [data-card-id]`)
+            .evaluateAll(
+              (cards, color) =>
+                cards.filter((c) =>
+                  (c.getAttribute('aria-label') ?? '').toLowerCase().includes(color),
+                ).length,
+              preview,
+            );
+          check(
+            raised === ofColor && raised > 0 && /^(red|yellow|black|green)$/.test(preview),
+            `pointing at a color raises its group and names it in the bar (${raised} cards, ${preview})`,
+          );
+          trumpChecked = true;
+        }
+        await shoot('4b-trump');
+        await colored.click(quick);
+        return true;
+      }
     }
     const suit = page.locator('.suit-btn').first();
     if (await suit.isVisible()) {
       await suit.click(quick);
       return true;
     }
-    const card = page.locator('.hand button.card:not([aria-disabled])').first();
+    const card = page
+      .locator('.hand .hand-present:not([inert]) button.card:not([aria-disabled])')
+      .first();
     if (await card.isVisible()) {
-      const blocked = page.locator('.hand button.card[aria-disabled="true"]').first();
+      const blocked = page
+        .locator('.hand .hand-present:not([inert]) button.card[aria-disabled="true"]')
+        .first();
       if (!blockedCardChecked && (await blocked.count()) > 0) {
         const reason = await blocked.getAttribute('title', quick);
         check(Boolean(reason), 'a greyed-out card carries a tooltip saying why');
@@ -213,6 +306,20 @@ async function act(page: Page, shoot: Shoot): Promise<boolean> {
           'clicking a greyed-out card shows the reason',
         );
         blockedCardChecked = true;
+      }
+      if (!cursorChecked) {
+        const box = await card.boundingBox();
+        const cursor =
+          box &&
+          (await page.evaluate(
+            ([x, y]) => {
+              const el = document.elementFromPoint(x, y);
+              return el ? getComputedStyle(el).cursor : null;
+            },
+            [box.x + box.width / 2, box.y + box.height / 2] as const,
+          ));
+        check(cursor === 'pointer', 'the pointer turns to a hand over a card you can play');
+        cursorChecked = true;
       }
       await card.click(quick);
       return true;
@@ -266,6 +373,7 @@ async function fullHand(browser: Browser, base: string): Promise<void> {
   const help = page.getByRole('dialog', { name: 'How to play' });
   check(await help.isVisible(), 'How to play opens from the top bar');
   await shoot('1-how-to-play');
+  await checkNoScroll(page, 'How to play');
   await page.keyboard.press('Escape');
   check(await help.isHidden(), 'Esc closes How to play');
   await page.keyboard.press('?');
@@ -274,8 +382,11 @@ async function fullHand(browser: Browser, base: string): Promise<void> {
 
   await openTable(page, base);
   await shoot('2-dealt');
+  await checkNoScroll(page, 'the table');
   check(
-    /Bidding opens|High bid/.test((await page.locator('.contract-bar').textContent()) ?? ''),
+    ((await page.locator('.contract-bar').getAttribute('class')) ?? '').includes(
+      'visually-hidden',
+    ) && /Bidding opens|High bid/.test((await page.locator('.contract-bar').textContent()) ?? ''),
     'bidding begins as soon as the cards are dealt',
   );
   await until(() => page.locator('.me.me-turn').isVisible(), 'your turn to bid');
@@ -283,15 +394,16 @@ async function fullHand(browser: Browser, base: string): Promise<void> {
     await page.getByRole('button', { name: /^Bid \$/ }).isVisible(),
     'the table marks your turn to bid',
   );
-  const seatText = (await page.locator('.seat-panel, .me-line').allTextContents()).join(' ');
+  const seatText = (await page.locator('.seat-panel').allTextContents()).join(' ');
   check(
-    !/\b(dealer|Partner|Opponent|You)\b/.test(seatText.replace(/your partner|opponent/g, '')),
-    'seats carry no dealer, partner, opponent or You tags',
+    !/\b(dealer|Partner|Opponent|You)\b/.test(seatText.replace(/your partner|opponent/g, '')) &&
+      (await page.locator('.me-line .you-tag').textContent()) === 'You',
+    'only your own seat is tagged, with You',
   );
   const corner = page.locator('.table-corner');
   check(
     (await corner.locator('.icon-btn svg').count()) === 3 &&
-      (await corner.getByRole('button', { name: 'Score sheet & log' }).count()) === 1 &&
+      (await corner.getByRole('button', { name: 'Score sheet', exact: true }).count()) === 1 &&
       (await corner.getByRole('button', { name: 'How to play' }).count()) === 1 &&
       (await page.locator('.topbar').getByRole('button', { name: 'How to play' }).count()) === 0,
     'the score sheet, sound and How to play sit as icons in the corner by your seat',
@@ -342,6 +454,7 @@ async function fullHand(browser: Browser, base: string): Promise<void> {
   );
 
   await shoot('6-result');
+  await checkNoScroll(page, 'the hand review');
   check(
     await result.locator('.result-banner').isVisible(),
     'the hand result shows a made/set banner',
@@ -351,7 +464,7 @@ async function fullHand(browser: Browser, base: string): Promise<void> {
   const seen = await seenClasses(page);
   check(seen.includes('trick-enter'), 'played cards slide in');
   check(seen.includes('trick-sweep'), 'taken tricks sweep to the winner');
-  check(seen.includes('card-winning'), 'the winning card is highlighted');
+  check(seen.includes('card-winning'), 'the winning card is marked (for screen readers)');
   const moves = await cardMoves(page);
   check(moves.deal.some(Boolean), 'the deal flies cards into the hand');
   check(moves.trick.some(Boolean), "the others' cards fly onto the felt");
@@ -375,8 +488,8 @@ async function fullHand(browser: Browser, base: string): Promise<void> {
       )) as number[];
   const counts = await piled();
   check(
-    counts.length === 2 && counts.reduce((a, b) => a + b, 0) === 13,
-    `the taken tricks lie in two piles (${counts.join(' + ')})`,
+    counts.length === 4 && counts.reduce((a, b) => a + b, 0) === 13,
+    `each player's taken tricks lie in their own pile (${counts.join(' + ')})`,
   );
   check(
     (await page.locator('.trick-pile .pile-card').count()) === 52 &&
@@ -400,9 +513,9 @@ async function fullHand(browser: Browser, base: string): Promise<void> {
   );
 
   // The score sheet and log wait in a drawer off the table.
-  const drawer = page.getByRole('complementary', { name: 'Score sheet and table log' });
+  const drawer = page.getByRole('complementary', { name: 'Score sheet' });
   check(await drawer.isHidden(), 'the score sheet and log start put away');
-  await page.getByRole('button', { name: 'Score sheet & log' }).click();
+  await page.getByRole('button', { name: 'Score sheet', exact: true }).click();
   check(await drawer.isVisible(), 'the score sheet and log open from the felt');
   await shoot('8-score-sheet');
   check(
@@ -416,6 +529,8 @@ async function fullHand(browser: Browser, base: string): Promise<void> {
   check(!/takes trick|bids \$|passes\./.test(log), 'the log has no per-trick or per-bid lines');
   check(/(made|were set on) the \$\d+k bid/.test(log), 'the log records the result');
   await page.keyboard.press('Escape');
+  // It slides back out before it is gone.
+  await drawer.waitFor({ state: 'hidden', timeout: 2_000 }).catch(() => {});
   check(await drawer.isHidden(), 'Esc puts the score sheet and log away');
   check(
     pageErrors.length === 0,

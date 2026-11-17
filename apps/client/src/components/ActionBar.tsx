@@ -3,7 +3,7 @@ import {
   cardById,
   isNumberCard,
   type LegalMoves,
-  SUITS,
+  type Suit,
   type TableView,
 } from '@mam/engine';
 import type { RoomView } from '@mam/protocol';
@@ -18,28 +18,47 @@ interface Props {
   room: RoomView;
   selected: ReadonlySet<CardId>;
   onClearSelection: () => void;
+  /** Choosing trump: the color the pointer is on in the hand. */
+  trumpPreview?: Suit | null;
 }
 
 /** The controls for whatever decision the seat faces right now. */
-export function ActionBar({ view, room, selected, onClearSelection }: Props) {
+export function ActionBar({ view, room, selected, onClearSelection, trumpPreview = null }: Props) {
   const legal = view.legal;
   switch (legal.kind) {
     case 'none':
-      return <output className="action-bar muted">{waitingText(view, room)}</output>;
+      // Whose turn it is shows on the table (the ring round the seat), so the bar says
+      // nothing while you wait; screen readers still hear it. Through the auction the empty
+      // bar keeps its place; otherwise it holds the space unseen, so your hand doesn't jump.
+      return (
+        <>
+          <div
+            className={
+              view.phase === 'bidding' ? 'action-bar action-idle' : 'action-bar action-hidden'
+            }
+            aria-hidden="true"
+          />
+          <output className="visually-hidden">{waitingText(view, room)}</output>
+        </>
+      );
     case 'bid':
       return <BidControls legal={legal} view={view} />;
     case 'discard':
       return <DiscardControls legal={legal} selected={selected} onDone={onClearSelection} />;
     case 'trump':
-      return <TrumpControls />;
+      return <TrumpControls legal={legal} view={view} preview={trumpPreview} />;
     case 'play':
+      // The cards you can't play are dimmed, each saying why on hover, so the bar stays
+      // empty (held unseen, as while you wait); screen readers still hear the hint.
       return (
-        <TurnBar>
-          <span>{playHint(view)}</span>
-        </TurnBar>
+        <>
+          <div className="action-bar action-hidden" aria-hidden="true" />
+          <output className="visually-hidden">Your turn. {playHint(view)}</output>
+        </>
       );
     case 'continue':
-      return null; // handled by the hand-result modal
+      // The hand-result dialog asks; the bar holds its space so the table doesn't shift.
+      return <div className="action-bar action-hidden" aria-hidden="true" />;
   }
 }
 
@@ -47,9 +66,9 @@ export function ActionBar({ view, room, selected, onClearSelection }: Props) {
  * The bar while the table waits on this player. The gold ring round your seat shows whose
  * turn it is, so only screen readers are told in words.
  */
-function TurnBar({ children }: { children: ReactNode }) {
+function TurnBar({ children, className }: { children: ReactNode; className?: string }) {
   return (
-    <div className="action-bar action-turn">
+    <div className={className ? `action-bar action-turn ${className}` : 'action-bar action-turn'}>
       <span className="visually-hidden">Your turn.</span>
       {children}
     </div>
@@ -57,8 +76,9 @@ function TurnBar({ children }: { children: ReactNode }) {
 }
 
 /**
- * Bid or pass; on a first turn with a weak enough hand, call a misdeal instead. The high bid
- * is on the contract bar, so it isn't repeated here.
+ * Bid or pass; on a first turn with a weak enough hand, call a misdeal instead. The bid sits
+ * in the middle, its amount on the button itself with − and + either side; Pass is off to the
+ * right. The high bid is on the contract bar, so it isn't repeated here.
  */
 function BidControls({
   legal,
@@ -83,38 +103,52 @@ function BidControls({
   });
   const threshold = view.ruleset.misdeal.threshold;
   return (
-    <TurnBar>
-      {!legal.canPass && <span>You open the bidding.</span>}
+    <TurnBar className="bid-bar">
+      <div className="bid-bar-start">
+        {!legal.canPass && <span>You open the bidding.</span>}
+        {legal.canCallMisdeal && (
+          <button
+            type="button"
+            className="warn-btn"
+            title={`Your Money totals ${shortMoney(threshold)} or less: you may have the hand re-dealt instead of bidding.`}
+            onClick={() => act({ type: 'callMisdeal' })}
+          >
+            Call misdeal
+          </button>
+        )}
+      </div>
       <div className="bid-stepper">
         <button
           type="button"
+          className="bid-step"
           onClick={lower}
           disabled={amount <= legal.minBid}
           aria-label="lower bid"
         >
           −
         </button>
-        <strong className="bid-amount">{shortMoney(amount)}</strong>
-        <button type="button" onClick={raise} aria-label="raise bid">
+        <button
+          type="button"
+          className="primary bid-button"
+          onClick={bid}
+          aria-keyshortcuts="Enter"
+        >
+          Bid {shortMoney(amount)}
+        </button>
+        <button type="button" className="bid-step" onClick={raise} aria-label="raise bid">
           +
         </button>
       </div>
-      <button type="button" className="primary" onClick={bid} aria-keyshortcuts="Enter">
-        Bid {shortMoney(amount)}
-      </button>
-      <button type="button" disabled={!legal.canPass} onClick={() => act({ type: 'pass' })}>
-        Pass
-      </button>
-      {legal.canCallMisdeal && (
+      <div className="bid-bar-end">
         <button
           type="button"
-          className="warn-btn"
-          title={`Your Money totals ${shortMoney(threshold)} or less: you may have the hand re-dealt instead of bidding.`}
-          onClick={() => act({ type: 'callMisdeal' })}
+          className="bid-pass"
+          disabled={!legal.canPass}
+          onClick={() => act({ type: 'pass' })}
         >
-          Call misdeal
+          Pass
         </button>
-      )}
+      </div>
     </TurnBar>
   );
 }
@@ -150,6 +184,7 @@ function DiscardControls({
   const chosen = [...selected];
   const numbers = chosen.filter((id) => isNumberCard(cardById(id))).length;
   const ok = chosen.length === 3 && numbers >= legal.requiredNumberCards;
+  const left = 3 - chosen.length;
   const discard = () => {
     act({ type: 'discard', cardIds: chosen });
     onDone();
@@ -157,9 +192,8 @@ function DiscardControls({
   useGameKeys(ok ? { Enter: discard } : {});
   return (
     <TurnBar>
-      <strong>Discard 3</strong>
       <button type="button" className="primary" disabled={!ok} onClick={discard}>
-        Discard
+        {left > 0 ? `Discard (${left} left)` : 'Discard'}
       </button>
       <RulesTip label="Discard rules">
         The three widow cards are now in your hand, marked new. Choose three to put out of play for
@@ -170,21 +204,56 @@ function DiscardControls({
   );
 }
 
-function TrumpControls() {
+/**
+ * Naming trump is done in the hand: pointing at a color raises its cards, and a click names
+ * it. The bar says what is being asked and which color is about to be named; any color the
+ * hand has none of can still be named here.
+ */
+function TrumpControls({
+  legal,
+  view,
+  preview,
+}: {
+  legal: Extract<LegalMoves, { kind: 'trump' }>;
+  view: TableView;
+  preview: Suit | null;
+}) {
   const { act } = useGame();
+  const held = new Set(
+    view.hand.map((id) => cardById(id)).flatMap((c) => (c.kind === 'suit' ? [c.suit] : [])),
+  );
+  const missing = legal.suits.filter((s) => !held.has(s));
   return (
-    <TurnBar>
-      <span>Name trump:</span>
-      {SUITS.map((suit) => (
-        <button
-          type="button"
-          key={suit}
-          className={`suit-btn suit-${suit}`}
-          onClick={() => act({ type: 'nameTrump', suit })}
-        >
-          {SUIT_NAMES[suit]}
-        </button>
-      ))}
+    <TurnBar className="trump-bar">
+      {/* One badge, its blank filled with the color under the pointer. */}
+      <output className="trump-badge">
+        Choose{' '}
+        {preview ? (
+          <span key={preview} className={`trump-word suit-${preview}`}>
+            {SUIT_NAMES[preview].toLowerCase()}
+          </span>
+        ) : (
+          <span className="trump-blank">
+            <span className="visually-hidden">a color</span>
+          </span>
+        )}{' '}
+        as trump
+      </output>
+      {missing.length > 0 && (
+        <span className="trump-missing">
+          <span className="muted small">or:</span>
+          {missing.map((suit) => (
+            <button
+              type="button"
+              key={suit}
+              className={`ghost small suit-btn suit-${suit}`}
+              onClick={() => act({ type: 'nameTrump', suit })}
+            >
+              {SUIT_NAMES[suit]}
+            </button>
+          ))}
+        </span>
+      )}
     </TurnBar>
   );
 }

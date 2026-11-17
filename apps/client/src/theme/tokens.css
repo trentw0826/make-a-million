@@ -51,10 +51,15 @@
   --warn-ink: #7a3e00;
   /* A seat out of the auction fades back to this. */
   --passed-opacity: 0.4;
+  /* How far a card that can't be chosen fades into the felt. */
+  --disabled-veil: 0.55;
 
   /* Type ---------------------------------------------------------------- */
-  --font-display: Georgia, "Times New Roman", serif;
-  --font-body: Georgia, "Times New Roman", serif;
+  /* Fraunces, a soft old-style serif, for the name, headings and the card indices, in the
+     spirit of printed playing cards; Inter for everything else, clean at small sizes, with
+     even-width figures for sums of money. */
+  --font-display: "Fraunces Variable", Georgia, serif;
+  --font-body: "Inter Variable", system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-mono: ui-monospace, monospace;
 
   /* Shape and depth ----------------------------------------------------- */
@@ -68,15 +73,19 @@
   --shadow-drawer: -8px 0 24px rgba(0, 0, 0, 0.35);
   /* Dims what lies behind a panel that sits over the table without blocking it. */
   --scrim-light: rgba(0, 0, 0, 0.35);
-  --glow-accent: 0 0 0 3px var(--accent), 0 0 18px 4px rgba(233, 196, 106, 0.55);
 
   /* Cards --------------------------------------------------------------- */
-  --card-w: 64px;
-  --card-h: 92px;
+  /* One size for every card at the table: in the hand, face down before the other players,
+     on the felt, in the discard tray and in the piles. (Small cards appear only in the hand
+     review, off the table.) */
+  --card-w: 68px;
+  --card-h: 98px;
   --card-small-w: 54px;
   --card-small-h: 78px;
-  --back-w: 30px;
-  --back-h: 42px;
+  /* The action bar's fixed height. */
+  --action-h: 52px;
+  --back-w: var(--card-w);
+  --back-h: var(--card-h);
   /* Degrees between neighbouring cards in the fanned hand. */
   --fan-angle: 2.4deg;
   /* How far the outermost cards of the hand drop, per step from the middle, squared. */
@@ -84,7 +93,7 @@
   /* How much of each card the next one covers, at most (a narrow hand closes up further). */
   --hand-overlap: 0.3;
   /* The extra space before a new color in the hand. */
-  --group-gap: 14px;
+  --group-gap: 24px;
   /* Hovering a card in the hand: it rises and grows a little, and the next card moves aside
      by --part-gap, enough to uncover it. A card picked for the discard rises further. */
   --hover-lift: 12px;
@@ -115,6 +124,7 @@
     --card-h: 80px;
     --card-small-w: 46px;
     --card-small-h: 66px;
+    --action-h: 44px;
   }
 }
 
@@ -127,6 +137,6 @@
     --fan-angle: 1.2deg;
     --fan-drop: 0.4px;
     --hand-overlap: 0.5;
-    --group-gap: 8px;
+    --group-gap: 12px;
   }
 }

@@ -11,6 +11,8 @@
     "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p e2e/tsconfig.json"
   },
   "dependencies": {
+    "@fontsource-variable/fraunces": "5.2.5",
+    "@fontsource-variable/inter": "5.2.5",
     "@mam/engine": "workspace:*",
     "@mam/protocol": "workspace:*",
     "motion": "^14.14.0",

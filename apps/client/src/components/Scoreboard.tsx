@@ -23,6 +23,7 @@ export function Scoreboard({ view, room }: { view: TableView; room: RoomView }) 
 
   return (
     <section className="scoreboard" aria-label="Scores">
+      {view.handNumber > 0 && <div className="scoreboard-hand">Hand {view.handNumber}</div>}
       {sides.map(({ team, name, side }) => {
         const score = view.scores[team];
         const progress = Math.max(0, Math.min(100, (score / target) * 100));

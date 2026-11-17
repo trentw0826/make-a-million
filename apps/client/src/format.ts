@@ -1,5 +1,5 @@
 import type { Seat, Suit } from '@mam/engine';
-import type { Difficulty, RoomView, SeatView } from '@mam/protocol';
+import type { Difficulty, RoomView } from '@mam/protocol';
 
 export function money(amount: number): string {
   const sign = amount < 0 ? '−' : '';
@@ -30,12 +30,6 @@ export const DIFFICULTY_LABELS: Record<Difficulty, string> = {
 };
 
 export const DIFFICULTY_ORDER: readonly Difficulty[] = ['easy', 'normal', 'hard'];
-
-export function seatLabel(seat: SeatView): string {
-  if (!seat) return 'Empty seat';
-  if (seat.kind === 'bot') return `${seat.name} · ${DIFFICULTY_LABELS[seat.difficulty]}`;
-  return seat.name;
-}
 
 export function nameOf(room: RoomView | null, seat: Seat): string {
   const s = room?.seats[seat];

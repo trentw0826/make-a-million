@@ -12,8 +12,9 @@ const CONTRACT_PHASES: ReadonlySet<Phase> = new Set([
 ]);
 
 /**
- * Across the top of the felt, always there so the table never jumps: the hand number, then
- * the auction's high bid, then the contract, trump and tricks taken.
+ * The hand's status in words: the hand number, then the auction's high bid, then the
+ * contract, trump and tricks taken. Read by screen readers only; on screen the same facts
+ * are shown by the seats' badges, the trump mark on the felt, the piles and the scoreboard.
  */
 export function ContractBar({ view, room }: { view: TableView; room: RoomView }) {
   const contract = view.contract;
@@ -67,7 +68,7 @@ export function ContractBar({ view, room }: { view: TableView; room: RoomView })
   }
 
   return (
-    <section className="contract-bar" aria-label="Hand status">
+    <section className="contract-bar visually-hidden" aria-label="Hand status">
       {view.handNumber > 0 && <span className="contract-hand">Hand {view.handNumber}</span>}
       {body}
     </section>

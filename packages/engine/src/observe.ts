@@ -46,6 +46,8 @@ export interface Observation {
  */
 export interface TableView extends Omit<Observation, 'tricks' | 'handHistory'> {
   readonly trickCounts: readonly [number, number];
+  /** Tricks each seat has taken this hand: the size of its face-down pile. */
+  readonly tricksWon: readonly [number, number, number, number];
   /** Score-sheet lines only: the cards of past hands are gone from the table. */
   readonly handHistory: readonly ScoreLine[];
 }
@@ -88,11 +90,14 @@ export function observe(state: GameState, seat: Seat): Observation {
 export function tableView(obs: Observation): TableView {
   const { tricks, handHistory, ...rest } = obs;
   const counts: [number, number] = [0, 0];
+  const won: [number, number, number, number] = [0, 0, 0, 0];
   for (const t of tricks) {
-    if (t.winner !== null) counts[teamOf(t.winner)] += 1;
+    if (t.winner === null) continue;
+    counts[teamOf(t.winner)] += 1;
+    won[t.winner] += 1;
   }
   // The just-finished hand's tricks stay in `result` while it is being counted; once the
   // next hand is dealt they are gone, as at a real table.
   const sheet = handHistory.map(({ tricks: _cards, ...line }) => line);
-  return { ...rest, handHistory: sheet, trickCounts: counts };
+  return { ...rest, handHistory: sheet, trickCounts: counts, tricksWon: won };
 }

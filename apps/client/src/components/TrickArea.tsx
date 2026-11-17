@@ -8,6 +8,8 @@ import {
 } from '@mam/engine';
 import type { RoomView } from '@mam/protocol';
 import { motion, type TargetAndTransition, useReducedMotion } from 'motion/react';
+import { useRef } from 'react';
+import { SuitGlyph } from '../art/CardArt';
 import { CardBackArt } from '../art/CardBackArt';
 import { nameOf, SUIT_NAMES } from '../format';
 import { trickSuit } from '../hints';
@@ -103,12 +105,21 @@ export function TrickArea({ me, room, view, plays, completed }: Props) {
   else if (plays.length === 0) caption = `${nameOf(room, view.turn ?? me)} to lead`;
   else caption = suit ? `${SUIT_NAMES[suit]} led` : 'No color yet';
 
+  // Whose turn it is, as a marker on the rim of the felt pointing at their seat.
+  const waiting =
+    view.phase === 'bidding' ||
+    view.phase === 'discarding' ||
+    view.phase === 'naming-trump' ||
+    view.phase === 'playing';
+  const turnSpot = waiting && view.turn !== null && !held ? spotOf(view.turn, me) : null;
+
   // One keyed list, finished trick first: a card keeps its element when its trick completes,
   // so its entrance motion never replays.
   const cards = [...(held?.plays ?? []), ...plays];
 
   return (
     <section className="trick-area" aria-label="Trick">
+      <TurnMarker turn={turnSpot} />
       {cards.map((play) => {
         const from = spotOf(play.seat, me);
         const mine = play.seat === me;
@@ -136,7 +147,6 @@ export function TrickArea({ me, room, view, plays, completed }: Props) {
               >
                 <CardFace
                   id={play.cardId}
-                  size="small"
                   trump={trump !== null && isTrump(cardById(play.cardId), trump)}
                   winning={play.cardId === winningCard}
                 />
@@ -148,9 +158,55 @@ export function TrickArea({ me, room, view, plays, completed }: Props) {
           </div>
         );
       })}
-      <div className="trick-caption">
-        <span>{caption}</span>
-      </div>
+      {/* Trump, once named, as a faint mark in the middle of the felt, under the cards. */}
+      {trump && (
+        <span key={trump} className={`trump-mark suit-${trump}`} aria-hidden="true">
+          <SuitGlyph suit={trump} />
+        </span>
+      )}
+      {/* The middle of the felt is left to the cards; what is happening is put in words
+          for screen readers only, since sighted players see it in the cards. */}
+      <div className="visually-hidden">{caption}</div>
     </section>
+  );
+}
+
+/** Where the turn marker sits on the felt's rim, and which way it points, for each seat. */
+const MARKER: Readonly<Record<Spot, { left: string; top: string; angle: number }>> = {
+  bottom: { left: '50%', top: '97%', angle: 0 },
+  left: { left: '2.5%', top: '50%', angle: 90 },
+  top: { left: '50%', top: '3%', angle: 180 },
+  right: { left: '97.5%', top: '50%', angle: 270 },
+};
+
+/**
+ * A small gold marker that travels round the rim of the felt to whoever the table is waiting
+ * on, pointing at their seat. It always turns the short way round.
+ */
+function TurnMarker({ turn }: { turn: Spot | null }) {
+  const angle = useRef(0);
+  if (turn !== null) {
+    const target = MARKER[turn].angle;
+    const delta = ((((target - angle.current) % 360) + 540) % 360) - 180;
+    angle.current += delta;
+  }
+  const at = MARKER[turn ?? 'bottom'];
+  return (
+    <motion.div
+      className="turn-marker"
+      aria-hidden="true"
+      initial={false}
+      animate={{
+        left: at.left,
+        top: at.top,
+        rotate: angle.current,
+        opacity: turn === null ? 0 : 1,
+      }}
+      transition={{ type: 'spring', stiffness: 170, damping: 24 }}
+    >
+      <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+        <path d="M5 8l7 8 7-8z" fill="currentColor" />
+      </svg>
+    </motion.div>
   );
 }

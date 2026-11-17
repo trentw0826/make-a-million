@@ -15,6 +15,15 @@ const SUIT_GLYPH: Record<Suit, ReactNode> = {
   green: <path d="M20 5l16 28H4z" />,
 };
 
+/** A color's emblem on its own, filled with `currentColor`. */
+export function SuitGlyph({ suit, className }: { suit: Suit; className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 40 40" fill="currentColor" aria-hidden="true">
+      {SUIT_GLYPH[suit]}
+    </svg>
+  );
+}
+
 const SPECIAL_GLYPH: Record<'tiger' | 'bull' | 'bear', ReactNode> = {
   // Three claw stripes.
   tiger: (

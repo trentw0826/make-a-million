@@ -1,6 +1,19 @@
 :root {
   font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.45;
+  font-feature-settings: "tnum" 1;
   color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Headings in the display face; Inter carries the rest. */
+h1,
+h2,
+h3 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: 0.005em;
 }
 
 * {
@@ -153,8 +166,8 @@ input {
   align-items: center;
   gap: 0.4em;
   font-family: var(--font-display);
-  font-weight: bold;
-  letter-spacing: 0.02em;
+  font-weight: 650;
+  letter-spacing: 0.01em;
 }
 .wordmark-coin {
   width: 1.25em;
@@ -170,7 +183,8 @@ input {
 .topbar-room {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 6px;
+  margin-right: 6px;
 }
 .room-code {
   font-family: var(--font-mono);
@@ -181,12 +195,15 @@ input {
   gap: 8px;
   margin-left: auto;
 }
-.icon-btn {
-  display: inline-grid;
-  place-items: center;
+/* button.small's padding would otherwise win and nudge the icon off-centre. */
+button.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   width: 36px;
   height: 36px;
   padding: 0;
+  line-height: 0;
 }
 .topbar .ghost {
   border-color: rgba(255, 255, 255, 0.35);
@@ -203,36 +220,139 @@ input {
 }
 
 /* Home ------------------------------------------------------------------- */
+/* The table before anyone sits: a felt oval with a fan of cards and the name, and a paper
+   place card below it for coming in. It fits the window without scrolling. */
 .home {
-  max-width: 440px;
-  margin: 10vh auto;
-  padding: 0 16px;
+  flex: 1;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: clamp(12px, 3vh, 28px);
+  padding: 16px;
   color: var(--paper);
 }
-.home h1 {
-  margin-bottom: 4px;
-}
-.home .panel {
-  color: var(--ink);
-  margin-top: 16px;
+.home-table {
+  position: relative;
   display: grid;
-  gap: 10px;
+  justify-items: center;
+  align-content: center;
+  gap: 6px;
+  width: min(640px, 100%);
+  padding: clamp(18px, 4vh, 36px) 24px clamp(20px, 4vh, 40px);
+  border-radius: 50%;
+  background: radial-gradient(
+    ellipse at center,
+    var(--felt-light) 0%,
+    var(--felt) 70%,
+    var(--felt-dark) 100%
+  );
+  box-shadow:
+    inset 0 0 0 8px var(--bar),
+    var(--shadow-2);
+  text-align: center;
 }
-.home .muted {
+.home-table h1 {
+  margin: 0;
+}
+.home-tagline {
+  margin: 0;
+  max-width: 34ch;
   color: var(--on-felt-muted);
 }
-.home-form label {
+.home-fan {
+  display: flex;
+  justify-content: center;
+  height: calc(var(--card-h) + 12px);
+  margin-bottom: 4px;
+  perspective: 900px;
+}
+.home-fan-card {
+  margin: 0 calc(var(--card-w) * -0.18);
+  transform-origin: 50% 120%;
+  rotate: calc(var(--d) * 9deg);
+  translate: 0 calc(var(--d) * var(--d) * 3px);
+  perspective: 900px;
+}
+.home-fan-flip {
+  backface-visibility: hidden;
+  filter: drop-shadow(0 8px 10px rgba(0, 0, 0, 0.3));
+}
+.home-card {
+  width: min(560px, 100%);
+  display: grid;
+  gap: 14px;
+  padding: 18px 20px 14px;
+  border-radius: var(--radius-l);
+  background: var(--paper);
+  color: var(--ink);
+  box-shadow: var(--shadow-2);
+}
+.home-card label {
   display: grid;
   gap: 4px;
   font-size: 0.9em;
 }
+.home-name input {
+  font-size: 1.05em;
+}
+.home-ways {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+.home-way {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+}
+.home-way + .home-way {
+  padding-left: 18px;
+  border-left: 1px solid var(--line);
+}
+.home-way h2 {
+  margin: 0;
+  font-size: 1em;
+}
+.home-way p {
+  margin: 0;
+  color: var(--muted);
+}
+.home-way button {
+  justify-self: start;
+}
+.home-help {
+  margin: 0;
+  color: var(--muted);
+}
+@media (max-width: 600px) {
+  .home-ways {
+    grid-template-columns: 1fr;
+  }
+  .home-way + .home-way {
+    padding: 12px 0 0;
+    border-left: 0;
+    border-top: 1px solid var(--line);
+  }
+}
 
 /* Lobby ------------------------------------------------------------------ */
+/* The lobby fills the window below the top bar, the table taking what the header leaves. */
 .lobby {
-  max-width: 1000px;
-  margin: 6vh auto;
-  padding: 0 16px;
+  flex: 1;
+  width: min(1000px, 100%);
+  margin: 0 auto;
+  padding: clamp(8px, 2vh, 20px) 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
   color: var(--paper);
+}
+.lobby-header h1 {
+  margin: 0 0 2px;
+  font-size: 1.6em;
+}
+.lobby-header p {
+  margin: 0;
 }
 .lobby .muted {
   color: var(--on-felt-muted);
@@ -241,14 +361,14 @@ input {
 .lobby-table {
   display: grid;
   grid-template-columns: minmax(200px, 1fr) minmax(260px, 1.5fr) minmax(200px, 1fr);
-  grid-template-rows: auto minmax(220px, auto) auto;
+  grid-template-rows: auto minmax(clamp(110px, 22vh, 220px), auto) auto;
   grid-template-areas:
     ". top ."
     "left felt right"
     ". bottom .";
-  gap: 14px;
+  gap: clamp(8px, 1.6vh, 14px);
   align-items: center;
-  margin: 24px 0;
+  margin: clamp(10px, 2.4vh, 24px) 0 0;
 }
 .lobby-felt {
   grid-area: felt;
@@ -256,7 +376,7 @@ input {
   align-self: stretch;
   display: grid;
   place-items: center;
-  min-height: 220px;
+  min-height: clamp(110px, 22vh, 220px);
   border-radius: 50%;
   background: radial-gradient(
     ellipse at center,
@@ -299,8 +419,8 @@ input {
 .chair {
   display: grid;
   justify-items: center;
-  gap: 6px;
-  padding: 12px;
+  gap: 4px;
+  padding: clamp(6px, 1.4vh, 12px) 12px;
   border: 2px solid transparent;
   border-top: 4px solid var(--team-them);
   border-radius: var(--radius-l);
@@ -348,8 +468,8 @@ input {
 .chair-avatar {
   display: grid;
   place-items: center;
-  width: 44px;
-  height: 44px;
+  width: clamp(30px, 5vh, 44px);
+  height: clamp(30px, 5vh, 44px);
   border-radius: 50%;
   background: var(--team-them);
   color: var(--on-accent);
@@ -406,15 +526,6 @@ input {
   margin-bottom: 4px;
   padding: 0;
   text-align: center;
-}
-.lobby-share {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  align-items: center;
-}
-.lobby-share button {
-  font-size: 0.9em;
 }
 
 /* Table ------------------------------------------------------------------ */
@@ -564,9 +675,8 @@ input {
   color: var(--paper);
   display: grid;
   grid-template-columns: 1fr minmax(320px, 2fr) 1fr;
-  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  grid-template-rows: auto minmax(0, 1fr) auto;
   grid-template-areas:
-    "bar bar bar"
     "score top tools"
     "left trick right"
     "me me me";
@@ -615,10 +725,20 @@ input {
   border-radius: var(--radius-l);
   border: 2px solid transparent;
   text-align: center;
+  /* The ring round the acting seat fades in and out as the turn passes. */
+  transition:
+    border-color var(--dur-slow) var(--ease-out),
+    background-color var(--dur-slow) var(--ease-out);
 }
-.seat-top {
+/* Each seat with its trick pile on the player's own left as they face the middle: your
+   partner's to their right on screen, the left player's above them, the right player's
+   below them. */
+.top-side {
   grid-area: top;
   justify-self: center;
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 /* The player on your left, with the opponents' tricks on their left: seen from their seat,
    facing the middle of the table, that is above them on screen. */
@@ -632,12 +752,18 @@ input {
   min-height: 0;
   min-width: 0;
 }
-.pile-them {
+.pile-left {
   align-self: center;
 }
-.seat-right {
+.right-side {
   grid-area: right;
-  align-self: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  min-height: 0;
+  min-width: 0;
 }
 .seat-acting {
   border-color: var(--accent);
@@ -645,6 +771,11 @@ input {
 }
 .seat-name {
   margin-bottom: 4px;
+}
+/* A bot's strength, after its name: there if you look, quiet if you don't. */
+.seat-difficulty {
+  font-weight: normal;
+  opacity: 0.55;
 }
 .seat-role {
   display: flex;
@@ -665,41 +796,80 @@ input {
   background: var(--paper);
   color: var(--ink);
 }
+/* Only the winning bid is solid; every other standing in the auction is an outline. */
+.chip-none,
+.chip-bid,
+.chip-pass {
+  background: transparent;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.28);
+  color: var(--on-felt-muted);
+  font-weight: normal;
+}
+.chip-none,
+.chip-pass {
+  color: rgba(255, 255, 255, 0.5);
+}
 .chip-high {
   background: var(--accent);
   color: var(--on-accent);
 }
-.chip-pass {
-  background: rgba(255, 255, 255, 0.2);
-  color: inherit;
-  font-weight: normal;
-}
-.contract-bar {
-  grid-area: bar;
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
+/* The bidder's badge for the rest of the hand: the contract, and trump once named. */
+.chip-contract {
+  display: inline-flex;
   align-items: center;
-  gap: 6px 22px;
-  min-height: 34px;
-  padding: 4px 14px;
-  border-radius: var(--radius-l);
-  background: rgba(0, 0, 0, 0.22);
-  font-size: 0.95em;
-}
-.contract-hand {
-  opacity: 0.7;
-}
-.suit-chip {
-  padding: 1px 10px;
-  border-radius: var(--radius-l);
+  gap: 6px;
   background: var(--paper);
+  color: var(--ink);
+  box-shadow: inset 0 0 0 2px var(--accent);
+}
+.chip-trump {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding-left: 6px;
+  border-left: 1px solid var(--line);
+}
+.chip-trump-glyph {
+  width: 0.85em;
+  height: 0.85em;
+}
+/* Your own seat says so. */
+.you-tag {
+  margin-right: 6px;
+  padding: 1px 8px;
+  border-radius: var(--radius-l);
+  background: var(--team-us);
+  color: var(--on-accent);
+  font-size: 0.85em;
+  font-weight: bold;
+}
+/* Trump, as a faint watermark in the middle of the felt. */
+.trump-mark {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: min(30%, 140px);
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  opacity: 0.14;
+  pointer-events: none;
+  animation: fade-in var(--dur-slow) var(--ease-out);
+}
+.trump-mark svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.scoreboard-hand {
+  font-size: 0.8em;
+  letter-spacing: 0.04em;
+  color: var(--on-felt-muted);
 }
 
 /* Sized to its fan (inline), so it centres under the seat's name. */
 .card-backs {
   position: relative;
-  height: 44px;
+  height: var(--back-h);
   margin: 0 auto;
 }
 .card-back {
@@ -707,7 +877,7 @@ input {
   top: 0;
   width: var(--back-w);
   height: var(--back-h);
-  border-radius: var(--radius-s);
+  border-radius: var(--radius-card);
   overflow: hidden;
   border: 1px solid var(--back-trim);
   box-shadow: var(--shadow-1);
@@ -722,6 +892,35 @@ input {
   grid-area: trick;
   position: relative;
   min-height: 220px;
+}
+/* The bidder's discards, laid out in the middle of the felt as they are picked. */
+.discard-tray {
+  grid-area: trick;
+  place-self: center;
+  z-index: 2;
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+}
+.discard-tray-label {
+  margin: 0;
+  font-size: 0.85em;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--on-felt-muted);
+}
+.discard-slots {
+  display: flex;
+  gap: 14px;
+}
+.discard-slot {
+  width: var(--card-w);
+  height: var(--card-h);
+  border: 2px dashed rgba(255, 255, 255, 0.28);
+  border-radius: var(--radius-card);
+}
+.discard-card {
+  position: relative;
 }
 /* The playing surface leans away from you. Only this backdrop tilts: the cards stay flat, so
    Motion can measure them for the flight from your hand. */
@@ -761,16 +960,6 @@ input {
   top: 50%;
   transform: translateY(-50%);
 }
-.trick-caption {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  text-align: center;
-  display: grid;
-  gap: 4px;
-  pointer-events: none;
-}
 
 /* Your seat: centred, about half the table wide, with your side's tricks off to its right. */
 .me {
@@ -783,10 +972,33 @@ input {
   padding: 8px;
   border-radius: 12px;
   border: 2px solid transparent;
+  transition:
+    border-color var(--dur-slow) var(--ease-out),
+    background-color var(--dur-slow) var(--ease-out);
 }
 .me-turn {
   border-color: var(--accent);
   background: rgba(0, 0, 0, 0.1);
+}
+/* Each screen fades in as it takes over the window. */
+.screen {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  animation: fade-in var(--dur-slow) var(--ease-out);
+}
+/* The marker on the felt's rim pointing at whoever the table waits on. */
+.turn-marker {
+  position: absolute;
+  z-index: 1;
+  translate: -50% -50%;
+  color: var(--accent-light);
+  filter: drop-shadow(0 0 6px rgba(233, 196, 106, 0.6));
+  pointer-events: none;
+}
+.turn-marker svg {
+  display: block;
 }
 .me-line {
   display: flex;
@@ -804,15 +1016,19 @@ input {
   align-items: center;
   justify-content: center;
   background: rgba(0, 0, 0, 0.2);
-  padding: 10px 14px;
+  padding: 0 14px;
   border-radius: var(--radius-l);
-  min-height: 48px;
+  /* A fixed height, whatever the bar holds or whether it shows at all, so the table above
+     never grows or shrinks with it. */
+  height: var(--action-h);
 }
-/* The "?" in the action bar's corner, and the rules it shows on hover or focus. */
+/* The "?" at the action bar's right end, and the rules it shows on hover or focus. */
 .rules-tip {
   position: absolute;
-  top: 4px;
-  right: 6px;
+  top: 50%;
+  right: 8px;
+  display: flex;
+  transform: translateY(-50%);
 }
 .rules-tip-btn {
   width: 20px;
@@ -856,14 +1072,80 @@ input {
   visibility: visible;
   opacity: 1;
 }
+/* The bid bar: anything to say on the left, the bid in the middle, Pass on the right. */
+.bid-bar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+}
+.bid-bar-start {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9em;
+}
+.bid-bar-end {
+  justify-self: end;
+}
+/* Pass is always there but rarely the point: a quiet outline, not a second button to weigh. */
+.bid-pass {
+  border-color: rgba(255, 255, 255, 0.28);
+  background: transparent;
+  color: var(--on-felt-muted);
+}
 .bid-stepper {
   display: flex;
   align-items: center;
   gap: 6px;
 }
-.bid-amount {
-  min-width: 110px;
+.bid-step {
+  width: 34px;
+  padding-left: 0;
+  padding-right: 0;
+}
+.bid-button {
+  min-width: 120px;
+  font-variant-numeric: tabular-nums;
+}
+/* Naming trump: one wide badge, "Choose ___ as trump", its blank filled with the color under
+   the pointer. */
+.trump-badge {
+  display: inline-flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 0;
+  min-width: min(340px, 100%);
+  padding: 6px 20px;
+  border-radius: 999px;
+  background: var(--paper);
+  color: var(--ink);
+  font-weight: bold;
+  white-space: pre;
+}
+.trump-blank,
+.trump-word {
+  display: inline-block;
+  min-width: 3.6em;
   text-align: center;
+}
+.trump-blank {
+  height: 1em;
+  border-bottom: 2px solid var(--line);
+}
+.trump-word {
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+  animation: fade-in var(--dur-base) var(--ease-out);
+}
+.trump-missing {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+/* While you wait, the bar is empty: kept in view through the auction, held unseen after. */
+.action-hidden {
+  visibility: hidden;
 }
 .suit-btn {
   font-weight: bold;
@@ -894,14 +1176,21 @@ input {
   position: relative;
   pointer-events: none;
   display: flex;
-  --fit: calc((100% - var(--card-w) - 4 * var(--group-gap)) / max(var(--n, 13) - 1, 1));
+  --fit: calc((100% - var(--card-w) - 6 * var(--group-gap)) / max(var(--n, 13) - 1, 1));
   --step: min(var(--card-w) * (1 - var(--hand-overlap)), var(--fit));
+}
+.hand-present {
+  display: contents;
 }
 .hand-slot + .hand-slot {
   margin-left: calc(var(--step) - var(--card-w));
 }
 .hand-slot.group-start {
   margin-left: calc(var(--step) - var(--card-w) + var(--group-gap));
+}
+/* While discarding, the cards that must be kept sit apart at the end of the hand. */
+.hand-slot.kept-start {
+  margin-left: calc(var(--step) - var(--card-w) + var(--group-gap) * 2.5);
 }
 /* The fan: each card leans by its distance from the middle (--d) and drops a little. Around
    a hovered card the others part (--part, set by Hand) and the card itself rises (--raise);
@@ -955,14 +1244,14 @@ input {
 .trick-pile {
   position: relative;
   flex: none;
-  width: var(--card-small-w);
-  height: var(--card-small-h);
+  width: var(--card-w);
+  height: var(--card-h);
 }
-.pile-us {
+.pile-me {
   grid-area: me;
   justify-self: start;
   align-self: center;
-  margin-left: max(16px, (25% - var(--card-small-w)) / 2);
+  margin-left: max(16px, (25% - var(--card-w)) / 2);
 }
 .pile-card {
   position: absolute;
@@ -1072,15 +1361,6 @@ button.card:focus-visible:not([aria-disabled="true"]) {
   fill: currentColor;
   opacity: 0.12;
 }
-/* Money cards wear a gold inner frame. */
-.card-money::after {
-  content: "";
-  position: absolute;
-  inset: 3px;
-  border: 1.5px solid var(--accent-light);
-  border-radius: calc(var(--radius-card) - 2px);
-  pointer-events: none;
-}
 .card-small {
   width: var(--card-small-w);
   height: var(--card-small-h);
@@ -1110,9 +1390,31 @@ button.card-selected:hover:not([aria-disabled="true"]) {
 .hand-fan button.card-selected:hover:not([aria-disabled="true"]) {
   transform: none;
 }
-.card-disabled,
-button.card-disabled {
-  opacity: 0.45;
+/* The shadow follows the fan too: every raised card (one, or a whole color when naming
+   trump) casts the same lifted shadow, whichever card the pointer happens to be on. */
+.hand-fan button.card:hover:not(:disabled, [aria-disabled="true"]),
+.hand-fan button.card:focus-visible:not([aria-disabled="true"]) {
+  box-shadow: var(--shadow-1);
+}
+.hand-fan.hand-fan-hovered button.card:not([aria-disabled="true"]) {
+  box-shadow: var(--shadow-lift);
+}
+/* A card that can't be chosen right now fades into the felt. A felt-coloured veil over an
+   opaque card, rather than a see-through card, so where cards overlap in the hand the one
+   underneath doesn't show through. Each card keeps its veil to itself (isolation), or a
+   covered card's veil would paint over the card on top of it too. */
+.card-disabled {
+  isolation: isolate;
+}
+.card-disabled::before {
+  content: "";
+  position: absolute;
+  z-index: 2;
+  inset: -1px;
+  border-radius: inherit;
+  background: var(--felt);
+  opacity: var(--disabled-veil);
+  pointer-events: none;
 }
 .card-star {
   position: absolute;
@@ -1141,17 +1443,6 @@ button.card-disabled {
 }
 .card-fresh {
   border-color: var(--accent);
-}
-@keyframes winning-glow {
-  50% {
-    box-shadow:
-      0 0 0 3px var(--accent),
-      0 0 26px 8px rgba(233, 196, 106, 0.7);
-  }
-}
-.card-winning {
-  box-shadow: var(--glow-accent);
-  animation: winning-glow 1.4s ease-in-out infinite;
 }
 .card-red .card-label,
 .card-red .card-art,
@@ -1226,15 +1517,25 @@ button.modal-close {
   padding: 0 6px;
 }
 .help {
-  max-width: 680px;
+  max-width: 1180px;
+}
+.help-columns {
+  column-width: 300px;
+  column-gap: 32px;
+  column-rule: 1px solid var(--line);
+  font-size: 0.92em;
+}
+.help-columns section {
+  break-inside: avoid;
+  padding-bottom: 12px;
 }
 .help h3 {
-  margin: 16px 0 4px;
+  margin: 0 0 4px;
   font-size: 1em;
 }
 .help p,
 .help li {
-  line-height: 1.45;
+  line-height: 1.4;
   margin: 4px 0;
 }
 .help ul {
@@ -1696,8 +1997,7 @@ button.modal-close {
     gap: 4px;
   }
   .action-bar {
-    padding: 6px 12px;
-    min-height: 40px;
+    padding: 0 12px;
   }
   .hand {
     padding: 6px 0 calc(var(--fan-drop) * 24);
@@ -1715,7 +2015,6 @@ button.modal-close {
     grid-template-columns: 1fr 1fr;
     grid-template-rows: auto;
     grid-template-areas:
-      "bar bar"
       "score tools"
       "top top"
       "left right"
@@ -1733,7 +2032,7 @@ button.modal-close {
   .table-corner {
     grid-area: score;
   }
-  .pile-us {
+  .pile-me {
     grid-area: tools;
     justify-self: start;
     align-self: end;
@@ -1761,8 +2060,19 @@ button.modal-close {
     box-shadow: 0 0 0 7px rgba(184, 134, 11, 0);
   }
 }
-.seat-acting {
+.seat-acting,
+.me-turn {
   animation: pulse-ring 1.8s ease-in-out infinite;
+}
+/* A decision's controls ease in as the bar changes to them. */
+@keyframes bar-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+.action-turn {
+  animation: bar-in var(--dur-base) var(--ease-out);
 }
 
 @keyframes fade-in {
@@ -1781,18 +2091,6 @@ button.modal-close {
 }
 .modal {
   animation: rise-in 200ms var(--ease-out);
-}
-@keyframes slide-in-right {
-  from {
-    opacity: 0;
-    transform: translateX(40px);
-  }
-}
-.drawer-scrim {
-  animation: fade-in var(--dur-base) var(--ease-out);
-}
-.drawer {
-  animation: slide-in-right var(--dur-base) var(--ease-out);
 }
 
 @keyframes toast-in {
@@ -1858,11 +2156,13 @@ button.modal-close {
 
 @media (prefers-reduced-motion: reduce) {
   .seat-acting,
-  .card-winning,
+  .me-turn,
+  .action-turn,
+  .screen,
+  .trump-mark,
+  .trump-word,
   .modal-backdrop,
   .modal,
-  .drawer,
-  .drawer-scrim,
   .toast,
   .delta-float {
     animation: none;
