@@ -202,6 +202,31 @@ describe('score sheet and log drawer', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Close the score sheet and log' }));
     expect(screen.queryByRole('complementary')).toBeNull();
   });
+
+  it('dims the table while open, and a click anywhere else puts it away', () => {
+    render(
+      <div>
+        <p>The table</p>
+        <TableDrawer view={dealt} room={room('playing')} log={entries} />
+      </div>,
+    );
+    const toggle = screen.getByRole('button', { name: 'Score sheet & log' });
+    expect(document.querySelector('.drawer-scrim')).toBeNull();
+    fireEvent.click(toggle);
+    expect(document.querySelector('.drawer-scrim')).not.toBeNull();
+
+    // A press inside the sheet keeps it open.
+    fireEvent.pointerDown(screen.getByText('Ann deals.'));
+    expect(screen.getByRole('complementary')).toBeInTheDocument();
+
+    fireEvent.pointerDown(document.querySelector('.drawer-scrim') as Element);
+    expect(screen.queryByRole('complementary')).toBeNull();
+    expect(document.querySelector('.drawer-scrim')).toBeNull();
+
+    fireEvent.click(toggle);
+    fireEvent.pointerDown(screen.getByText('The table'));
+    expect(screen.queryByRole('complementary')).toBeNull();
+  });
 });
 
 describe('trick piles', () => {

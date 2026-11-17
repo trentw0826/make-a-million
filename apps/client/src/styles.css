@@ -442,6 +442,13 @@ input {
   height: calc(100dvh - var(--topbar-h));
   overflow-y: auto;
 }
+/* The table behind the open score sheet: dimmed, and it takes the click that closes it. */
+.drawer-scrim {
+  position: absolute;
+  z-index: 4;
+  inset: 0;
+  background: var(--scrim-light);
+}
 /* The score sheet and log, slid in over the right edge of the felt. */
 .drawer {
   position: absolute;
@@ -1354,7 +1361,8 @@ button.modal-close {
       "trick trick"
       "me me";
   }
-  .drawer {
+  .drawer,
+  .drawer-scrim {
     position: fixed;
     top: var(--topbar-h);
   }
@@ -1418,6 +1426,9 @@ button.modal-close {
     opacity: 0;
     transform: translateX(40px);
   }
+}
+.drawer-scrim {
+  animation: fade-in var(--dur-base) var(--ease-out);
 }
 .drawer {
   animation: slide-in-right var(--dur-base) var(--ease-out);
@@ -1490,6 +1501,7 @@ button.modal-close {
   .modal-backdrop,
   .modal,
   .drawer,
+  .drawer-scrim,
   .toast,
   .delta-float {
     animation: none;

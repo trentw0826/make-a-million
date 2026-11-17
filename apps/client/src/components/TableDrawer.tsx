@@ -15,13 +15,16 @@ interface Props {
 
 /**
  * The score sheet and the table log, kept off the table until asked for: a sheet icon in the
- * corner by your seat slides them in over the felt's right edge. It doesn't block the table, so play goes
- * on while it is open; the button, its close button or Esc put it away.
+ * corner by your seat slides them in over the felt's right edge, and the table dims behind
+ * them. Play goes on while it is open. The button, its close button, Esc, or a click anywhere
+ * else put it away; a click on the dimmed table only closes the sheet, so it can't play a
+ * card by accident.
  */
 export function TableDrawer({ view, room, log }: Props) {
   const [open, setOpen] = useState(false);
   const id = useId();
   const toggle = useRef<HTMLButtonElement>(null);
+  const drawer = useRef<HTMLElement>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -31,8 +34,19 @@ export function TableDrawer({ view, room, log }: Props) {
       setOpen(false);
       toggle.current?.focus();
     };
+    // A press anywhere but the sheet and its own button (which toggles it) puts it away.
+    const onPress = (e: PointerEvent) => {
+      const target = e.target as Node;
+      if (drawer.current?.contains(target) || toggle.current?.contains(target)) return;
+      if (isModalOpen()) return;
+      setOpen(false);
+    };
     window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+    document.addEventListener('pointerdown', onPress);
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      document.removeEventListener('pointerdown', onPress);
+    };
   }, [open]);
 
   return (
@@ -49,8 +63,9 @@ export function TableDrawer({ view, room, log }: Props) {
       >
         <Icon name="sheet" />
       </button>
+      {open && <div className="drawer-scrim" aria-hidden="true" />}
       {open && (
-        <aside id={id} className="drawer" aria-label="Score sheet and table log">
+        <aside ref={drawer} id={id} className="drawer" aria-label="Score sheet and table log">
           <button
             type="button"
             className="drawer-close"
