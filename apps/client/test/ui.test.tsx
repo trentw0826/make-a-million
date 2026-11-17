@@ -1,12 +1,12 @@
 import { createGame, observe, type TableView, tableView } from '@mam/engine';
 import type { RoomView, ServerMessage } from '@mam/protocol';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import { useEffect } from 'react';
 import { describe, expect, it } from 'vitest';
 import { Shell } from '../src/App';
 import { ContractBar } from '../src/components/ContractBar';
 import { EventLog } from '../src/components/EventLog';
-import { Hand } from '../src/components/Hand';
+import { Hand, partOffset } from '../src/components/Hand';
 import { GameProvider, useGame } from '../src/store';
 
 /** Nothing listens here, so every send fails and shows the "Not connected" toast. */
@@ -92,6 +92,18 @@ describe('How to play', () => {
 });
 
 describe('top bar', () => {
+  it('mutes and unmutes sound, remembering the choice', () => {
+    window.localStorage.removeItem('mam.muted');
+    renderWith();
+    const toggle = screen.getByRole('button', { name: 'Mute sounds' });
+    const before = toggle.getAttribute('aria-pressed');
+    fireEvent.click(toggle);
+    expect(toggle).toHaveAttribute('aria-pressed', before === 'true' ? 'false' : 'true');
+    expect(window.localStorage.getItem('mam.muted')).toBe(before === 'true' ? null : '1');
+    fireEvent.click(toggle);
+    expect(toggle).toHaveAttribute('aria-pressed', before ?? 'false');
+  });
+
   it('shows the room code with an invite button', () => {
     renderWith(inLobby);
     expect(document.querySelector('.topbar')).toHaveTextContent('Room ABC123');
@@ -208,6 +220,54 @@ describe('hand', () => {
       false,
       true,
       true,
+    ]);
+  });
+});
+
+describe('hovering the hand', () => {
+  const fans = () =>
+    [...document.querySelectorAll<HTMLElement>('.hand-fan')].map((f) => ({
+      part: Number(f.style.getPropertyValue('--part')),
+      raise: Number(f.style.getPropertyValue('--raise')),
+    }));
+
+  it('parts the cards away from the hovered one, most where they are closest', () => {
+    expect([0, 1, 2, 3, 4, 5].map((i) => partOffset(i, 2))).toEqual([-0.35, -0.5, 0, 1, 0.7, 0.45]);
+    expect(partOffset(3, -1)).toBe(0);
+    expect(partOffset(9, 2)).toBe(0);
+  });
+
+  it('raises the hovered card without reordering, and settles when the pointer leaves', () => {
+    render(<Hand ids={[0, 1, 2, 3, 4]} trump={null} cardProps={() => ({})} />);
+    const slots = [...document.querySelectorAll('.hand-slot')];
+    const before = slots.map((s) => s.textContent);
+    fireEvent.pointerEnter(slots[2] as Element, { pointerType: 'mouse' });
+    expect(fans()).toEqual([
+      { part: -0.35, raise: 0 },
+      { part: -0.5, raise: 0 },
+      { part: 0, raise: 1 },
+      { part: 1, raise: 0 },
+      { part: 0.7, raise: 0 },
+    ]);
+    expect([...document.querySelectorAll('.hand-slot')].map((s) => s.textContent)).toEqual(before);
+    fireEvent.pointerLeave(document.querySelector('.hand') as Element);
+    expect(fans().every((f) => f.part === 0 && f.raise === 0)).toBe(true);
+  });
+
+  it('parts the hand for keyboard focus too, but does not raise a card that cannot be played', () => {
+    render(
+      <Hand
+        ids={[0, 1, 2]}
+        trump={null}
+        cardProps={() => ({ onClick: () => {}, disabled: true })}
+      />,
+    );
+    const buttons = document.querySelectorAll<HTMLElement>('.hand button.card');
+    act(() => (buttons[1] as HTMLElement).focus());
+    expect(fans()).toEqual([
+      { part: -0.5, raise: 0 },
+      { part: 0, raise: 0 },
+      { part: 1, raise: 0 },
     ]);
   });
 });

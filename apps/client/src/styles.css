@@ -1,25 +1,5 @@
 :root {
-  --felt: #1f5f3b;
-  --felt-dark: #184a2e;
-  --paper: #fbf7ee;
-  --ink: #1b1b1b;
-  --muted: #6b6b6b;
-  --line: #d9d2c3;
-  --accent: #b8860b;
-  --red: #c62828;
-  --yellow: #b07d00;
-  --black: #1b1b1b;
-  --green: #2e7d32;
-  --tiger: #e65100;
-  --bull: #5d4037;
-  --bear: #37474f;
-  --danger: #b00020;
-  --topbar-h: 48px;
-  --team-us: #e0a526;
-  --team-them: #6fa8dc;
-  --good: #2e7d32;
-  --bar: #123822;
-  font-family: Georgia, "Times New Roman", serif;
+  font-family: var(--font-body);
   color: var(--ink);
 }
 
@@ -36,7 +16,7 @@ body {
 button {
   font: inherit;
   padding: 6px 12px;
-  border-radius: 6px;
+  border-radius: var(--radius-m);
   border: 1px solid var(--line);
   background: var(--paper);
   color: var(--ink);
@@ -53,7 +33,7 @@ button[aria-disabled="true"] {
 button.primary {
   background: var(--accent);
   border-color: var(--accent);
-  color: white;
+  color: var(--on-accent);
   font-weight: bold;
 }
 button.ghost {
@@ -77,7 +57,7 @@ button.link {
   text-decoration: underline;
 }
 kbd {
-  font-family: ui-monospace, monospace;
+  font-family: var(--font-mono);
   font-size: 0.85em;
   padding: 1px 6px;
   border: 1px solid var(--line);
@@ -89,13 +69,13 @@ input {
   font: inherit;
   padding: 8px 10px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: var(--radius-m);
   width: 100%;
 }
 .code-input {
   letter-spacing: 0.3em;
   text-transform: uppercase;
-  font-family: ui-monospace, monospace;
+  font-family: var(--font-mono);
 }
 .muted {
   color: var(--muted);
@@ -112,17 +92,17 @@ input {
   display: inline-block;
   margin-left: 6px;
   padding: 0 6px;
-  border-radius: 10px;
+  border-radius: var(--radius-l);
   font-size: 0.75em;
   background: rgba(0, 0, 0, 0.12);
 }
 .tag.warn {
-  background: #ffe0b2;
-  color: #7a3e00;
+  background: var(--warn-bg);
+  color: var(--warn-ink);
 }
 .panel {
   background: var(--paper);
-  border-radius: 10px;
+  border-radius: var(--radius-l);
   padding: 16px;
 }
 .neg {
@@ -164,8 +144,28 @@ input {
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 .brand {
+  display: flex;
+}
+
+/* Wordmark --------------------------------------------------------------- */
+.wordmark {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  font-family: var(--font-display);
   font-weight: bold;
   letter-spacing: 0.02em;
+}
+.wordmark-coin {
+  width: 1.25em;
+  height: 1.25em;
+  flex: none;
+}
+.wordmark-million {
+  color: var(--accent-light);
+}
+.wordmark-large {
+  font-size: 1.15em;
 }
 .topbar-room {
   display: flex;
@@ -173,13 +173,17 @@ input {
   gap: 10px;
 }
 .room-code {
-  font-family: ui-monospace, monospace;
+  font-family: var(--font-mono);
   letter-spacing: 0.15em;
 }
 .topbar-actions {
   display: flex;
   gap: 8px;
   margin-left: auto;
+}
+.sound-toggle {
+  min-width: 34px;
+  line-height: 1.2;
 }
 .topbar .ghost {
   border-color: rgba(255, 255, 255, 0.35);
@@ -191,8 +195,8 @@ input {
   padding: 6px 16px;
   text-align: center;
   font-size: 0.9em;
-  background: #ffe0b2;
-  color: #7a3e00;
+  background: var(--warn-bg);
+  color: var(--warn-ink);
 }
 
 /* Home ------------------------------------------------------------------- */
@@ -212,7 +216,7 @@ input {
   gap: 10px;
 }
 .home .muted {
-  color: rgba(255, 255, 255, 0.75);
+  color: var(--on-felt-muted);
 }
 .home-form label {
   display: grid;
@@ -228,7 +232,7 @@ input {
   color: var(--paper);
 }
 .lobby .muted {
-  color: rgba(255, 255, 255, 0.75);
+  color: var(--on-felt-muted);
 }
 .seats-grid {
   display: grid;
@@ -239,7 +243,7 @@ input {
 .seat-card {
   background: var(--paper);
   color: var(--ink);
-  border-radius: 10px;
+  border-radius: var(--radius-l);
   padding: 14px;
   display: grid;
   gap: 8px;
@@ -306,7 +310,7 @@ input {
 }
 .total {
   padding: 6px 8px;
-  border-radius: 6px;
+  border-radius: var(--radius-m);
   background: rgba(0, 0, 0, 0.04);
   border-top: 3px solid var(--team-them);
 }
@@ -410,15 +414,12 @@ input {
 }
 
 .felt .muted {
-  color: rgba(255, 255, 255, 0.75);
+  color: var(--on-felt-muted);
 }
 .felt {
-  background: radial-gradient(
-    ellipse at center,
-    #2a7a4c 0%,
-    var(--felt) 60%,
-    var(--felt-dark) 100%
-  );
+  background:
+    var(--felt-texture),
+    radial-gradient(ellipse at center, var(--felt-light) 0%, var(--felt) 60%, var(--felt-dark) 100%);
   color: var(--paper);
   display: grid;
   grid-template-columns: 1fr minmax(320px, 2fr) 1fr;
@@ -434,7 +435,7 @@ input {
 }
 .seat-panel {
   padding: 10px;
-  border-radius: 10px;
+  border-radius: var(--radius-l);
   border: 2px solid transparent;
   text-align: center;
 }
@@ -470,7 +471,7 @@ input {
 .seat-chip {
   margin-left: 8px;
   padding: 1px 8px;
-  border-radius: 10px;
+  border-radius: var(--radius-l);
   font-size: 1.05em;
   font-weight: bold;
   background: var(--paper);
@@ -478,7 +479,7 @@ input {
 }
 .chip-high {
   background: var(--accent);
-  color: white;
+  color: var(--on-accent);
 }
 .chip-pass {
   background: rgba(255, 255, 255, 0.2);
@@ -486,8 +487,8 @@ input {
   font-weight: normal;
 }
 .chip-ready {
-  background: #c8e6c9;
-  color: #1b5e20;
+  background: var(--good-chip);
+  color: var(--good-ink);
   font-weight: normal;
 }
 .contract-bar {
@@ -499,7 +500,7 @@ input {
   gap: 6px 22px;
   min-height: 34px;
   padding: 4px 14px;
-  border-radius: 10px;
+  border-radius: var(--radius-l);
   background: rgba(0, 0, 0, 0.22);
   font-size: 0.95em;
 }
@@ -508,7 +509,7 @@ input {
 }
 .suit-chip {
   padding: 1px 10px;
-  border-radius: 10px;
+  border-radius: var(--radius-l);
   background: var(--paper);
 }
 
@@ -521,11 +522,17 @@ input {
 .card-back {
   position: absolute;
   top: 0;
-  width: 30px;
-  height: 42px;
-  border-radius: 4px;
-  background: repeating-linear-gradient(45deg, #7b1e1e 0 4px, #5a1414 4px 8px);
-  border: 1px solid #f3e9d2;
+  width: var(--back-w);
+  height: var(--back-h);
+  border-radius: var(--radius-s);
+  overflow: hidden;
+  border: 1px solid var(--back-trim);
+  box-shadow: var(--shadow-1);
+}
+.card-back-art {
+  display: block;
+  width: 100%;
+  height: 100%;
 }
 .card-back-count {
   position: absolute;
@@ -538,11 +545,24 @@ input {
   grid-area: trick;
   position: relative;
   min-height: 260px;
+}
+/* The playing surface leans away from you. Only this backdrop tilts: the cards stay flat, so
+   Motion can measure them for the flight from your hand. */
+.trick-area::before {
+  content: "";
+  position: absolute;
+  inset: 0;
   border-radius: 50%;
-  background: rgba(0, 0, 0, 0.08);
+  background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.04), rgba(0, 0, 0, 0.16));
+  box-shadow: inset 0 0 0 2px rgba(233, 196, 106, 0.18);
+  transform: perspective(900px) rotateX(var(--felt-tilt));
 }
 .trick-card {
   position: absolute;
+  perspective: 700px;
+}
+.trick-motion {
+  transform-style: preserve-3d;
 }
 .trick-bottom {
   left: 50%;
@@ -577,6 +597,7 @@ input {
 
 .me {
   grid-area: me;
+  min-width: 0;
   display: grid;
   gap: 10px;
   padding: 8px;
@@ -597,9 +618,9 @@ input {
 }
 .turn-pill {
   padding: 2px 10px;
-  border-radius: 10px;
+  border-radius: var(--radius-l);
   background: var(--accent);
-  color: white;
+  color: var(--on-accent);
   font-weight: bold;
   font-size: 0.9em;
 }
@@ -610,7 +631,7 @@ input {
   align-items: center;
   background: rgba(0, 0, 0, 0.2);
   padding: 10px 14px;
-  border-radius: 10px;
+  border-radius: var(--radius-l);
   min-height: 48px;
 }
 .bid-stepper {
@@ -627,70 +648,179 @@ input {
 }
 .hand {
   position: relative;
+  min-width: 0;
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px 4px;
   justify-content: center;
-  padding-top: 10px;
+  padding: 16px 0 calc(var(--fan-drop) * 40);
 }
+/* Cards overlap, so each one's corner index stays in view; a gap marks a new color. Where
+   the hand is narrower than that (a phone), the cards close up further to fit its width:
+   --n is the number of cards, and the fit leaves room for up to four color gaps. Hits go to
+   the cards as drawn (.hand-fan), not to the slots: a slot's box stays put while its card
+   parts aside, and must not steal the pointer from the card it has uncovered. */
 .hand-slot {
+  position: relative;
+  pointer-events: none;
   display: flex;
+  --fit: calc((100% - var(--card-w) - 4 * var(--group-gap)) / max(var(--n, 13) - 1, 1));
+  --step: min(var(--card-w) * (1 - var(--hand-overlap)), var(--fit));
+}
+.hand-slot + .hand-slot {
+  margin-left: calc(var(--step) - var(--card-w));
 }
 .hand-slot.group-start {
-  margin-left: 10px;
+  margin-left: calc(var(--step) - var(--card-w) + var(--group-gap));
+}
+/* The fan: each card leans by its distance from the middle (--d) and drops a little. Around
+   a hovered card the others part (--part, set by Hand) and the card itself rises (--raise);
+   a card picked for the discard stays up (--picked). The stacking order never changes. */
+.hand-fan {
+  --lift: calc(var(--raise, 0) * var(--hover-lift) + var(--picked, 0) * var(--pick-lift));
+  position: relative;
+  pointer-events: auto;
+  transform-origin: 50% 100%;
+  transform: translate(
+      calc(var(--part, 0) * var(--part-gap)),
+      calc(var(--d, 0) * var(--d, 0) * var(--fan-drop) - var(--lift))
+    )
+    rotate(calc(var(--d, 0) * var(--fan-angle)))
+    scale(calc(1 + var(--raise, 0) * var(--hover-scale)));
+  transition: transform var(--dur-hover) var(--ease-out);
+  perspective: 900px;
+}
+/* Keeps the pointer on a raised card across the gap it leaves below. */
+.hand-fan-hovered::after {
+  content: "";
+  position: absolute;
+  inset: 100% 0 auto;
+  height: var(--lift);
 }
 
 /* Cards ------------------------------------------------------------------ */
 .card {
   position: relative;
-  display: inline-flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  width: 60px;
-  height: 90px;
-  border-radius: 7px;
-  background: white;
-  border: 1px solid #c9c2b2;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
-  padding: 4px;
+  display: block;
+  flex: none;
+  width: var(--card-w);
+  height: var(--card-h);
+  border-radius: var(--radius-card);
+  background: linear-gradient(160deg, var(--card-paper), var(--card-paper-shade));
+  border: 1px solid var(--card-edge);
+  box-shadow: var(--shadow-1);
+  padding: 0;
+  text-align: left;
   cursor: default;
   transition:
-    transform 0.12s,
-    box-shadow 0.2s;
+    transform var(--dur-fast),
+    box-shadow var(--dur-base);
+}
+/* A card with two faces, for turning over: its face and, behind it, its back. */
+.card-3d {
+  position: relative;
+  transform-style: preserve-3d;
+}
+.card-3d > .card {
+  backface-visibility: hidden;
+}
+.card-3d-back {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: var(--radius-card);
+  border: 1px solid var(--back-trim);
+  transform: rotateY(180deg);
+  backface-visibility: hidden;
+  pointer-events: none;
 }
 button.card {
   cursor: pointer;
 }
-button.card:hover:not(:disabled, [aria-disabled="true"]) {
-  transform: translateY(-6px);
+button.card:hover:not(:disabled, [aria-disabled="true"]),
+button.card:focus-visible:not([aria-disabled="true"]) {
+  transform: translateY(-14px);
+  box-shadow: var(--shadow-lift);
   filter: none;
 }
 .card-label {
-  font-size: 1.3em;
+  position: absolute;
+  top: 4px;
+  left: 6px;
+  font-family: var(--font-display);
+  font-size: 1.1em;
+  line-height: 1;
   font-weight: bold;
 }
 .card-sub {
-  font-size: 0.65em;
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 4px;
+  text-align: center;
+  font-size: 0.6em;
+  line-height: 1;
   color: var(--muted);
-  margin-top: 2px;
+}
+/* The picture sits a little below centre, clear of the corner index. */
+.card-art {
+  position: absolute;
+  left: 50%;
+  top: 54%;
+  width: 52%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+.card-art-image {
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  transform: none;
+  object-fit: cover;
+  border-radius: inherit;
+}
+.card-art-special {
+  width: 60%;
+}
+.card-art-medallion {
+  fill: currentColor;
+  opacity: 0.12;
+}
+/* Money cards wear a gold inner frame. */
+.card-money::after {
+  content: "";
+  position: absolute;
+  inset: 3px;
+  border: 1.5px solid var(--accent-light);
+  border-radius: calc(var(--radius-card) - 2px);
+  pointer-events: none;
 }
 .card-small {
-  width: 48px;
-  height: 68px;
+  width: var(--card-small-w);
+  height: var(--card-small-h);
 }
 .card-small .card-label {
-  font-size: 1em;
+  top: 3px;
+  left: 4px;
+  font-size: 0.85em;
+}
+.card-small .card-art {
+  width: 56%;
+  top: 58%;
 }
 .card-small .card-sub {
   display: none;
 }
-.card-money .card-label {
-  text-decoration: underline;
-}
-.card-selected {
+.card-selected,
+button.card-selected:hover:not([aria-disabled="true"]) {
   outline: 3px solid var(--accent);
-  transform: translateY(-10px);
+  transform: translateY(-22px);
+  box-shadow: var(--shadow-lift);
+}
+/* In the hand the fan does the lifting, so the card itself stays still. */
+.hand-fan .card,
+.hand-fan button.card:hover:not(:disabled, [aria-disabled="true"]),
+.hand-fan button.card:focus-visible:not([aria-disabled="true"]),
+.hand-fan button.card-selected:hover:not([aria-disabled="true"]) {
+  transform: none;
 }
 .card-disabled,
 button.card-disabled {
@@ -719,44 +849,56 @@ button.card-disabled {
   text-transform: uppercase;
   letter-spacing: 0.05em;
   background: var(--accent);
-  color: white;
+  color: var(--on-accent);
 }
 .card-fresh {
   border-color: var(--accent);
 }
+@keyframes winning-glow {
+  50% {
+    box-shadow:
+      0 0 0 3px var(--accent),
+      0 0 26px 8px rgba(233, 196, 106, 0.7);
+  }
+}
 .card-winning {
-  box-shadow:
-    0 0 0 3px var(--accent),
-    0 2px 10px rgba(0, 0, 0, 0.45);
+  box-shadow: var(--glow-accent);
+  animation: winning-glow 1.4s ease-in-out infinite;
 }
 .card-red .card-label,
+.card-red .card-art,
 .suit-red {
   color: var(--red);
 }
 .card-yellow .card-label,
+.card-yellow .card-art,
 .suit-yellow {
   color: var(--yellow);
 }
 .card-black .card-label,
+.card-black .card-art,
 .suit-black {
   color: var(--black);
 }
 .card-green .card-label,
+.card-green .card-art,
 .suit-green {
   color: var(--green);
 }
-.card-tiger .card-label {
+.card-tiger {
   color: var(--tiger);
-  font-size: 1em;
-  letter-spacing: 0.05em;
 }
-.card-bull .card-label {
+.card-bull {
   color: var(--bull);
-  font-size: 1em;
 }
-.card-bear .card-label {
+.card-bear {
   color: var(--bear);
-  font-size: 1em;
+}
+.card-tiger .card-label,
+.card-bull .card-label,
+.card-bear .card-label {
+  font-size: 0.85em;
+  letter-spacing: 0.04em;
 }
 
 /* Modals ----------------------------------------------------------------- */
@@ -811,7 +953,7 @@ button.modal-close {
   padding-left: 20px;
 }
 .rank-order {
-  font-family: ui-monospace, monospace;
+  font-family: var(--font-mono);
   font-size: 0.9em;
 }
 .keys {
@@ -828,6 +970,7 @@ button.modal-close {
   margin: 0;
 }
 .result-banner {
+  position: relative;
   margin: 0 0 8px;
   padding: 8px 12px;
   border-radius: 8px;
@@ -835,11 +978,11 @@ button.modal-close {
   font-size: 1.15em;
 }
 .result-banner.good {
-  background: #e8f5e9;
-  color: #1b5e20;
+  background: var(--good-bg);
+  color: var(--good-ink);
 }
 .result-banner.bad {
-  background: #fdecea;
+  background: var(--bad-bg);
   color: var(--danger);
 }
 .result-team h3 .muted {
@@ -868,10 +1011,18 @@ button.modal-close {
 .result-trick .card {
   width: 36px;
   height: 50px;
-  padding: 2px;
 }
 .result-trick .card-label {
-  font-size: 0.8em;
+  top: 2px;
+  left: 3px;
+  font-size: 0.7em;
+}
+.result-trick .card-art {
+  width: 50%;
+  top: 62%;
+}
+.result-trick .card-sub {
+  display: none;
 }
 .result-foot {
   position: sticky;
@@ -924,13 +1075,13 @@ button.modal-close {
   color: var(--muted);
 }
 .ready-list .is-ready {
-  background: #e8f5e9;
-  border-color: #a5d6a7;
-  color: #1b5e20;
+  background: var(--good-bg);
+  border-color: var(--good-line);
+  color: var(--good-ink);
 }
 .ready-list .is-ready .ready-mark {
   background: var(--good);
-  color: white;
+  color: var(--on-accent);
 }
 .ready-list .is-reading {
   color: var(--muted);
@@ -995,7 +1146,7 @@ button.modal-close {
   border-radius: 8px;
   background: var(--paper);
   color: var(--ink);
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+  box-shadow: var(--shadow-2);
   z-index: 20;
 }
 .toast-error {
@@ -1041,39 +1192,7 @@ button.modal-close {
 
 /* Motion ----------------------------------------------------------------- */
 /* Every animation here is switched off under prefers-reduced-motion (below), and the
-   FLIP slides in useFlip.ts check the same setting. */
-@keyframes deal-in {
-  from {
-    opacity: 0;
-    transform: translateY(28px) scale(0.94);
-  }
-}
-.hand-slot {
-  animation: deal-in 360ms cubic-bezier(0.2, 0.7, 0.3, 1) both;
-  animation-delay: calc(var(--i, 0) * 40ms);
-}
-
-/* A played card slides in from its player's side (--fx/--fy, set in TrickArea.tsx). */
-@keyframes trick-enter {
-  from {
-    opacity: 0;
-    transform: translate(var(--fx, 0), var(--fy, 0)) scale(0.9);
-  }
-}
-.trick-enter {
-  animation: trick-enter 260ms cubic-bezier(0.2, 0.7, 0.3, 1) both;
-}
-
-/* A taken trick slides to its winner (--dx/--dy); lasts TRICK_SWEEP_MS in Table.tsx. */
-@keyframes trick-sweep {
-  to {
-    opacity: 0;
-    transform: translate(var(--dx, 0), var(--dy, 0)) scale(0.7);
-  }
-}
-.trick-sweep {
-  animation: trick-sweep 350ms ease-in forwards;
-}
+   card motions run by Motion follow the same setting (MotionConfig in App.tsx). */
 
 @keyframes pulse-ring {
   0%,
@@ -1104,7 +1223,7 @@ button.modal-close {
   animation: fade-in 160ms ease-out;
 }
 .modal {
-  animation: rise-in 200ms cubic-bezier(0.2, 0.7, 0.3, 1);
+  animation: rise-in 200ms var(--ease-out);
 }
 
 @keyframes toast-in {
@@ -1137,12 +1256,41 @@ button.modal-close {
   animation: float-away 2.6s ease-out forwards;
 }
 
+/* Sparks fly out from the middle of the banner and fade (HandResult's Burst). */
+@keyframes spark {
+  from {
+    opacity: 1;
+    transform: rotate(var(--a)) translateX(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: rotate(var(--a)) translateX(90px) scale(0.4);
+  }
+}
+.burst {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  pointer-events: none;
+}
+.burst > .spark {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  margin: -4px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #fff6d5, var(--accent-light) 60%, var(--accent));
+  opacity: 0;
+  animation: spark 0.9s var(--ease-out) 0.25s;
+}
+.count-up {
+  font-variant-numeric: tabular-nums;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .hand-slot,
-  .trick-enter,
-  .trick-sweep,
   .seat-acting,
   .turn-pill,
+  .card-winning,
   .modal-backdrop,
   .modal,
   .toast,
@@ -1150,6 +1298,7 @@ button.modal-close {
     animation: none;
   }
   .card,
+  .hand-fan,
   .progress span,
   .countdown-fill {
     transition: none;

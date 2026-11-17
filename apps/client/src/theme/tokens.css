@@ -1,0 +1,113 @@
+/*
+ * Design tokens: the one place the look is defined. Components read these, never raw
+ * values, so a rebrand (palette, type, card size, motion feel) is an edit here. The motion
+ * durations are mirrored for script in theme/motion.ts; keep the two in step.
+ */
+:root {
+  /* Colour: table ------------------------------------------------------- */
+  --felt: #1f5f3b;
+  --felt-light: #2a7a4c;
+  --felt-dark: #184a2e;
+  --bar: #123822;
+  --paper: #fbf7ee;
+  --card-paper: #fffdf8;
+  --card-paper-shade: #f3ecdc;
+  --card-edge: #c9c2b2;
+  --ink: #1b1b1b;
+  --muted: #6b6b6b;
+  --line: #d9d2c3;
+  --accent: #b8860b;
+  --accent-light: #e9c46a;
+  --on-accent: #ffffff;
+  --on-felt-muted: rgba(255, 255, 255, 0.75);
+
+  /* Colour: suits and specials ----------------------------------------- */
+  --red: #c62828;
+  --yellow: #b07d00;
+  --black: #1b1b1b;
+  --green: #2e7d32;
+  --tiger: #e65100;
+  --bull: #5d4037;
+  --bear: #37474f;
+  --back: #7b1e1e;
+  --back-dark: #5a1414;
+  --back-trim: #f3e9d2;
+
+  /* Colour: sides and states ------------------------------------------- */
+  --team-us: #e0a526;
+  --team-them: #6fa8dc;
+  --good: #2e7d32;
+  --good-ink: #1b5e20;
+  --good-bg: #e8f5e9;
+  --good-line: #a5d6a7;
+  --good-chip: #c8e6c9;
+  --danger: #b00020;
+  --bad-bg: #fdecea;
+  --warn-bg: #ffe0b2;
+  --warn-ink: #7a3e00;
+
+  /* Type ---------------------------------------------------------------- */
+  --font-display: Georgia, "Times New Roman", serif;
+  --font-body: Georgia, "Times New Roman", serif;
+  --font-mono: ui-monospace, monospace;
+
+  /* Shape and depth ----------------------------------------------------- */
+  --radius-s: 4px;
+  --radius-m: 6px;
+  --radius-l: 10px;
+  --radius-card: 7px;
+  --shadow-1: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --shadow-2: 0 2px 10px rgba(0, 0, 0, 0.4);
+  --shadow-lift: 0 10px 18px rgba(0, 0, 0, 0.35);
+  --glow-accent: 0 0 0 3px var(--accent), 0 0 18px 4px rgba(233, 196, 106, 0.55);
+
+  /* Cards --------------------------------------------------------------- */
+  --card-w: 64px;
+  --card-h: 92px;
+  --card-small-w: 54px;
+  --card-small-h: 78px;
+  --back-w: 30px;
+  --back-h: 42px;
+  /* Degrees between neighbouring cards in the fanned hand. */
+  --fan-angle: 2.4deg;
+  /* How far the outermost cards of the hand drop, per step from the middle, squared. */
+  --fan-drop: 0.8px;
+  /* How much of each card the next one covers, at most (a narrow hand closes up further). */
+  --hand-overlap: 0.3;
+  /* The extra space before a new color in the hand. */
+  --group-gap: 14px;
+  /* Hovering a card in the hand: it rises and grows a little, and the next card moves aside
+     by --part-gap, enough to uncover it. A card picked for the discard rises further. */
+  --hover-lift: 12px;
+  --hover-scale: 0.04;
+  --pick-lift: 22px;
+  --part-gap: calc(var(--card-w) * var(--hand-overlap) + 6px);
+  /* How far the felt leans away from the player. */
+  --felt-tilt: 10deg;
+
+  /* Table texture: fine speckle over the felt gradient. Swap for a tiled image to rebrand. */
+  --felt-texture: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.55 0 0 0 -0.18'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+
+  /* Layout -------------------------------------------------------------- */
+  --topbar-h: 48px;
+
+  /* Motion (mirrored in theme/motion.ts) -------------------------------- */
+  --dur-fast: 120ms;
+  --dur-base: 200ms;
+  --dur-slow: 360ms;
+  --ease-out: cubic-bezier(0.2, 0.7, 0.3, 1);
+  --dur-hover: 280ms;
+}
+
+@media (max-width: 600px) {
+  :root {
+    --card-w: 50px;
+    --card-h: 74px;
+    --card-small-w: 44px;
+    --card-small-h: 64px;
+    --fan-angle: 1.2deg;
+    --fan-drop: 0.4px;
+    --hand-overlap: 0.5;
+    --group-gap: 8px;
+  }
+}

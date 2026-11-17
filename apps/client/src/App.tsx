@@ -1,4 +1,5 @@
 import { DEFAULT_RULESET } from '@mam/engine';
+import { MotionConfig } from 'motion/react';
 import { HowToPlay } from './components/HowToPlay';
 import { Toast } from './components/Toast';
 import { ConnectionBanner, TopBar } from './components/TopBar';
@@ -40,7 +41,10 @@ export function Shell() {
 export function App({ url }: { url?: string }) {
   return (
     <GameProvider {...(url ? { url } : {})}>
-      <Shell />
+      {/* Movement follows the player's reduced-motion setting; fades still play. */}
+      <MotionConfig reducedMotion="user">
+        <Shell />
+      </MotionConfig>
     </GameProvider>
   );
 }

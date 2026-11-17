@@ -1,10 +1,12 @@
 import { otherTeam, type HandResult as Result, SEATS, type Seat, type Team } from '@mam/engine';
 import type { RoomView } from '@mam/protocol';
-import { useEffect, useState } from 'react';
+import { motion, useReducedMotion } from 'motion/react';
+import { type CSSProperties, useEffect, useState } from 'react';
 import { money, nameOf, SUIT_NAMES, teamLabel } from '../format';
 import type { ResultDeadline } from '../state';
 import { useGame } from '../store';
 import { CardFace } from './CardFace';
+import { CountUp } from './CountUp';
 import { Modal } from './Modal';
 
 /** Shown when the last trick is taken: both sides count their Money openly. */
@@ -38,9 +40,19 @@ export function HandResult({
     { side: team, name: 'Us', key: 'us' },
     { side: otherTeam(team), name: 'Them', key: 'them' },
   ] as const;
+  const good = ours === result.made;
+  const still = useReducedMotion() ?? false;
   return (
     <Modal title={`Hand ${result.handNumber}`}>
-      <p className={`result-banner ${ours === result.made ? 'good' : 'bad'}`}>{banner}</p>
+      <motion.p
+        className={`result-banner ${good ? 'good' : 'bad'}`}
+        initial={still ? false : { scale: 0.85, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ type: 'spring', stiffness: 420, damping: 18, delay: 0.12 }}
+      >
+        {good && !still && <Burst />}
+        {banner}
+      </motion.p>
       <p>
         {nameOf(room, result.bidder)} bid {money(result.bid)} in {SUIT_NAMES[result.trump]} and{' '}
         <strong>{result.made ? 'made it' : 'was set'}</strong>.
@@ -52,10 +64,12 @@ export function HandResult({
               <span className="side-dot" aria-hidden="true" />
               {name} <span className="muted small">{teamLabel(room, side)}</span>
             </h3>
-            <div>Captured {money(result.captured[side])}</div>
+            <div>
+              Captured <CountUp value={result.captured[side]} format={money} />
+            </div>
             <div className={result.delta[side] < 0 ? 'neg' : ''}>
               {side === bt && !result.made ? 'Set back ' : 'Scores '}
-              {money(result.delta[side])}
+              <CountUp value={result.delta[side]} format={money} />
             </div>
             <div className="muted small">Total {money(result.scoresAfter[side])}</div>
             <div className="result-tricks">
@@ -109,6 +123,19 @@ export function HandResult({
         )}
       </div>
     </Modal>
+  );
+}
+
+const SPARK_ANGLES = Array.from({ length: 14 }, (_, i) => (i * 360) / 14);
+
+/** Gold sparks thrown out from the banner when the hand went your way. Placeholder effect. */
+function Burst() {
+  return (
+    <span className="burst" aria-hidden="true">
+      {SPARK_ANGLES.map((a) => (
+        <span key={a} className="spark" style={{ '--a': `${a}deg` } as CSSProperties} />
+      ))}
+    </span>
   );
 }
 

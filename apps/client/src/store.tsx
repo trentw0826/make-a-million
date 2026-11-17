@@ -11,6 +11,7 @@ import {
   useRef,
 } from 'react';
 import { GameSocket } from './socket';
+import { cuesFor, sound } from './sound/player';
 import { type ClientState, initialState, type Msg, reduce } from './state';
 import { storage } from './storage';
 
@@ -32,6 +33,9 @@ export function GameProvider({ children, url }: { children: ReactNode; url?: str
   const [state, dispatch] = useReducer(reduce, initialState);
   const intent = useRef<Intent | null>(null);
   const socket = useRef<GameSocket | null>(null);
+  // The socket callback is made once, so it reads the viewer's side through a ref.
+  const team = useRef(state.view?.team ?? null);
+  team.current = state.view?.team ?? null;
 
   if (!socket.current) {
     socket.current = new GameSocket(
@@ -49,11 +53,14 @@ export function GameProvider({ children, url }: { children: ReactNode; url?: str
         if (message.type === 'room') window.location.hash = `#/room/${message.room.code}`;
         if (message.type === 'left') window.location.hash = '#/';
         dispatch({ kind: 'server', message });
+        for (const cue of cuesFor(message, team.current)) sound.play(cue);
       },
       (status) => dispatch({ kind: 'status', status }),
       () => {},
     );
   }
+
+  useEffect(() => sound.unlockOnGesture(), []);
 
   // Returning visitors reconnect at once so a reload lands them back in their seat.
   useEffect(() => {

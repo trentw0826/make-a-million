@@ -2,6 +2,7 @@
 
 const TOKEN_KEY = 'mam.token';
 const NAME_KEY = 'mam.name';
+const MUTED_KEY = 'mam.muted';
 
 function read(key: string): string | null {
   try {
@@ -25,4 +26,6 @@ export const storage = {
   setToken: (token: string) => write(TOKEN_KEY, token),
   name: () => read(NAME_KEY),
   setName: (name: string) => write(NAME_KEY, name),
+  muted: () => read(MUTED_KEY) === '1',
+  setMuted: (muted: boolean) => write(MUTED_KEY, muted ? '1' : null),
 };
