@@ -703,6 +703,16 @@ input {
   justify-content: center;
   padding: 16px 0 calc(var(--fan-drop) * 40);
 }
+/* A seat that has passed is out of the auction: its name and cards fade back, and only its
+   "Pass" chip stays clear. Your own action bar stays readable too. */
+.seat-panel > *,
+.me > .hand {
+  transition: opacity var(--dur-slow) var(--ease-out);
+}
+.seat-passed.seat-panel > :not(.seat-role),
+.seat-passed.me > .hand {
+  opacity: var(--passed-opacity);
+}
 /* Cards overlap, so each one's corner index stays in view; a gap marks a new color. Where
    the hand is narrower than that (a phone), the cards close up further to fit its width:
    --n is the number of cards, and the fit leaves room for up to four color gaps. Hits go to

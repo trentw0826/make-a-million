@@ -10,7 +10,7 @@ import {
 } from '@mam/engine';
 import type { RoomView } from '@mam/protocol';
 import { describe, expect, it } from 'vitest';
-import { blockedReason, listNames, playHint, seatChip, waitingText } from '../src/hints';
+import { blockedReason, hasPassed, listNames, playHint, seatChip, waitingText } from '../src/hints';
 
 const room: RoomView = {
   code: 'ABC123',
@@ -146,6 +146,26 @@ describe('seatChip', () => {
   it('goes quiet once the auction is over', () => {
     const v = view({ phase: 'playing', auction: [{ seat: 1, kind: 'bid', amount: 175_000 }] });
     expect(seatChip(v, 1)).toBeNull();
+  });
+});
+
+describe('hasPassed', () => {
+  it('marks a seat out of the auction once it passes', () => {
+    const v = view({
+      phase: 'bidding',
+      auction: [
+        { seat: 1, kind: 'bid', amount: 175_000 },
+        { seat: 2, kind: 'pass' },
+      ],
+    });
+    expect(hasPassed(v, 2)).toBe(true);
+    expect(hasPassed(v, 1)).toBe(false);
+    expect(hasPassed(v, 3)).toBe(false);
+  });
+
+  it('clears once the auction is over', () => {
+    const v = view({ phase: 'discarding', auction: [{ seat: 2, kind: 'pass' }] });
+    expect(hasPassed(v, 2)).toBe(false);
   });
 });
 

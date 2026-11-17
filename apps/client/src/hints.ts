@@ -96,6 +96,11 @@ export function highBid(auction: readonly AuctionEntry[]): Bid | null {
   return null;
 }
 
+/** True while the auction runs and `seat` has passed: a pass is final, so it is out of it. */
+export function hasPassed(view: TableView, seat: Seat): boolean {
+  return view.phase === 'bidding' && view.auction.some((e) => e.seat === seat && e.kind === 'pass');
+}
+
 export type ChipKind = 'bid' | 'high' | 'pass';
 
 export interface SeatChip {

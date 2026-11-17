@@ -25,6 +25,7 @@ const VIEWPORT = { width: 1280, height: 860 };
 
 const failures: string[] = [];
 /** Checked once, on the first turn that has an unplayable card. */
+let passedSeatChecked = false;
 let blockedCardChecked = false;
 function check(ok: boolean, what: string): void {
   console.log(`${ok ? '✓' : '✗'} ${what}`);
@@ -155,6 +156,20 @@ async function act(page: Page, shoot: Shoot): Promise<boolean> {
     const pass = page.getByRole('button', { name: 'Pass', exact: true });
     if (await pass.isVisible()) {
       await shoot('3-bidding');
+      const passed = page.locator('.seat-panel:has(.chip-pass)');
+      if (!passedSeatChecked && (await passed.count()) > 0) {
+        await sleep(400); // let the fade finish
+        const faded = await passed.first().evaluate((el) => ({
+          marked: el.classList.contains('seat-passed'),
+          name: Number(getComputedStyle(el.querySelector('.seat-name') as Element).opacity),
+          chip: Number(getComputedStyle(el.querySelector('.seat-role') as Element).opacity),
+        }));
+        check(
+          faded.marked && faded.name < 1 && faded.chip > faded.name,
+          'a seat that has passed fades back, its Pass chip still clear',
+        );
+        passedSeatChecked = true;
+      }
       if (await pass.isEnabled()) await pass.click(quick);
       else await page.getByRole('button', { name: /^Bid \$/ }).click(quick);
       return true;

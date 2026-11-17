@@ -48,6 +48,8 @@
   --bad-bg: #fdecea;
   --warn-bg: #ffe0b2;
   --warn-ink: #7a3e00;
+  /* A seat out of the auction fades back to this. */
+  --passed-opacity: 0.4;
 
   /* Type ---------------------------------------------------------------- */
   --font-display: Georgia, "Times New Roman", serif;
