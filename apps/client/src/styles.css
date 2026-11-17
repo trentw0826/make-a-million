@@ -763,6 +763,14 @@ input {
   gap: 4px;
   pointer-events: none;
 }
+/* How many of the hand's tricks have been played: there to find, not to read. */
+.trick-count {
+  font-size: 0.85em;
+  letter-spacing: 0.08em;
+  font-variant-numeric: tabular-nums;
+  color: var(--paper);
+  opacity: 0.35;
+}
 
 /* Your seat: centred, about half the table wide, with your side's tricks off to its right. */
 .me {

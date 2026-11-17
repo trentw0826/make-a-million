@@ -46,10 +46,13 @@ export function ActionBar({ view, room, selected, onClearSelection }: Props) {
     case 'trump':
       return <TrumpControls />;
     case 'play':
+      // The cards you can't play are dimmed, each saying why on hover, so the bar stays
+      // empty (held unseen, as while you wait); screen readers still hear the hint.
       return (
-        <TurnBar>
-          <span>{playHint(view)}</span>
-        </TurnBar>
+        <>
+          <div className="action-bar action-hidden" aria-hidden="true" />
+          <output className="visually-hidden">Your turn. {playHint(view)}</output>
+        </>
       );
     case 'continue':
       return null; // handled by the hand-result modal

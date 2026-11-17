@@ -160,7 +160,8 @@ type Shoot = (name: string) => Promise<void>;
 async function act(page: Page, shoot: Shoot): Promise<boolean> {
   const quick = { timeout: 2_000 };
   try {
-    if (!(await page.locator('.action-turn').isVisible())) return false;
+    // The gold ring round your seat says the table is waiting on you.
+    if (!(await page.locator('.me.me-turn').isVisible())) return false;
     const pass = page.getByRole('button', { name: 'Pass', exact: true });
     if (await pass.isVisible()) {
       await shoot('3-bidding');

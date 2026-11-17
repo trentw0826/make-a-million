@@ -339,6 +339,29 @@ describe('table status', () => {
     }
   });
 
+  it('counts the tricks on the felt, and leaves the bar and the seats unlabelled in play', () => {
+    renderWith([
+      welcome,
+      { type: 'room', room: room('playing') },
+      {
+        type: 'view',
+        view: {
+          ...dealt,
+          phase: 'playing',
+          turn: 0,
+          trump: 'red',
+          contract: { bidder: 1, amount: 175_000 },
+          trickCounts: [3, 2],
+          legal: { kind: 'play', cardIds: dealt.hand },
+        },
+      },
+    ]);
+    expect(document.querySelector('.trick-count')).toHaveTextContent('5/13');
+    expect(document.querySelector('.seat-left')).not.toHaveTextContent('bidder');
+    expect(document.querySelector('.action-bar')).toHaveClass('action-hidden');
+    expect(screen.getByText(/^Your turn\./)).toHaveClass('visually-hidden');
+  });
+
   it("doesn't tag your own seat as the bidder", () => {
     renderWith([
       welcome,

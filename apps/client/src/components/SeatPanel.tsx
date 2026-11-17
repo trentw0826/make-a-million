@@ -31,7 +31,6 @@ export function SeatPanel({ seat, room, view, position }: Props) {
         <span className="side-dot" aria-hidden="true" />
         {seatLabel(s)}
         <span className="visually-hidden">, {partner ? 'your partner' : 'opponent'}</span>
-        {view.contract?.bidder === seat && <span className="tag">bidder</span>}
         {s?.kind === 'human' && !s.connected && (
           <span className="tag warn">{s.botControlled ? 'bot playing' : 'reconnecting…'}</span>
         )}
