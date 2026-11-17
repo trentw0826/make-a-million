@@ -322,9 +322,32 @@ async function fullHand(browser: Browser, base: string): Promise<void> {
     'the bots ready up',
   );
   await shoot('6b-result-ready');
+  // By now the last trick has been gathered too: every trick lies in a pile, face down.
+  const piled = async () =>
+    (await page
+      .locator('.trick-pile')
+      .evaluateAll((piles) =>
+        piles.map((p) =>
+          Number(/(\d+) tricks? taken/.exec(p.getAttribute('aria-label') ?? '')?.[1]),
+        ),
+      )) as number[];
+  const counts = await piled();
+  check(
+    counts.length === 2 && counts.reduce((a, b) => a + b, 0) === 13,
+    `the taken tricks lie in two piles (${counts.join(' + ')})`,
+  );
+  check(
+    (await page.locator('.trick-pile .pile-card').count()) === 52 &&
+      (await page.locator('.trick-pile [data-card-id]').count()) === 0,
+    'every card in the piles is face down',
+  );
   await page.getByRole('button', { name: 'Ready' }).click();
   await until(() => result.isHidden(), 'the next hand');
   await shoot('7-next-hand');
+  check(
+    (await page.locator('.trick-pile .pile-card').count()) === 0,
+    'a new hand starts with no piles',
+  );
   check(
     await page.evaluate(
       () =>

@@ -9,6 +9,7 @@ import { EventLog } from '../src/components/EventLog';
 import { Hand, partOffset } from '../src/components/Hand';
 import { Scoreboard } from '../src/components/Scoreboard';
 import { TableDrawer } from '../src/components/TableDrawer';
+import { TrickPile } from '../src/components/TrickPile';
 import { GameProvider, useGame } from '../src/store';
 
 /** Nothing listens here, so every send fails and shows the "Not connected" toast. */
@@ -198,6 +199,33 @@ describe('score sheet and log drawer', () => {
     fireEvent.click(toggle);
     fireEvent.click(screen.getByRole('button', { name: 'Close the score sheet and log' }));
     expect(screen.queryByRole('complementary')).toBeNull();
+  });
+});
+
+describe('trick piles', () => {
+  it('shows each taken trick face down, and nothing of what is in it', () => {
+    render(<TrickPile side="them" count={2} incoming={null} />);
+    const pile = screen.getByRole('img', { name: 'Opponents: 2 tricks taken' });
+    expect(pile.querySelectorAll('.pile-card')).toHaveLength(8);
+    expect(pile.querySelector('[data-card-id]')).toBeNull();
+  });
+
+  it('draws a trick being gathered in the pile already, turning over', () => {
+    const incoming = [
+      { seat: 0, cardId: 3 },
+      { seat: 1, cardId: 7 },
+      { seat: 2, cardId: 9 },
+      { seat: 3, cardId: 12 },
+    ] as const;
+    render(<TrickPile side="us" count={1} incoming={incoming} />);
+    const pile = screen.getByRole('img', { name: 'Your side: 2 tricks taken' });
+    expect(pile.querySelectorAll('.pile-card.trick-sweep .card-3d')).toHaveLength(4);
+    expect(pile.querySelectorAll('.pile-card:not(.trick-sweep)')).toHaveLength(4);
+  });
+
+  it('says one trick, not one tricks', () => {
+    render(<TrickPile side="us" count={1} incoming={null} />);
+    expect(screen.getByRole('img', { name: 'Your side: 1 trick taken' })).toBeInTheDocument();
   });
 });
 
