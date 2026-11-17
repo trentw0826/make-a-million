@@ -890,6 +890,52 @@ input {
   min-width: 120px;
   font-variant-numeric: tabular-nums;
 }
+/* Naming trump: the question, and the color about to be named, which follows the pointer
+   over the hand. */
+.trump-ask {
+  font-size: 1.05em;
+}
+.trump-preview {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 170px;
+  justify-content: center;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.2);
+  font-weight: bold;
+  transition: background-color var(--dur-base);
+}
+.trump-swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.trump-preview-red,
+.trump-preview-yellow,
+.trump-preview-black,
+.trump-preview-green {
+  background: var(--paper);
+}
+.trump-preview-red {
+  color: var(--red);
+}
+.trump-preview-yellow {
+  color: var(--yellow);
+}
+.trump-preview-black {
+  color: var(--black);
+}
+.trump-preview-green {
+  color: var(--green);
+}
+.trump-missing {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
 /* While you wait, the bar is empty: kept in view through the auction, held unseen after. */
 .action-hidden {
   visibility: hidden;

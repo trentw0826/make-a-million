@@ -392,6 +392,46 @@ describe('table status', () => {
     expect(screen.getByText(/^Your turn\./)).toHaveClass('visually-hidden');
   });
 
+  it('names trump from the hand: a color rises under the pointer and shows in the bar', () => {
+    renderWith([
+      welcome,
+      { type: 'room', room: room('playing') },
+      {
+        type: 'view',
+        view: {
+          ...dealt,
+          phase: 'naming-trump',
+          turn: 0,
+          contract: { bidder: 0, amount: 175_000 },
+          // Red 1, Red 2, Green 1, the Tiger.
+          hand: [0, 1, 39, 52],
+          legal: { kind: 'trump', suits: ['red', 'yellow', 'black', 'green'] },
+        },
+      },
+    ]);
+    const bar = document.querySelector('.trump-bar') as HTMLElement;
+    expect(bar).toHaveTextContent('Choose trump');
+    expect(bar).toHaveTextContent('Point at a color in your hand');
+    // Yellow and Black aren't in the hand, so they can still be named from the bar.
+    expect(within(bar).getByRole('button', { name: 'Yellow' })).toBeInTheDocument();
+    expect(within(bar).queryByRole('button', { name: 'Red' })).toBeNull();
+
+    const slot = (id: number) =>
+      document.querySelector(`[data-card-id="${id}"]`)?.closest('.hand-slot') as HTMLElement;
+    const fan = (id: number) => slot(id).querySelector('.hand-fan') as HTMLElement;
+    fireEvent.pointerEnter(slot(1), { pointerType: 'mouse' });
+    expect(fan(0).style.getPropertyValue('--raise')).toBe('1');
+    expect(fan(1).style.getPropertyValue('--raise')).toBe('1');
+    expect(fan(39).style.getPropertyValue('--raise')).toBe('0');
+    expect(Number(fan(39).style.getPropertyValue('--part'))).toBeGreaterThan(0);
+    expect(bar.querySelector('.trump-preview')).toHaveTextContent('Red');
+
+    // The Tiger has no color: it fades back and can't be chosen.
+    expect(document.querySelector('[data-card-id="52"]')).toHaveClass('card-disabled');
+    fireEvent.click(screen.getByRole('button', { name: /Green/ }));
+    expect(screen.getByText(NOT_CONNECTED)).toBeInTheDocument();
+  });
+
   it("doesn't tag your own seat as the bidder", () => {
     renderWith([
       welcome,

@@ -3,7 +3,7 @@ import {
   cardById,
   isNumberCard,
   type LegalMoves,
-  SUITS,
+  type Suit,
   type TableView,
 } from '@mam/engine';
 import type { RoomView } from '@mam/protocol';
@@ -18,10 +18,12 @@ interface Props {
   room: RoomView;
   selected: ReadonlySet<CardId>;
   onClearSelection: () => void;
+  /** Choosing trump: the color the pointer is on in the hand. */
+  trumpPreview?: Suit | null;
 }
 
 /** The controls for whatever decision the seat faces right now. */
-export function ActionBar({ view, room, selected, onClearSelection }: Props) {
+export function ActionBar({ view, room, selected, onClearSelection, trumpPreview = null }: Props) {
   const legal = view.legal;
   switch (legal.kind) {
     case 'none':
@@ -44,7 +46,7 @@ export function ActionBar({ view, room, selected, onClearSelection }: Props) {
     case 'discard':
       return <DiscardControls legal={legal} selected={selected} onDone={onClearSelection} />;
     case 'trump':
-      return <TrumpControls />;
+      return <TrumpControls legal={legal} view={view} preview={trumpPreview} />;
     case 'play':
       // The cards you can't play are dimmed, each saying why on hover, so the bar stays
       // empty (held unseen, as while you wait); screen readers still hear the hint.
@@ -201,21 +203,53 @@ function DiscardControls({
   );
 }
 
-function TrumpControls() {
+/**
+ * Naming trump is done in the hand: pointing at a color raises its cards, and a click names
+ * it. The bar says what is being asked and which color is about to be named; any color the
+ * hand has none of can still be named here.
+ */
+function TrumpControls({
+  legal,
+  view,
+  preview,
+}: {
+  legal: Extract<LegalMoves, { kind: 'trump' }>;
+  view: TableView;
+  preview: Suit | null;
+}) {
   const { act } = useGame();
+  const held = new Set(
+    view.hand.map((id) => cardById(id)).flatMap((c) => (c.kind === 'suit' ? [c.suit] : [])),
+  );
+  const missing = legal.suits.filter((s) => !held.has(s));
   return (
-    <TurnBar>
-      <span>Name trump:</span>
-      {SUITS.map((suit) => (
-        <button
-          type="button"
-          key={suit}
-          className={`suit-btn suit-${suit}`}
-          onClick={() => act({ type: 'nameTrump', suit })}
-        >
-          {SUIT_NAMES[suit]}
-        </button>
-      ))}
+    <TurnBar className="trump-bar">
+      <strong className="trump-ask">Choose trump</strong>
+      <output className={`trump-preview${preview ? ` trump-preview-${preview}` : ''}`}>
+        {preview ? (
+          <>
+            <span className="trump-swatch" aria-hidden="true" />
+            {SUIT_NAMES[preview]}
+          </>
+        ) : (
+          <span className="muted">Point at a color in your hand</span>
+        )}
+      </output>
+      {missing.length > 0 && (
+        <span className="trump-missing">
+          <span className="muted small">or one you don't hold:</span>
+          {missing.map((suit) => (
+            <button
+              type="button"
+              key={suit}
+              className={`ghost small suit-btn suit-${suit}`}
+              onClick={() => act({ type: 'nameTrump', suit })}
+            >
+              {SUIT_NAMES[suit]}
+            </button>
+          ))}
+        </span>
+      )}
     </TurnBar>
   );
 }

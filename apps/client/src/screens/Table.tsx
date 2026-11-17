@@ -5,6 +5,7 @@ import {
   nextSeat,
   partnerOf,
   type Seat,
+  type Suit,
   type TableView,
   teamOf,
 } from '@mam/engine';
@@ -54,6 +55,10 @@ export function Table({ room, view }: { room: RoomView; view: TableView }) {
     if (view.legal.kind !== 'discard') setSelected(new Set());
   }, [view.legal.kind]);
 
+  // Choosing trump: the color the pointer is on in the hand, shown in the bar.
+  const naming = view.legal.kind === 'trump';
+  const nameable = new Set<Suit>(view.legal.kind === 'trump' ? view.legal.suits : []);
+  const [trumpPreview, setTrumpPreview] = useState<Suit | null>(null);
   const legalPlays = view.legal.kind === 'play' ? new Set(view.legal.cardIds) : null;
   const discarding = view.legal.kind === 'discard';
   const forbidden =
@@ -76,6 +81,13 @@ export function Table({ room, view }: { room: RoomView; view: TableView }) {
   };
 
   const onCard = (id: CardId) => {
+    const card = cardById(id);
+    if (naming) {
+      if (card.kind === 'suit' && nameable.has(card.suit)) {
+        act({ type: 'nameTrump', suit: card.suit });
+      }
+      return;
+    }
     if (legalPlays) {
       if (legalPlays.has(id)) act({ type: 'playCard', cardId: id });
       return;
@@ -155,13 +167,25 @@ export function Table({ room, view }: { room: RoomView; view: TableView }) {
               room={room}
               selected={selected}
               onClearSelection={() => setSelected(new Set())}
+              trumpPreview={naming ? trumpPreview : null}
             />
             <Hand
               key={dealKey}
               ids={view.hand}
               trump={view.trump}
               dealer={spotOf(view.dealer, me)}
+              onHoverColor={naming ? setTrumpPreview : undefined}
               cardProps={(id) => {
+                if (naming) {
+                  // The Tiger, Bull and Bear have no color to name; they fade back.
+                  const card = cardById(id);
+                  const colored = card.kind === 'suit' && nameable.has(card.suit);
+                  return {
+                    selected: false,
+                    disabled: !colored,
+                    onClick: colored ? () => onCard(id) : undefined,
+                  };
+                }
                 const disabled = legalPlays
                   ? !legalPlays.has(id)
                   : discarding

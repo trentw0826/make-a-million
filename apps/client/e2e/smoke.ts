@@ -28,6 +28,7 @@ const failures: string[] = [];
 let passedSeatChecked = false;
 let discardChecked = false;
 let cursorChecked = false;
+let trumpChecked = false;
 let blockedCardChecked = false;
 function check(ok: boolean, what: string): void {
   console.log(`${ok ? '✓' : '✗'} ${what}`);
@@ -207,6 +208,26 @@ async function act(page: Page, shoot: Shoot): Promise<boolean> {
       }
       await page.getByRole('button', { name: 'Discard', exact: true }).click(quick);
       return true;
+    }
+    // Trump is named from the hand: point at a color, read it in the bar, click.
+    if (await page.locator('.trump-bar').isVisible()) {
+      const colored = page.locator('.hand button.card:not([aria-disabled])').first();
+      if ((await colored.count()) > 0) {
+        await colored.hover(quick);
+        await sleep(350);
+        if (!trumpChecked) {
+          const raised = await page.locator('.hand-fan-hovered').count();
+          const preview = (await page.locator('.trump-preview').textContent()) ?? '';
+          check(
+            raised > 1 && /^(Red|Yellow|Black|Green)$/.test(preview),
+            `pointing at a color raises its group and names it in the bar (${raised} cards, ${preview})`,
+          );
+          trumpChecked = true;
+        }
+        await shoot('4b-trump');
+        await colored.click(quick);
+        return true;
+      }
     }
     const suit = page.locator('.suit-btn').first();
     if (await suit.isVisible()) {

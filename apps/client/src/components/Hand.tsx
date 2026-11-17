@@ -15,6 +15,12 @@ interface Props {
   readonly dealer?: Spot | undefined;
   /** Per-card state from the table: selection, legality, widow mark, tooltip. */
   readonly cardProps: (id: CardId) => Omit<CardFaceProps, 'id' | 'trump'>;
+  /**
+   * Choosing trump: a whole color group rises under the pointer and the other groups part
+   * around it, as a single card does otherwise. Called with the color under the pointer or
+   * focus, or null.
+   */
+  readonly onHoverColor?: ((suit: Suit | null) => void) | undefined;
 }
 
 /** Offsets from the hand to each dealer's seat, roughly, for the deal to start from. */
@@ -52,7 +58,7 @@ export function partOffset(i: number, at: number): number {
  * while it leaves, because the view that drops it arrives just before the event that puts it
  * on the felt. Hovering or focusing a card raises it and parts the cards around it.
  */
-export function Hand({ ids, trump, dealer, cardProps }: Props) {
+export function Hand({ ids, trump, dealer, cardProps, onHoverColor }: Props) {
   const order = useMemo(() => displayOrder(ids, trump), [ids, trump]);
   // The first render is the deal; cards that mount after it are the widow.
   const dealt = useRef(false);
@@ -69,6 +75,18 @@ export function Hand({ ids, trump, dealer, cardProps }: Props) {
   const onBlur = (e: FocusEvent<HTMLElement>) => {
     if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setHovered(null);
   };
+  // Choosing trump, whole color groups rise and part instead of single cards.
+  const byColor = onHoverColor !== undefined;
+  const groups = useMemo(
+    () => [...new Set(order.map((id) => displayGroup(id, trump)))],
+    [order, trump],
+  );
+  const hoveredGroup = hovered === null ? null : displayGroup(hovered, trump);
+  const hoveredColor = byColor && hoveredGroup !== 'special' ? hoveredGroup : null;
+  const atGroup = hoveredColor === null ? -1 : groups.indexOf(hoveredColor);
+  useEffect(() => {
+    onHoverColor?.(hoveredColor);
+  }, [onHoverColor, hoveredColor]);
 
   return (
     <section
@@ -87,10 +105,19 @@ export function Hand({ ids, trump, dealer, cardProps }: Props) {
           const delay = dealt.current ? 0 : (i * DEAL_STAGGER_MS) / 1000;
           const props = cardProps(id);
           // A picked card stays up; any other rises under the pointer, unless it can't be played.
-          const raise = i === at && !props.selected && !props.disabled ? 1 : 0;
+          // Choosing trump, the hovered card's whole color rises instead.
+          const group = displayGroup(id, trump);
+          const raise = byColor
+            ? group === hoveredColor
+              ? 1
+              : 0
+            : i === at && !props.selected && !props.disabled
+              ? 1
+              : 0;
+          const part = byColor ? partOffset(groups.indexOf(group), atGroup) : partOffset(i, at);
           const fan = {
             '--d': i - mid,
-            '--part': partOffset(i, at),
+            '--part': part,
             '--raise': raise,
             '--picked': props.selected ? 1 : 0,
           } as CSSProperties;
@@ -108,7 +135,7 @@ export function Hand({ ids, trump, dealer, cardProps }: Props) {
               }}
               onFocus={() => setHovered(id)}
             >
-              <div className={i === at ? 'hand-fan hand-fan-hovered' : 'hand-fan'} style={fan}>
+              <div className={raise ? 'hand-fan hand-fan-hovered' : 'hand-fan'} style={fan}>
                 <motion.div
                   className="card-3d"
                   initial={still ? false : { x: from.x, y: from.y, rotateY: 180, opacity: 0 }}
