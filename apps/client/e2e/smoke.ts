@@ -21,7 +21,32 @@ const ROOT = path.resolve(import.meta.dirname, '../../..');
 const OUT = path.join(import.meta.dirname, 'out');
 const CHROMIUM = process.env.CHROMIUM_PATH ?? '/usr/bin/chromium';
 const HAND_TIMEOUT_MS = 4 * 60_000;
-const VIEWPORT = { width: 1280, height: 860 };
+/** E2E_VIEWPORT=1366x768 tries another window size. */
+const VIEWPORT = (() => {
+  const [w, h] = (process.env.E2E_VIEWPORT ?? '1280x860').split('x').map(Number);
+  return { width: w ?? 1280, height: h ?? 860 };
+})();
+
+/** Nothing on screen scrolls: not the page, not the felt, not an open dialog. */
+async function checkNoScroll(page: Page, where: string): Promise<void> {
+  const over = await page.evaluate(() => {
+    const out: string[] = [];
+    const root = document.scrollingElement ?? document.documentElement;
+    if (root.scrollHeight > window.innerHeight + 1)
+      out.push(`page +${root.scrollHeight - window.innerHeight}px`);
+    for (const sel of ['.felt', '.modal']) {
+      for (const el of document.querySelectorAll(sel)) {
+        if (el.scrollHeight > el.clientHeight + 1)
+          out.push(`${sel} +${el.scrollHeight - el.clientHeight}px`);
+      }
+    }
+    return out;
+  });
+  check(
+    over.length === 0,
+    `${where} fits the window without scrolling${over.length ? ` (${over.join(', ')})` : ''}`,
+  );
+}
 
 const failures: string[] = [];
 /** Checked once, on the first turn that has an unplayable card. */
@@ -129,6 +154,9 @@ const cardMoves = (page: Page) =>
 async function openTable(page: Page, base: string): Promise<void> {
   await page.goto(base);
   await page.getByLabel('Your name').fill('Tester');
+  await sleep(1_200); // let the showcase cards land
+  await page.screenshot({ path: path.join(OUT, '0-home.png') });
+  await checkNoScroll(page, 'the home page');
   await page.getByRole('button', { name: 'Create a room' }).click();
   await page.getByRole('button', { name: 'Sit here' }).first().click();
   const addHard = page.getByRole('button', { name: '+ Bot · Hard' });
@@ -145,6 +173,7 @@ async function openTable(page: Page, base: string): Promise<void> {
   await addHard.first().click();
   await until(async () => (await addHard.count()) === 2, 'a Hard bot seated');
   await page.screenshot({ path: path.join(OUT, '0-lobby.png') });
+  await checkNoScroll(page, 'the lobby');
   for (let left = 2; left > 0; left--) {
     await until(async () => (await addNormal.count()) === left, `${left} empty seats`);
     await addNormal.first().click();
@@ -317,6 +346,7 @@ async function fullHand(browser: Browser, base: string): Promise<void> {
   const help = page.getByRole('dialog', { name: 'How to play' });
   check(await help.isVisible(), 'How to play opens from the top bar');
   await shoot('1-how-to-play');
+  await checkNoScroll(page, 'How to play');
   await page.keyboard.press('Escape');
   check(await help.isHidden(), 'Esc closes How to play');
   await page.keyboard.press('?');
@@ -325,6 +355,7 @@ async function fullHand(browser: Browser, base: string): Promise<void> {
 
   await openTable(page, base);
   await shoot('2-dealt');
+  await checkNoScroll(page, 'the table');
   check(
     /Bidding opens|High bid/.test((await page.locator('.contract-bar').textContent()) ?? ''),
     'bidding begins as soon as the cards are dealt',
@@ -393,6 +424,7 @@ async function fullHand(browser: Browser, base: string): Promise<void> {
   );
 
   await shoot('6-result');
+  await checkNoScroll(page, 'the hand review');
   check(
     await result.locator('.result-banner').isVisible(),
     'the hand result shows a made/set banner',

@@ -207,36 +207,139 @@ button.icon-btn {
 }
 
 /* Home ------------------------------------------------------------------- */
+/* The table before anyone sits: a felt oval with a fan of cards and the name, and a paper
+   place card below it for coming in. It fits the window without scrolling. */
 .home {
-  max-width: 440px;
-  margin: 10vh auto;
-  padding: 0 16px;
+  flex: 1;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: clamp(12px, 3vh, 28px);
+  padding: 16px;
   color: var(--paper);
 }
-.home h1 {
-  margin-bottom: 4px;
-}
-.home .panel {
-  color: var(--ink);
-  margin-top: 16px;
+.home-table {
+  position: relative;
   display: grid;
-  gap: 10px;
+  justify-items: center;
+  align-content: center;
+  gap: 6px;
+  width: min(640px, 100%);
+  padding: clamp(18px, 4vh, 36px) 24px clamp(20px, 4vh, 40px);
+  border-radius: 50%;
+  background: radial-gradient(
+    ellipse at center,
+    var(--felt-light) 0%,
+    var(--felt) 70%,
+    var(--felt-dark) 100%
+  );
+  box-shadow:
+    inset 0 0 0 8px var(--bar),
+    var(--shadow-2);
+  text-align: center;
 }
-.home .muted {
+.home-table h1 {
+  margin: 0;
+}
+.home-tagline {
+  margin: 0;
+  max-width: 34ch;
   color: var(--on-felt-muted);
 }
-.home-form label {
+.home-fan {
+  display: flex;
+  justify-content: center;
+  height: calc(var(--card-h) + 12px);
+  margin-bottom: 4px;
+  perspective: 900px;
+}
+.home-fan-card {
+  margin: 0 calc(var(--card-w) * -0.18);
+  transform-origin: 50% 120%;
+  rotate: calc(var(--d) * 9deg);
+  translate: 0 calc(var(--d) * var(--d) * 3px);
+  perspective: 900px;
+}
+.home-fan-flip {
+  backface-visibility: hidden;
+  filter: drop-shadow(0 8px 10px rgba(0, 0, 0, 0.3));
+}
+.home-card {
+  width: min(560px, 100%);
+  display: grid;
+  gap: 14px;
+  padding: 18px 20px 14px;
+  border-radius: var(--radius-l);
+  background: var(--paper);
+  color: var(--ink);
+  box-shadow: var(--shadow-2);
+}
+.home-card label {
   display: grid;
   gap: 4px;
   font-size: 0.9em;
 }
+.home-name input {
+  font-size: 1.05em;
+}
+.home-ways {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+.home-way {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+}
+.home-way + .home-way {
+  padding-left: 18px;
+  border-left: 1px solid var(--line);
+}
+.home-way h2 {
+  margin: 0;
+  font-size: 1em;
+}
+.home-way p {
+  margin: 0;
+  color: var(--muted);
+}
+.home-way button {
+  justify-self: start;
+}
+.home-help {
+  margin: 0;
+  color: var(--muted);
+}
+@media (max-width: 600px) {
+  .home-ways {
+    grid-template-columns: 1fr;
+  }
+  .home-way + .home-way {
+    padding: 12px 0 0;
+    border-left: 0;
+    border-top: 1px solid var(--line);
+  }
+}
 
 /* Lobby ------------------------------------------------------------------ */
+/* The lobby fills the window below the top bar, the table taking what the header leaves. */
 .lobby {
-  max-width: 1000px;
-  margin: 6vh auto;
-  padding: 0 16px;
+  flex: 1;
+  width: min(1000px, 100%);
+  margin: 0 auto;
+  padding: clamp(8px, 2vh, 20px) 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
   color: var(--paper);
+}
+.lobby-header h1 {
+  margin: 0 0 2px;
+  font-size: 1.6em;
+}
+.lobby-header p {
+  margin: 0;
 }
 .lobby .muted {
   color: var(--on-felt-muted);
@@ -245,14 +348,14 @@ button.icon-btn {
 .lobby-table {
   display: grid;
   grid-template-columns: minmax(200px, 1fr) minmax(260px, 1.5fr) minmax(200px, 1fr);
-  grid-template-rows: auto minmax(220px, auto) auto;
+  grid-template-rows: auto minmax(clamp(110px, 22vh, 220px), auto) auto;
   grid-template-areas:
     ". top ."
     "left felt right"
     ". bottom .";
-  gap: 14px;
+  gap: clamp(8px, 1.6vh, 14px);
   align-items: center;
-  margin: 24px 0;
+  margin: clamp(10px, 2.4vh, 24px) 0 0;
 }
 .lobby-felt {
   grid-area: felt;
@@ -260,7 +363,7 @@ button.icon-btn {
   align-self: stretch;
   display: grid;
   place-items: center;
-  min-height: 220px;
+  min-height: clamp(110px, 22vh, 220px);
   border-radius: 50%;
   background: radial-gradient(
     ellipse at center,
@@ -303,8 +406,8 @@ button.icon-btn {
 .chair {
   display: grid;
   justify-items: center;
-  gap: 6px;
-  padding: 12px;
+  gap: 4px;
+  padding: clamp(6px, 1.4vh, 12px) 12px;
   border: 2px solid transparent;
   border-top: 4px solid var(--team-them);
   border-radius: var(--radius-l);
@@ -352,8 +455,8 @@ button.icon-btn {
 .chair-avatar {
   display: grid;
   place-items: center;
-  width: 44px;
-  height: 44px;
+  width: clamp(30px, 5vh, 44px);
+  height: clamp(30px, 5vh, 44px);
   border-radius: 50%;
   background: var(--team-them);
   color: var(--on-accent);
@@ -1312,15 +1415,25 @@ button.modal-close {
   padding: 0 6px;
 }
 .help {
-  max-width: 680px;
+  max-width: 1180px;
+}
+.help-columns {
+  column-width: 300px;
+  column-gap: 32px;
+  column-rule: 1px solid var(--line);
+  font-size: 0.92em;
+}
+.help-columns section {
+  break-inside: avoid;
+  padding-bottom: 12px;
 }
 .help h3 {
-  margin: 16px 0 4px;
+  margin: 0 0 4px;
   font-size: 1em;
 }
 .help p,
 .help li {
-  line-height: 1.45;
+  line-height: 1.4;
   margin: 4px 0;
 }
 .help ul {
