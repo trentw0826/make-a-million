@@ -179,6 +179,32 @@ describe('scoreboard', () => {
   });
 });
 
+describe('lobby', () => {
+  it('turns the table so your chair is at the bottom, partner across', () => {
+    const lobby: RoomView = {
+      ...room('lobby'),
+      seats: [
+        null,
+        { kind: 'bot', name: 'Bot 2', difficulty: 'hard' },
+        { kind: 'human', playerId: 'p1', name: 'Ann', connected: true, botControlled: false },
+        null,
+      ],
+      yourSeat: 2,
+    };
+    renderWith([welcome, { type: 'room', room: lobby }]);
+    const chair = (n: number) => screen.getByRole('group', { name: `Seat ${n}` });
+    expect(chair(3)).toHaveClass('chair-bottom', 'chair-mine', 'side-us');
+    expect(chair(1)).toHaveClass('chair-top', 'chair-empty', 'side-us');
+    expect(chair(2)).toHaveClass('chair-right', 'side-them');
+    expect(chair(2)).toHaveTextContent('Bot 2 · Hard');
+    expect(chair(4)).toHaveClass('chair-left', 'side-them');
+    // The host fills an empty chair with a bot of the chosen strength.
+    expect(within(chair(4)).getByRole('button', { name: '+ Bot · Hard' })).toBeInTheDocument();
+    expect(within(chair(4)).getByRole('button', { name: 'Sit here' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Start game' })).toBeDisabled();
+  });
+});
+
 describe('score sheet and log drawer', () => {
   const entries = [{ id: 1, hand: 1, text: 'Ann deals.', tone: 'info' as const }];
 

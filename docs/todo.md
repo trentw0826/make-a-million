@@ -3,10 +3,11 @@
 A scratchpad for future fixes, features, and updates
 
 ## Immediate
-- [ ] Creatively re-imagine the seat-choosing UI
 - [ ] Remove the UI element in the action box explaining what the player is waiting on (such as "Waiting for bot 2 to bid"). This element should still show up for bidding
 - [ ] The bidding bar currently looks like "-   215k   + [Bid 215k] Pass". Instead, have a single button that says "[Bid 215k]" in the middle with decrement, increment buttons to the immediate left, immediate right of it. On the right hand side of the action bar, move the "Pass" button. Incrementing or decrementing updates the value shown on the button itself rather than a second element
 - [ ] Remove the current bid indicator under the user once they've been out-bid (that bid is no longer relevant)
+- [ ] Add a slightly wider separation between the groups of cards of different colors within the player's hand
+- [ ] The discard button should be the only element in the discord action box with the prompt "Discard (3 left)", then "Discard (2 left)", etc until just "Discard" 
 
 ## Later
 - [ ] Create a phone-friendly UI

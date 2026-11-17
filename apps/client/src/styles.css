@@ -229,7 +229,7 @@ input {
 
 /* Lobby ------------------------------------------------------------------ */
 .lobby {
-  max-width: 820px;
+  max-width: 1000px;
   margin: 6vh auto;
   padding: 0 16px;
   color: var(--paper);
@@ -237,35 +237,175 @@ input {
 .lobby .muted {
   color: var(--on-felt-muted);
 }
-.seats-grid {
+/* The table seen from above: a chair at each side of the felt, yours at the bottom. */
+.lobby-table {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: minmax(200px, 1fr) minmax(260px, 1.5fr) minmax(200px, 1fr);
+  grid-template-rows: auto minmax(220px, auto) auto;
+  grid-template-areas:
+    ". top ."
+    "left felt right"
+    ". bottom .";
   gap: 14px;
-  margin: 18px 0;
+  align-items: center;
+  margin: 24px 0;
 }
-.seat-card {
+.lobby-felt {
+  grid-area: felt;
+  position: relative;
+  align-self: stretch;
+  display: grid;
+  place-items: center;
+  min-height: 220px;
+  border-radius: 50%;
+  background: radial-gradient(
+    ellipse at center,
+    var(--felt-light) 0%,
+    var(--felt) 70%,
+    var(--felt-dark) 100%
+  );
+  box-shadow:
+    inset 0 0 0 6px var(--bar),
+    var(--shadow-2);
+}
+.partner-lines {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.partner-lines line {
+  stroke: var(--team-them);
+  stroke-width: 2;
+  stroke-dasharray: 3 3;
+  vector-effect: non-scaling-stroke;
+  opacity: 0.55;
+}
+.partner-lines line.side-us {
+  stroke: var(--team-us);
+}
+.lobby-felt-text {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  max-width: 60%;
+  text-align: center;
+}
+.lobby-felt-text p {
+  margin: 0;
+}
+
+.chair {
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  padding: 12px;
+  border: 2px solid transparent;
+  border-top: 4px solid var(--team-them);
+  border-radius: var(--radius-l);
   background: var(--paper);
   color: var(--ink);
-  border-radius: var(--radius-l);
-  padding: 14px;
-  display: grid;
-  gap: 8px;
-  border: 2px solid transparent;
+  text-align: center;
+  box-shadow: var(--shadow-1);
 }
-.seat-card.seat-mine {
+.chair.side-us {
+  border-top-color: var(--team-us);
+}
+.chair-top {
+  grid-area: top;
+  justify-self: center;
+  width: min(100%, 260px);
+}
+.chair-bottom {
+  grid-area: bottom;
+  justify-self: center;
+  width: min(100%, 260px);
+}
+.chair-left {
+  grid-area: left;
+}
+.chair-right {
+  grid-area: right;
+}
+.chair-mine {
   border-color: var(--accent);
+  border-top-color: var(--team-us);
 }
-.seat-card .muted {
+/* An empty chair is an outline on the felt, waiting to be filled. */
+.chair-empty {
+  background: rgba(0, 0, 0, 0.16);
+  color: var(--paper);
+  box-shadow: none;
+  border-style: dashed;
+  border-top-style: solid;
+  border-color: rgba(255, 255, 255, 0.3);
+  border-top-color: var(--team-them);
+}
+.chair-empty.side-us {
+  border-top-color: var(--team-us);
+}
+.chair-avatar {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--team-them);
+  color: var(--on-accent);
+  font-size: 1.3em;
+  font-weight: bold;
+}
+.side-us .chair-avatar {
+  background: var(--team-us);
+}
+.chair-empty .chair-avatar {
+  background: transparent;
+  border: 2px dashed rgba(255, 255, 255, 0.4);
+  color: var(--on-felt-muted);
+}
+.chair-who {
+  display: grid;
+  gap: 4px;
+}
+.chair-tags {
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+}
+.chair .muted {
   color: var(--muted);
 }
-.seat-actions {
-  display: flex;
-  flex-wrap: wrap;
+.chair-empty .muted {
+  color: var(--on-felt-muted);
+}
+.chair-actions {
+  display: grid;
+  justify-items: center;
   gap: 6px;
 }
-.seat-actions .ghost {
+.chair-actions .ghost {
   border-color: var(--line);
   color: var(--ink);
+}
+.chair-empty .ghost {
+  border-color: rgba(255, 255, 255, 0.35);
+  color: var(--paper);
+}
+.add-bot {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.add-bot legend {
+  width: 100%;
+  margin-bottom: 4px;
+  padding: 0;
+  text-align: center;
 }
 .lobby-share {
   display: flex;
@@ -275,11 +415,6 @@ input {
 }
 .lobby-share button {
   font-size: 0.9em;
-}
-.lobby-actions {
-  display: flex;
-  gap: 14px;
-  align-items: center;
 }
 
 /* Table ------------------------------------------------------------------ */
@@ -1522,9 +1657,19 @@ button.modal-close {
   border-left: 5px solid var(--accent);
 }
 
-@media (max-width: 900px) {
-  .seats-grid {
-    grid-template-columns: 1fr;
+/* A narrow window: the chairs line up around a smaller table. */
+@media (max-width: 700px) {
+  .lobby-table {
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto;
+    grid-template-areas:
+      "top top"
+      "felt felt"
+      "left right"
+      "bottom bottom";
+  }
+  .lobby-felt {
+    min-height: 140px;
   }
 }
 
