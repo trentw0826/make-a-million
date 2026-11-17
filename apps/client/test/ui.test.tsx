@@ -581,30 +581,33 @@ describe('table status', () => {
     expect(document.querySelector('.action-bar')).toHaveClass('action-hidden');
   });
 
-  it('keeps your outbid bid under your hand, as a quiet outline', () => {
+  it('lays the standing bid on the felt before its bidder, and no badges on the seats', () => {
     const auction = (entries: TableView['auction']): readonly ServerMessage[] => [
       welcome,
       { type: 'room', room: room('playing') },
       { type: 'view', view: { ...dealt, turn: 1, legal: { kind: 'none' }, auction: entries } },
     ];
-    const { unmount } = renderWith(auction([{ seat: 0, kind: 'bid', amount: 175_000 }]));
-    expect(
-      within(document.querySelector('.me-line') as HTMLElement).getByText('Winning bid: $175k'),
-    ).toHaveClass('chip-high');
+    const stake = () => document.querySelector('.bid-stake') as HTMLElement;
+    const { unmount } = renderWith(auction([]));
+    expect(stake()).toHaveClass('stake-open');
+    expect(stake()).toHaveTextContent('Opens at$175k');
     unmount();
+    const { unmount: unmount2 } = renderWith(auction([{ seat: 0, kind: 'bid', amount: 175_000 }]));
+    expect(stake()).toHaveClass('stake-us');
+    expect(stake()).toHaveTextContent('High bid$175k');
+    unmount2();
     renderWith(
       auction([
         { seat: 0, kind: 'bid', amount: 175_000 },
         { seat: 1, kind: 'bid', amount: 180_000 },
       ]),
     );
-    expect(
-      within(document.querySelector('.me-line') as HTMLElement).getByText('Bid: $175k'),
-    ).toHaveClass('chip-bid');
-    expect(screen.getAllByText('No bid yet')).toHaveLength(2);
+    expect(stake()).toHaveClass('stake-them');
+    expect(stake()).toHaveTextContent('High bid$180k');
+    expect(document.querySelector('.seat-chip')).toBeNull();
   });
 
-  it('fades a seat that has passed, leaving its Passed badge readable', () => {
+  it('fades the whole of a seat that has passed, and says so to screen readers', () => {
     const bidding: TableView = {
       ...dealt,
       phase: 'bidding',
@@ -617,7 +620,8 @@ describe('table status', () => {
       <SeatPanel seat={1} room={room('playing')} view={bidding} position="left" />,
     );
     expect(document.querySelector('.seat-panel')).toHaveClass('seat-passed');
-    expect(screen.getByText('Passed')).toHaveClass('chip-pass');
+    expect(document.querySelector('.seat-name')).toHaveTextContent(/passed/);
+    expect(document.querySelector('.seat-chip')).toBeNull();
     rerender(<SeatPanel seat={2} room={room('playing')} view={bidding} position="top" />);
     expect(document.querySelector('.seat-panel')).not.toHaveClass('seat-passed');
   });

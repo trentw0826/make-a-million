@@ -101,33 +101,22 @@ export function hasPassed(view: TableView, seat: Seat): boolean {
   return view.phase === 'bidding' && view.auction.some((e) => e.seat === seat && e.kind === 'pass');
 }
 
-export type ChipKind = 'none' | 'bid' | 'high' | 'pass' | 'contract';
-
 export interface SeatChip {
   readonly text: string;
-  readonly kind: ChipKind;
-  /** On the contract badge: trump, once named. */
-  readonly trump?: Suit | null;
+  readonly kind: 'contract';
+  /** Trump, once named. */
+  readonly trump: Suit | null;
 }
 
 /**
- * Where a seat stands in the auction, shown under it for as long as the auction runs: no
- * bid yet, the winning bid, a bid since topped, or passed. Only the winning bid stands out.
+ * The bidder's badge once the auction is over: the contract, and trump once named. While the
+ * auction runs no seat has a badge; the standing bid lies on the felt instead (`BidStake`).
  */
 export function seatChip(view: TableView, seat: Seat): SeatChip | null {
-  // After the auction the bidder keeps a badge for the contract, and trump once named.
-  if (view.phase !== 'bidding') {
-    const c = view.contract;
-    if (!c || c.bidder !== seat || view.phase === 'game-over') return null;
-    return { text: shortMoney(c.amount), kind: 'contract', trump: view.trump };
-  }
-  const last = view.auction.findLast((e) => e.seat === seat);
-  if (!last) return { text: 'No bid yet', kind: 'none' };
-  if (last.kind === 'pass') return { text: 'Passed', kind: 'pass' };
-  const amount = shortMoney(last.amount);
-  return highBid(view.auction)?.seat === seat
-    ? { text: `Winning bid: ${amount}`, kind: 'high' }
-    : { text: `Bid: ${amount}`, kind: 'bid' };
+  const c = view.contract;
+  if (view.phase === 'bidding' || view.phase === 'game-over') return null;
+  if (!c || c.bidder !== seat) return null;
+  return { text: shortMoney(c.amount), kind: 'contract', trump: view.trump };
 }
 
 /** "you", "your partner" or "opponent", as `seat` is seen from `me`. */

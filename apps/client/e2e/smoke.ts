@@ -199,18 +199,19 @@ async function act(page: Page, shoot: Shoot): Promise<boolean> {
     const pass = page.getByRole('button', { name: 'Pass', exact: true });
     if (await pass.isVisible()) {
       await shoot('3-bidding');
-      const passed = page.locator('.seat-panel:has(.chip-pass)');
+      check(
+        (await page.locator('.bid-stake').isVisible()) &&
+          (await page.locator('.seat-chip').count()) === 0,
+        'the auction shows only the bid on the felt, with no badges on the seats',
+      );
+      const passed = page.locator('.seat-panel.seat-passed');
       if (!passedSeatChecked && (await passed.count()) > 0) {
         await sleep(400); // let the fade finish
         const faded = await passed.first().evaluate((el) => ({
-          marked: el.classList.contains('seat-passed'),
           name: Number(getComputedStyle(el.querySelector('.seat-name') as Element).opacity),
-          chip: Number(getComputedStyle(el.querySelector('.seat-role') as Element).opacity),
+          cards: Number(getComputedStyle(el.querySelector('.card-backs') as Element).opacity),
         }));
-        check(
-          faded.marked && faded.name < 1 && faded.chip > faded.name,
-          'a seat that has passed fades back, its Pass chip still clear',
-        );
+        check(faded.name < 1 && faded.cards < 1, 'a seat that has passed fades back');
         passedSeatChecked = true;
       }
       if (await pass.isEnabled()) await pass.click(quick);

@@ -128,7 +128,7 @@ describe('blockedReason', () => {
 });
 
 describe('seatChip', () => {
-  it('shows where each seat stands, marking the winning bid', () => {
+  it('gives no seat a badge while the auction runs', () => {
     const v = view({
       phase: 'bidding',
       auction: [
@@ -137,10 +137,7 @@ describe('seatChip', () => {
         { seat: 3, kind: 'bid', amount: 185_000 },
       ],
     });
-    expect(seatChip(v, 1)).toEqual({ text: 'Bid: $175k', kind: 'bid' });
-    expect(seatChip(v, 2)).toEqual({ text: 'Passed', kind: 'pass' });
-    expect(seatChip(v, 3)).toEqual({ text: 'Winning bid: $185k', kind: 'high' });
-    expect(seatChip(v, 0)).toEqual({ text: 'No bid yet', kind: 'none' });
+    for (const seat of [0, 1, 2, 3] as const) expect(seatChip(v, seat)).toBeNull();
   });
 
   it('leaves only the bidder a badge once the auction is over: the contract and trump', () => {
