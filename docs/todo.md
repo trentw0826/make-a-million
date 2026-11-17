@@ -4,14 +4,11 @@ A scratchpad for future fixes, features, and updates
 
 ## Immediate
 - [ ] I don't like the top bar at all that reports "Hand 2Trent bid $225kTrump RedTricks Us 1 – Them 2". Find clean and simple ways to report that information in other ways and remove the top bar
-- [ ] The table seems to resize itself based on the elements on the screen (particularly the user's action box, when it disappears the table gets wider vertically). Have it be static relative to such foreground elements
 - [ ] The discard view where all money cards become transparent creates a very jumbled, awkward, and hard-to-read look. Take a look at it and creatively and cleanly re-invent that view to make it easier to understand your options for discarding
-- [ ] Vertically center the question mark icon that shows up when discarding within the action box
-- [ ] When choosing a group of cards to be trump, the group should feel like choosing one single element. Currently, different card shadows show up depending on which one in the group you're hovering over, despite all being chosen as one element. There should be one group-wide shadow
-- [ ] Replace the "Choose trump Point at a color in your hand" dialogue with a single wide badge prompting "Choose ___ as trump". When hovering over the red group, that badge transitions to "Choose red as trump" where the word "red" is underlined and colored. 
 - [ ] Add gentle animations throughout the whole experience to make it feel smoother. As part of that, Include animations that more clearly indicate whose turn it is
 - [ ] Having cards of different sizes on the screen looks funky (hidden cards vs. user cards vs. discarded cards). 
 - [ ] Choose an elegant and clean new approach to fonts throughout the project
+- [ ] Add back the badge denoting 'You'
 
 ## Later
 - [ ] Create a phone-friendly UI

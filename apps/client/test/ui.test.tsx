@@ -410,8 +410,7 @@ describe('table status', () => {
       },
     ]);
     const bar = document.querySelector('.trump-bar') as HTMLElement;
-    expect(bar).toHaveTextContent('Choose trump');
-    expect(bar).toHaveTextContent('Point at a color in your hand');
+    expect(bar.querySelector('.trump-badge')).toHaveTextContent(/^Choose\s+a color\s+as trump$/);
     // Yellow and Black aren't in the hand, so they can still be named from the bar.
     expect(within(bar).getByRole('button', { name: 'Yellow' })).toBeInTheDocument();
     expect(within(bar).queryByRole('button', { name: 'Red' })).toBeNull();
@@ -424,7 +423,8 @@ describe('table status', () => {
     expect(fan(1).style.getPropertyValue('--raise')).toBe('1');
     expect(fan(39).style.getPropertyValue('--raise')).toBe('0');
     expect(Number(fan(39).style.getPropertyValue('--part'))).toBeGreaterThan(0);
-    expect(bar.querySelector('.trump-preview')).toHaveTextContent('Red');
+    expect(bar.querySelector('.trump-badge')).toHaveTextContent(/^Choose\s+red\s+as trump$/);
+    expect(bar.querySelector('.trump-word')).toHaveClass('suit-red');
 
     // The Tiger has no color: it fades back and can't be chosen.
     expect(document.querySelector('[data-card-id="52"]')).toHaveClass('card-disabled');

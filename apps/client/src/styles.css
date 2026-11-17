@@ -917,15 +917,19 @@ button.icon-btn {
   align-items: center;
   justify-content: center;
   background: rgba(0, 0, 0, 0.2);
-  padding: 10px 14px;
+  padding: 0 14px;
   border-radius: var(--radius-l);
-  min-height: 48px;
+  /* A fixed height, whatever the bar holds or whether it shows at all, so the table above
+     never grows or shrinks with it. */
+  height: var(--action-h);
 }
-/* The "?" in the action bar's corner, and the rules it shows on hover or focus. */
+/* The "?" at the action bar's right end, and the rules it shows on hover or focus. */
 .rules-tip {
   position: absolute;
-  top: 4px;
-  right: 6px;
+  top: 50%;
+  right: 8px;
+  display: flex;
+  transform: translateY(-50%);
 }
 .rules-tip-btn {
   width: 20px;
@@ -1004,46 +1008,36 @@ button.icon-btn {
   min-width: 120px;
   font-variant-numeric: tabular-nums;
 }
-/* Naming trump: the question, and the color about to be named, which follows the pointer
-   over the hand. */
-.trump-ask {
-  font-size: 1.05em;
-}
-.trump-preview {
+/* Naming trump: one wide badge, "Choose ___ as trump", its blank filled with the color under
+   the pointer. */
+.trump-badge {
   display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  min-width: 170px;
+  align-items: baseline;
   justify-content: center;
-  padding: 4px 12px;
+  gap: 0;
+  min-width: min(340px, 100%);
+  padding: 6px 20px;
   border-radius: 999px;
-  background: rgba(0, 0, 0, 0.2);
-  font-weight: bold;
-  transition: background-color var(--dur-base);
-}
-.trump-swatch {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  background: currentColor;
-}
-.trump-preview-red,
-.trump-preview-yellow,
-.trump-preview-black,
-.trump-preview-green {
   background: var(--paper);
+  color: var(--ink);
+  font-weight: bold;
+  white-space: pre;
 }
-.trump-preview-red {
-  color: var(--red);
+.trump-blank,
+.trump-word {
+  display: inline-block;
+  min-width: 3.6em;
+  text-align: center;
 }
-.trump-preview-yellow {
-  color: var(--yellow);
+.trump-blank {
+  height: 1em;
+  border-bottom: 2px solid var(--line);
 }
-.trump-preview-black {
-  color: var(--black);
-}
-.trump-preview-green {
-  color: var(--green);
+.trump-word {
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+  animation: fade-in var(--dur-base) var(--ease-out);
 }
 .trump-missing {
   display: inline-flex;
@@ -1296,6 +1290,15 @@ button.card-selected:hover:not([aria-disabled="true"]) {
 .hand-fan button.card:focus-visible:not([aria-disabled="true"]),
 .hand-fan button.card-selected:hover:not([aria-disabled="true"]) {
   transform: none;
+}
+/* The shadow follows the fan too: every raised card (one, or a whole color when naming
+   trump) casts the same lifted shadow, whichever card the pointer happens to be on. */
+.hand-fan button.card:hover:not(:disabled, [aria-disabled="true"]),
+.hand-fan button.card:focus-visible:not([aria-disabled="true"]) {
+  box-shadow: var(--shadow-1);
+}
+.hand-fan.hand-fan-hovered button.card:not([aria-disabled="true"]) {
+  box-shadow: var(--shadow-lift);
 }
 /* A card that can't be chosen right now fades into the felt. A felt-coloured veil over an
    opaque card, rather than a see-through card, so where cards overlap in the hand the one
@@ -1895,8 +1898,7 @@ button.modal-close {
     gap: 4px;
   }
   .action-bar {
-    padding: 6px 12px;
-    min-height: 40px;
+    padding: 0 12px;
   }
   .hand {
     padding: 6px 0 calc(var(--fan-drop) * 24);

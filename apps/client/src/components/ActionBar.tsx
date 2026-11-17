@@ -57,7 +57,8 @@ export function ActionBar({ view, room, selected, onClearSelection, trumpPreview
         </>
       );
     case 'continue':
-      return null; // handled by the hand-result modal
+      // The hand-result dialog asks; the bar holds its space so the table doesn't shift.
+      return <div className="action-bar action-hidden" aria-hidden="true" />;
   }
 }
 
@@ -224,20 +225,23 @@ function TrumpControls({
   const missing = legal.suits.filter((s) => !held.has(s));
   return (
     <TurnBar className="trump-bar">
-      <strong className="trump-ask">Choose trump</strong>
-      <output className={`trump-preview${preview ? ` trump-preview-${preview}` : ''}`}>
+      {/* One badge, its blank filled with the color under the pointer. */}
+      <output className="trump-badge">
+        Choose{' '}
         {preview ? (
-          <>
-            <span className="trump-swatch" aria-hidden="true" />
-            {SUIT_NAMES[preview]}
-          </>
+          <span key={preview} className={`trump-word suit-${preview}`}>
+            {SUIT_NAMES[preview].toLowerCase()}
+          </span>
         ) : (
-          <span className="muted">Point at a color in your hand</span>
-        )}
+          <span className="trump-blank">
+            <span className="visually-hidden">a color</span>
+          </span>
+        )}{' '}
+        as trump
       </output>
       {missing.length > 0 && (
         <span className="trump-missing">
-          <span className="muted small">or one you don't hold:</span>
+          <span className="muted small">or:</span>
           {missing.map((suit) => (
             <button
               type="button"

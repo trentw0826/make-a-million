@@ -246,9 +246,9 @@ async function act(page: Page, shoot: Shoot): Promise<boolean> {
         await sleep(350);
         if (!trumpChecked) {
           const raised = await page.locator('.hand-fan-hovered').count();
-          const preview = (await page.locator('.trump-preview').textContent()) ?? '';
+          const preview = (await page.locator('.trump-word').textContent()) ?? '';
           check(
-            raised > 1 && /^(Red|Yellow|Black|Green)$/.test(preview),
+            raised > 1 && /^(red|yellow|black|green)$/.test(preview),
             `pointing at a color raises its group and names it in the bar (${raised} cards, ${preview})`,
           );
           trumpChecked = true;
