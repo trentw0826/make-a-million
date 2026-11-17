@@ -181,9 +181,12 @@ input {
   gap: 8px;
   margin-left: auto;
 }
-.sound-toggle {
-  min-width: 34px;
-  line-height: 1.2;
+.icon-btn {
+  display: inline-grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
 }
 .topbar .ghost {
   border-color: rgba(255, 255, 255, 0.35);
@@ -439,20 +442,6 @@ input {
   height: calc(100dvh - var(--topbar-h));
   overflow-y: auto;
 }
-.felt-tools {
-  grid-area: tools;
-  align-self: start;
-  justify-self: end;
-}
-.drawer-toggle {
-  background: rgba(0, 0, 0, 0.22);
-  color: var(--paper);
-  border-color: rgba(255, 255, 255, 0.18);
-}
-.drawer-toggle[aria-expanded="true"] {
-  background: var(--accent);
-  color: var(--on-accent);
-}
 /* The score sheet and log, slid in over the right edge of the felt. */
 .drawer {
   position: absolute;
@@ -464,7 +453,7 @@ input {
   display: flex;
   flex-direction: column;
   gap: 14px;
-  padding: 14px 14px 12px;
+  padding: 14px 14px 60px;
   background: var(--paper);
   color: var(--ink);
   box-shadow: var(--shadow-drawer);
@@ -665,15 +654,8 @@ input {
   min-height: 24px;
   font-size: 0.85em;
 }
-.turn-pill {
-  padding: 2px 10px;
-  border-radius: var(--radius-l);
-  background: var(--accent);
-  color: var(--on-accent);
-  font-weight: bold;
-  font-size: 0.9em;
-}
 .action-bar {
+  position: relative;
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
@@ -683,6 +665,54 @@ input {
   padding: 10px 14px;
   border-radius: var(--radius-l);
   min-height: 48px;
+}
+/* The "?" in the action bar's corner, and the rules it shows on hover or focus. */
+.rules-tip {
+  position: absolute;
+  top: 4px;
+  right: 6px;
+}
+.rules-tip-btn {
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border-radius: 50%;
+  border-color: rgba(255, 255, 255, 0.3);
+  background: transparent;
+  color: var(--paper);
+  font-size: 0.75em;
+  line-height: 1;
+  opacity: 0.6;
+}
+.rules-tip-btn:hover,
+.rules-tip-btn:focus-visible {
+  opacity: 1;
+}
+.rules-tip-text {
+  position: absolute;
+  z-index: 4;
+  right: 0;
+  bottom: calc(100% + 8px);
+  width: min(300px, 80vw);
+  padding: 10px 12px;
+  border-radius: var(--radius-m);
+  background: var(--paper);
+  color: var(--ink);
+  box-shadow: var(--shadow-2);
+  font-size: 0.85em;
+  line-height: 1.4;
+  text-align: left;
+  visibility: hidden;
+  opacity: 0;
+  transition:
+    opacity var(--dur-fast),
+    visibility var(--dur-fast);
+}
+.rules-tip:hover .rules-tip-text,
+.rules-tip-btn:focus-visible + .rules-tip-text,
+.rules-tip-btn:focus + .rules-tip-text {
+  visibility: visible;
+  opacity: 1;
 }
 .bid-stepper {
   display: flex;
@@ -756,7 +786,9 @@ input {
   height: var(--lift);
 }
 
-/* Sound and How to play, in the corner by your seat. */
+/* The score sheet, sound and How to play, in the corner by your seat. The corner itself
+   isn't positioned, so the score sheet still slides in against the felt; its buttons stay
+   above the open sheet, so the sheet's own button can put it away again. */
 .table-corner {
   grid-area: me;
   justify-self: end;
@@ -764,9 +796,17 @@ input {
   display: flex;
   gap: 6px;
 }
+.table-corner > .icon-btn {
+  z-index: 6;
+}
 .table-corner .ghost {
   color: var(--paper);
   border-color: rgba(255, 255, 255, 0.25);
+  background: var(--felt-dark);
+}
+.table-corner .drawer-toggle[aria-expanded="true"] {
+  background: var(--accent);
+  color: var(--on-accent);
 }
 
 /* Taken tricks: a loose, face-down pile beside each partnership. */
@@ -1352,8 +1392,7 @@ button.modal-close {
     box-shadow: 0 0 0 7px rgba(184, 134, 11, 0);
   }
 }
-.seat-acting,
-.turn-pill {
+.seat-acting {
   animation: pulse-ring 1.8s ease-in-out infinite;
 }
 
@@ -1447,7 +1486,6 @@ button.modal-close {
 
 @media (prefers-reduced-motion: reduce) {
   .seat-acting,
-  .turn-pill,
   .card-winning,
   .modal-backdrop,
   .modal,

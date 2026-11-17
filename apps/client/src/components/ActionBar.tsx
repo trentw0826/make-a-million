@@ -7,7 +7,7 @@ import {
   type TableView,
 } from '@mam/engine';
 import type { RoomView } from '@mam/protocol';
-import { type ReactNode, useEffect, useState } from 'react';
+import { type ReactNode, useEffect, useId, useState } from 'react';
 import { SUIT_NAMES, shortMoney } from '../format';
 import { playHint, waitingText } from '../hints';
 import { useGame } from '../store';
@@ -29,9 +29,7 @@ export function ActionBar({ view, room, selected, onClearSelection }: Props) {
     case 'bid':
       return <BidControls legal={legal} view={view} />;
     case 'discard':
-      return (
-        <DiscardControls legal={legal} view={view} selected={selected} onDone={onClearSelection} />
-      );
+      return <DiscardControls legal={legal} selected={selected} onDone={onClearSelection} />;
     case 'trump':
       return <TrumpControls />;
     case 'play':
@@ -45,11 +43,14 @@ export function ActionBar({ view, room, selected, onClearSelection }: Props) {
   }
 }
 
-/** The bar while the table waits on this player: marked so it can't be missed. */
+/**
+ * The bar while the table waits on this player. The gold ring round your seat shows whose
+ * turn it is, so only screen readers are told in words.
+ */
 function TurnBar({ children }: { children: ReactNode }) {
   return (
     <div className="action-bar action-turn">
-      <span className="turn-pill">Your turn</span>
+      <span className="visually-hidden">Your turn.</span>
       {children}
     </div>
   );
@@ -118,14 +119,30 @@ function BidControls({
   );
 }
 
+/**
+ * A quiet "?" in the corner of the action bar: hovering or focusing it (a tap, on a touch
+ * screen) shows the rules behind the decision, which the bar itself leaves out.
+ */
+function RulesTip({ label, children }: { label: string; children: ReactNode }) {
+  const id = useId();
+  return (
+    <span className="rules-tip">
+      <button type="button" className="rules-tip-btn" aria-label={label} aria-describedby={id}>
+        ?
+      </button>
+      <span id={id} role="tooltip" className="rules-tip-text">
+        {children}
+      </span>
+    </span>
+  );
+}
+
 function DiscardControls({
   legal,
-  view,
   selected,
   onDone,
 }: {
   legal: Extract<LegalMoves, { kind: 'discard' }>;
-  view: TableView;
   selected: ReadonlySet<CardId>;
   onDone: () => void;
 }) {
@@ -140,16 +157,15 @@ function DiscardControls({
   useGameKeys(ok ? { Enter: discard } : {});
   return (
     <TurnBar>
-      <span>
-        {view.widow ? 'The widow cards are marked new. ' : ''}Discard three cards
-        {legal.requiredNumberCards > 0
-          ? `, at least ${legal.requiredNumberCards} of them number cards`
-          : ''}
-        . <strong>{chosen.length}/3</strong> chosen.
-      </span>
+      <strong>Discard 3</strong>
       <button type="button" className="primary" disabled={!ok} onClick={discard}>
         Discard
       </button>
+      <RulesTip label="Discard rules">
+        The three widow cards are now in your hand, marked new. Choose three to put out of play for
+        this hand. Number cards must go before Money; the Tiger, Bull and Bear can never be
+        discarded.
+      </RulesTip>
     </TurnBar>
   );
 }

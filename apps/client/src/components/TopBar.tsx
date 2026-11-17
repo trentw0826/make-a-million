@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { sound } from '../sound/player';
 import { useGame } from '../store';
+import { Icon } from './Icon';
 import { Modal } from './Modal';
 import { Wordmark } from './Wordmark';
 
@@ -54,27 +55,37 @@ export function SoundToggle() {
   return (
     <button
       type="button"
-      className="ghost small sound-toggle"
+      className="ghost small icon-btn"
       aria-pressed={muted}
       aria-label="Mute sounds"
       title={muted ? 'Sounds are off' : 'Sounds are on'}
       onClick={toggle}
     >
-      <span aria-hidden="true">{muted ? '🔇' : '🔊'}</span>
+      <Icon name={muted ? 'muted' : 'sound'} />
     </button>
   );
 }
 
-/** Opens How to play (also the `?` key). */
-export function HelpButton() {
+/** Opens How to play (also the `?` key): a labelled button, or at the table a "?" icon. */
+export function HelpButton({ icon = false }: { icon?: boolean }) {
   const { dispatch } = useGame();
+  const open = () => dispatch({ kind: 'help', open: true });
+  if (icon) {
+    return (
+      <button
+        type="button"
+        className="ghost small icon-btn"
+        aria-label="How to play"
+        title="How to play (?)"
+        aria-keyshortcuts="?"
+        onClick={open}
+      >
+        <Icon name="help" />
+      </button>
+    );
+  }
   return (
-    <button
-      type="button"
-      className="ghost small"
-      aria-keyshortcuts="?"
-      onClick={() => dispatch({ kind: 'help', open: true })}
-    >
+    <button type="button" className="ghost small" aria-keyshortcuts="?" onClick={open}>
       How to play
     </button>
   );

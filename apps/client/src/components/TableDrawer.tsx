@@ -3,6 +3,7 @@ import type { RoomView } from '@mam/protocol';
 import { useEffect, useId, useRef, useState } from 'react';
 import type { LogEntry } from '../state';
 import { EventLog } from './EventLog';
+import { Icon } from './Icon';
 import { isModalOpen } from './Modal';
 import { ScoreSheet } from './ScoreSheet';
 
@@ -13,8 +14,8 @@ interface Props {
 }
 
 /**
- * The score sheet and the table log, kept off the table until asked for: a button in the
- * corner of the felt slides them in over its edge. It doesn't block the table, so play goes
+ * The score sheet and the table log, kept off the table until asked for: a sheet icon in the
+ * corner by your seat slides them in over the felt's right edge. It doesn't block the table, so play goes
  * on while it is open; the button, its close button or Esc put it away.
  */
 export function TableDrawer({ view, room, log }: Props) {
@@ -39,12 +40,14 @@ export function TableDrawer({ view, room, log }: Props) {
       <button
         ref={toggle}
         type="button"
-        className="drawer-toggle"
+        className="ghost small icon-btn drawer-toggle"
+        aria-label="Score sheet & log"
+        title="Score sheet & log"
         aria-expanded={open}
         aria-controls={id}
         onClick={() => setOpen((o) => !o)}
       >
-        Score sheet &amp; log
+        <Icon name="sheet" />
       </button>
       {open && (
         <aside id={id} className="drawer" aria-label="Score sheet and table log">
