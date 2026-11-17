@@ -395,6 +395,18 @@ describe('table status', () => {
     expect(document.querySelector('.me-line .you-tag')).toHaveTextContent('You');
   });
 
+  it('points the turn marker at the seat the table waits on', () => {
+    renderWith([
+      welcome,
+      { type: 'room', room: room('playing') },
+      { type: 'view', view: { ...dealt, turn: 2, legal: { kind: 'none' } } },
+    ]);
+    const marker = document.querySelector('.turn-marker') as HTMLElement;
+    // Bot 3 sits across the table: the marker is at the top of the felt, pointing up.
+    expect(marker.style.top).toBe('3%');
+    expect(marker.style.transform).toMatch(/rotate\(-?180deg\)/);
+  });
+
   it('leaves the felt, the bar and the seats unlabelled in play', () => {
     renderWith([
       welcome,

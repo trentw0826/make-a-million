@@ -725,6 +725,10 @@ button.icon-btn {
   border-radius: var(--radius-l);
   border: 2px solid transparent;
   text-align: center;
+  /* The ring round the acting seat fades in and out as the turn passes. */
+  transition:
+    border-color var(--dur-slow) var(--ease-out),
+    background-color var(--dur-slow) var(--ease-out);
 }
 /* Each seat with its trick pile on the player's own left as they face the middle: your
    partner's to their right on screen, the left player's above them, the right player's
@@ -968,10 +972,33 @@ button.icon-btn {
   padding: 8px;
   border-radius: 12px;
   border: 2px solid transparent;
+  transition:
+    border-color var(--dur-slow) var(--ease-out),
+    background-color var(--dur-slow) var(--ease-out);
 }
 .me-turn {
   border-color: var(--accent);
   background: rgba(0, 0, 0, 0.1);
+}
+/* Each screen fades in as it takes over the window. */
+.screen {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  animation: fade-in var(--dur-slow) var(--ease-out);
+}
+/* The marker on the felt's rim pointing at whoever the table waits on. */
+.turn-marker {
+  position: absolute;
+  z-index: 1;
+  translate: -50% -50%;
+  color: var(--accent-light);
+  filter: drop-shadow(0 0 6px rgba(233, 196, 106, 0.6));
+  pointer-events: none;
+}
+.turn-marker svg {
+  display: block;
 }
 .me-line {
   display: flex;
@@ -2033,8 +2060,19 @@ button.modal-close {
     box-shadow: 0 0 0 7px rgba(184, 134, 11, 0);
   }
 }
-.seat-acting {
+.seat-acting,
+.me-turn {
   animation: pulse-ring 1.8s ease-in-out infinite;
+}
+/* A decision's controls ease in as the bar changes to them. */
+@keyframes bar-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+.action-turn {
+  animation: bar-in var(--dur-base) var(--ease-out);
 }
 
 @keyframes fade-in {
@@ -2118,6 +2156,11 @@ button.modal-close {
 
 @media (prefers-reduced-motion: reduce) {
   .seat-acting,
+  .me-turn,
+  .action-turn,
+  .screen,
+  .trump-mark,
+  .trump-word,
   .modal-backdrop,
   .modal,
   .toast,
