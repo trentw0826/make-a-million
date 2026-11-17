@@ -489,19 +489,20 @@ input {
   grid-area: top;
   justify-self: center;
 }
-/* The player on your left, with the opponents' tricks to their left (above them where the
-   column is too narrow for both side by side). */
+/* The player on your left, with the opponents' tricks on their left: seen from their seat,
+   facing the middle of the table, that is above them on screen. */
 .left-side {
   grid-area: left;
   display: flex;
-  align-items: center;
-  gap: 10px;
+  flex-direction: column;
+  justify-content: center;
+  align-items: stretch;
+  gap: 8px;
   min-height: 0;
   min-width: 0;
 }
-.left-side > .seat-panel {
-  flex: 1;
-  min-width: 0;
+.pile-them {
+  align-self: center;
 }
 .seat-right {
   grid-area: right;
@@ -542,11 +543,6 @@ input {
   color: inherit;
   font-weight: normal;
 }
-.chip-ready {
-  background: var(--good-chip);
-  color: var(--good-ink);
-  font-weight: normal;
-}
 .contract-bar {
   grid-area: bar;
   display: flex;
@@ -569,10 +565,10 @@ input {
   background: var(--paper);
 }
 
+/* Sized to its fan (inline), so it centres under the seat's name. */
 .card-backs {
   position: relative;
   height: 44px;
-  width: 140px;
   margin: 0 auto;
 }
 .card-back {
@@ -589,12 +585,6 @@ input {
   display: block;
   width: 100%;
   height: 100%;
-}
-.card-back-count {
-  position: absolute;
-  left: calc(100% + 6px);
-  top: 12px;
-  font-size: 0.8em;
 }
 
 .trick-area {
@@ -688,6 +678,7 @@ input {
   flex-wrap: wrap;
   gap: 10px;
   align-items: center;
+  justify-content: center;
   background: rgba(0, 0, 0, 0.2);
   padding: 10px 14px;
   border-radius: var(--radius-l);
@@ -753,6 +744,19 @@ input {
   position: absolute;
   inset: 100% 0 auto;
   height: var(--lift);
+}
+
+/* Sound and How to play, in the corner by your seat. */
+.table-corner {
+  grid-area: me;
+  justify-self: end;
+  align-self: end;
+  display: flex;
+  gap: 6px;
+}
+.table-corner .ghost {
+  color: var(--paper);
+  border-color: rgba(255, 255, 255, 0.25);
 }
 
 /* Taken tricks: a loose, face-down pile beside each partnership. */
@@ -1254,19 +1258,6 @@ button.modal-close {
   }
 }
 
-@media (max-width: 1000px) {
-  .left-side {
-    flex-direction: column;
-    justify-content: center;
-    align-items: stretch;
-    gap: 8px;
-  }
-  .pile-them {
-    align-self: flex-start;
-    margin-left: 12%;
-  }
-}
-
 /* A short window: everything around the trick tightens up so the trick keeps its room. */
 @media (max-height: 760px) {
   .felt {
@@ -1319,6 +1310,9 @@ button.modal-close {
   }
   .me {
     width: 100%;
+  }
+  .table-corner {
+    grid-area: score;
   }
   .pile-us {
     grid-area: tools;

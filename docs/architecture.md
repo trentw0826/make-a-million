@@ -30,7 +30,7 @@ tableView(observation)            →  TableView  (what a human is shown)
 ```
 
 - **All randomness is seeded.** The deal uses a PRNG stored in the state. The same ruleset, seed and action sequence always produce the same game.
-- **Phases.** `misdeal-window → bidding → discarding → naming-trump → playing → hand-complete`, then either the next hand or `game-over`.
+- **Phases.** `bidding → discarding → naming-trump → playing → hand-complete`, then either the next hand or `game-over`.
 - **Legal moves are described, not listed.** Bids have no upper bound, so `legalMoves` returns a structured description (minimum bid, step, whether passing is allowed; which cards may be played; how many number cards a discard must include). `validate(state, seat, action)` is the single authority on legality and is used for humans and bots alike.
 - **Ruleset.** House‑rule parameters (bid increment, minimum opening bid, misdeal threshold, target score, tie‑break) live in a `Ruleset` object passed to the engine. The deployed application uses one global default; tests and simulations may pass others.
 - **Events.** Every transition emits `GameEvent`s (card played, trick won, hand scored, …). They drive the UI, the history inside observations, and logs.

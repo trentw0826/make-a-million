@@ -12,7 +12,7 @@ describe('game phase', () => {
       expect(observe(state, 0).phase).toBe(state.hand?.phase);
       seen.add(state.phase);
     }
-    for (const p of ['misdeal-window', 'bidding', 'discarding', 'naming-trump', 'playing']) {
+    for (const p of ['bidding', 'discarding', 'naming-trump', 'playing']) {
       expect(seen.has(p)).toBe(true);
     }
   });

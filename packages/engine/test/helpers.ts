@@ -94,7 +94,7 @@ export function playingState(hand: HandOverrides, game: GameOverrides = {}): Gam
     hands: hand.hands.map(sortHand) as unknown as HandState['hands'],
     widow: hand.widow ?? [],
     discards: hand.discards ?? [],
-    misdeal: { pending: [], eligible: [] },
+    misdeal: { eligible: [] },
     auction: {
       entries: contract ? [{ seat: contract.bidder, kind: 'bid', amount: contract.amount }] : [],
       passed: [],
@@ -151,17 +151,6 @@ export function play(state: GameState, seat: Seat, spec: string): GameState {
   return act(state, seat, { type: 'playCard', cardId: c(spec) });
 }
 
-/** Every seat confirms it is ready to bid. */
-export function readyAll(state: GameState): GameState {
-  let s = state;
-  while (s.hand && s.hand.phase === 'misdeal-window') {
-    const seat = s.hand.misdeal.pending[0];
-    if (seat === undefined) break;
-    s = act(s, seat, { type: 'declineMisdeal' });
-  }
-  return s;
-}
-
 /** Seats that have something to do right now. */
 export function actingSeats(state: GameState): Seat[] {
   return SEATS.filter((seat) => legalMoves(state, seat).kind !== 'none');
@@ -172,11 +161,8 @@ export function randomAction(legal: LegalMoves, hand: readonly CardId[], rng: Rn
   switch (legal.kind) {
     case 'none':
       return null;
-    case 'misdeal':
-      return legal.canCall && rng.next() < 0.5
-        ? { type: 'callMisdeal' }
-        : { type: 'declineMisdeal' };
     case 'bid': {
+      if (legal.canCallMisdeal && rng.next() < 0.5) return { type: 'callMisdeal' };
       if (!legal.canPass) return { type: 'bid', amount: legal.minBid };
       if (legal.minBid <= 260_000 && rng.next() < 0.45) {
         return { type: 'bid', amount: legal.minBid + legal.step * rng.int(3) };

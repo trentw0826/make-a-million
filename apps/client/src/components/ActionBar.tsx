@@ -8,8 +8,8 @@ import {
 } from '@mam/engine';
 import type { RoomView } from '@mam/protocol';
 import { type ReactNode, useEffect, useState } from 'react';
-import { nameOf, SUIT_NAMES, shortMoney } from '../format';
-import { highBid, playHint, relation, waitingText } from '../hints';
+import { SUIT_NAMES, shortMoney } from '../format';
+import { playHint, waitingText } from '../hints';
 import { useGame } from '../store';
 import { useGameKeys } from '../useHotkeys';
 
@@ -26,10 +26,8 @@ export function ActionBar({ view, room, selected, onClearSelection }: Props) {
   switch (legal.kind) {
     case 'none':
       return <output className="action-bar muted">{waitingText(view, room)}</output>;
-    case 'misdeal':
-      return <MisdealControls canCall={legal.canCall} threshold={view.ruleset.misdeal.threshold} />;
     case 'bid':
-      return <BidControls legal={legal} view={view} room={room} />;
+      return <BidControls legal={legal} view={view} />;
     case 'discard':
       return (
         <DiscardControls legal={legal} view={view} selected={selected} onDone={onClearSelection} />
@@ -57,33 +55,16 @@ function TurnBar({ children }: { children: ReactNode }) {
   );
 }
 
-function MisdealControls({ canCall, threshold }: { canCall: boolean; threshold: number }) {
-  const { act } = useGame();
-  const ready = () => act({ type: 'declineMisdeal' });
-  useGameKeys({ Enter: ready });
-  return (
-    <TurnBar>
-      <span>Look at your hand.</span>
-      {canCall && (
-        <button type="button" className="warn-btn" onClick={() => act({ type: 'callMisdeal' })}>
-          Call misdeal ({shortMoney(threshold)} or less)
-        </button>
-      )}
-      <button type="button" className="primary" onClick={ready}>
-        Ready to bid
-      </button>
-    </TurnBar>
-  );
-}
-
+/**
+ * Bid or pass; on a first turn with a weak enough hand, call a misdeal instead. The high bid
+ * is on the contract bar, so it isn't repeated here.
+ */
 function BidControls({
   legal,
   view,
-  room,
 }: {
   legal: Extract<LegalMoves, { kind: 'bid' }>;
   view: TableView;
-  room: RoomView;
 }) {
   const { act } = useGame();
   const [amount, setAmount] = useState(legal.minBid);
@@ -99,21 +80,10 @@ function BidControls({
     ArrowUp: raise,
     Enter: bid,
   });
-  const high = highBid(view.auction);
+  const threshold = view.ruleset.misdeal.threshold;
   return (
     <TurnBar>
-      <span>
-        {high ? (
-          <>
-            High bid <strong>{shortMoney(high.amount)}</strong>: {nameOf(room, high.seat)} (
-            {relation(view.seat, high.seat)})
-          </>
-        ) : legal.canPass ? (
-          'No bids yet.'
-        ) : (
-          'You open the bidding.'
-        )}
-      </span>
+      {!legal.canPass && <span>You open the bidding.</span>}
       <div className="bid-stepper">
         <button
           type="button"
@@ -134,6 +104,16 @@ function BidControls({
       <button type="button" disabled={!legal.canPass} onClick={() => act({ type: 'pass' })}>
         Pass
       </button>
+      {legal.canCallMisdeal && (
+        <button
+          type="button"
+          className="warn-btn"
+          title={`Your Money totals ${shortMoney(threshold)} or less: you may have the hand re-dealt instead of bidding.`}
+          onClick={() => act({ type: 'callMisdeal' })}
+        >
+          Call misdeal
+        </button>
+      )}
     </TurnBar>
   );
 }

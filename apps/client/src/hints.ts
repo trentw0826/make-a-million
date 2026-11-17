@@ -39,10 +39,6 @@ export function waitingText(view: TableView, room: RoomView): string {
   const who = (seat: Seat) => nameOf(room, seat);
   const bidder = view.contract ? who(view.contract.bidder) : 'The bidder';
   switch (view.phase) {
-    case 'misdeal-window': {
-      const others = view.misdeal.pending.filter((s) => s !== view.seat).map(who);
-      return others.length > 0 ? `Waiting for ${listNames(others)} to look at their hands…` : '';
-    }
     case 'bidding':
       return view.turn === null ? '' : `Waiting for ${who(view.turn)} to bid…`;
     case 'discarding':
@@ -100,7 +96,7 @@ export function highBid(auction: readonly AuctionEntry[]): Bid | null {
   return null;
 }
 
-export type ChipKind = 'ready' | 'bid' | 'high' | 'pass';
+export type ChipKind = 'bid' | 'high' | 'pass';
 
 export interface SeatChip {
   readonly text: string;
@@ -108,13 +104,10 @@ export interface SeatChip {
 }
 
 /**
- * What a seat has said, shown beside it: "Ready" once it has looked at its hand, then its
- * latest call in the auction. All of it is spoken aloud at a real table.
+ * What a seat has said, shown beside it: its latest call in the auction, as spoken aloud at
+ * a real table.
  */
 export function seatChip(view: TableView, seat: Seat): SeatChip | null {
-  if (view.phase === 'misdeal-window') {
-    return view.misdeal.pending.includes(seat) ? null : { text: 'Ready', kind: 'ready' };
-  }
   if (view.phase !== 'bidding') return null;
   const last = view.auction.findLast((e) => e.seat === seat);
   if (!last) return null;

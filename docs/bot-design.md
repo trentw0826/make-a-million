@@ -41,7 +41,7 @@ Card play maximises money won from here on minus the opponents' (`playUtility: '
   - Deals are weighted by how well they explain the bids and passes so far (`auctionLikelihood`, scale `auctionSigma`).
   - The bot **never raises over its partner's standing bid** (`raisePartner: false`).
 - **Calibration** (`calibA` 130, `calibB` 0.5, `calibSd` 58, all in $1000s). The greedy playout badly understates weak hands, so the declaring team's capture is taken as Normal(130k + 0.5 × estimate, 58k²) and the utility is averaged over twelve equally likely points (`calibrated`). The parameters come from regressing the actual capture on the estimate over 571 played contracts (`packages/sim/scripts/calibrate.ts`). This was the largest single gain (`bot-ladder.md`, note 8). A refit after the first‑lead rule change (942 contracts) gave 116.5k + 0.56 × estimate, SD 56k: the same fit as before the change on the same bot, and within $5k of the defaults for most hands, so the defaults were kept (`bot-ladder.md`, Calibration).
-- **Misdeal.** Call a misdeal when this hand's expected equity, averaged over sampled deals and the predicted auction, is below the equity of a fresh deal.
+- **Misdeal.** On its first turn to bid, when its hand qualifies: call a misdeal when the better of bidding the minimum and passing (valued as for a bid, from the auction as it stands) is worth less in equity than a fresh deal. This check gets half the decision's time; the bid gets the rest.
 - **Discard and trump** (`bestCandidate`):
   1. List the legal discards for each trump suit (`discardCandidates`).
   2. **Screen** them by greedy playouts over `screenWorlds` (40) shared deals.

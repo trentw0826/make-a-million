@@ -179,7 +179,6 @@ function onEvent(state: ClientState, event: GameEvent): ClientState {
       };
     case 'misdealCalled':
       return push(`${name(event.seat)} calls a misdeal.`);
-    case 'readyToBid':
     case 'readyForNextHand':
     case 'biddingStarted':
     case 'discarded':

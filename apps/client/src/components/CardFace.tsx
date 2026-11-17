@@ -104,15 +104,17 @@ export function CardFace({
 }
 
 export function CardBack({ count }: { count: number }) {
-  const offsets = Array.from({ length: Math.min(count, 13) }, (_, i) => i * 9);
+  const shown = Math.min(count, 13);
+  const offsets = Array.from({ length: shown }, (_, i) => i * 9);
+  // As wide as the fan itself, so it centres under the name however many cards are left.
+  const width = `calc(${Math.max(shown - 1, 0) * 9}px + var(--back-w))`;
   return (
-    <div className="card-backs" role="img" aria-label={`${count} cards`}>
+    <div className="card-backs" role="img" aria-label={`${count} cards`} style={{ width }}>
       {offsets.map((left) => (
         <span className="card-back" key={left} style={{ left: `${left}px` }}>
           <CardBackArt />
         </span>
       ))}
-      <span className="card-back-count">{count}</span>
     </div>
   );
 }

@@ -37,7 +37,7 @@ function position(): GameState {
       hands: [cards('Y40k', 'R1'), cards('G30k', 'G1'), cards('Y1', 'R2'), cards('Y2', 'R3')],
       widow: cards('B1', 'B2', 'B3'),
       discards: cards('B1', 'B2', 'B3'),
-      misdeal: { pending: [], eligible: [] },
+      misdeal: { eligible: [] },
       auction: {
         entries: [{ seat: 0, kind: 'bid', amount: 175_000 }],
         passed: [1, 2, 3],

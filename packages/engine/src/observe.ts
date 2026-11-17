@@ -22,12 +22,6 @@ export interface Observation {
   /** Own cards. */
   readonly hand: readonly CardId[];
   readonly handSizes: readonly [number, number, number, number];
-  readonly misdeal: {
-    /** Seats that have not confirmed they are ready to bid. Public. */
-    readonly pending: readonly Seat[];
-    /** Whether this seat may call a misdeal. Private to this seat. */
-    readonly canCall: boolean;
-  };
   readonly auction: readonly AuctionEntry[];
   readonly contract: Contract | null;
   readonly trump: Suit | null;
@@ -66,8 +60,6 @@ export function observe(state: GameState, seat: Seat): Observation {
     seat,
     team: teamOf(seat),
     ruleset: state.ruleset,
-    // GameState.phase stays 'misdeal-window' for the whole of a hand; the hand tracks its
-    // own progress.
     phase: state.phase === 'game-over' ? 'game-over' : (hand?.phase ?? state.phase),
     handNumber: hand?.handNumber ?? 0,
     dealer: state.dealer,
@@ -78,10 +70,6 @@ export function observe(state: GameState, seat: Seat): Observation {
     handSizes: hand
       ? [hand.hands[0].length, hand.hands[1].length, hand.hands[2].length, hand.hands[3].length]
       : [0, 0, 0, 0],
-    misdeal: {
-      pending: hand?.misdeal.pending ?? [],
-      canCall: hand?.misdeal.eligible.includes(seat) ?? false,
-    },
     auction: hand?.auction.entries ?? [],
     contract: hand?.contract ?? null,
     trump: hand?.trump ?? null,

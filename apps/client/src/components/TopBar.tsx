@@ -65,10 +65,30 @@ export function SoundToggle() {
   );
 }
 
-/** Shown on every screen: the room, an invite link, sound, How to play, and Leave. */
+/** Opens How to play (also the `?` key). */
+export function HelpButton() {
+  const { dispatch } = useGame();
+  return (
+    <button
+      type="button"
+      className="ghost small"
+      aria-keyshortcuts="?"
+      onClick={() => dispatch({ kind: 'help', open: true })}
+    >
+      How to play
+    </button>
+  );
+}
+
+/**
+ * Shown on every screen: the room, an invite link, sound, How to play, and Leave. At the
+ * table, sound and How to play sit in the felt's corner instead, by the player's seat.
+ */
 export function TopBar() {
-  const { state, send, dispatch } = useGame();
-  const { room } = state;
+  const { state, send } = useGame();
+  const { room, view } = state;
+  const atTable =
+    room !== null && room.phase !== 'lobby' && view !== null && room.yourSeat !== null;
   const [confirming, setConfirming] = useState(false);
   // Leaving mid-game hands the seat to a bot at once (see Room.leave), so ask first.
   const midGame = room?.phase === 'playing' && room.yourSeat !== null;
@@ -94,15 +114,12 @@ export function TopBar() {
         </div>
       )}
       <nav className="topbar-actions" aria-label="Game">
-        <SoundToggle />
-        <button
-          type="button"
-          className="ghost small"
-          aria-keyshortcuts="?"
-          onClick={() => dispatch({ kind: 'help', open: true })}
-        >
-          How to play
-        </button>
+        {!atTable && (
+          <>
+            <SoundToggle />
+            <HelpButton />
+          </>
+        )}
         {room && (
           <button
             type="button"

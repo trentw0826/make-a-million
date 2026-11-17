@@ -2,10 +2,10 @@ import { describe, expect, it } from 'vitest';
 import { legalMoves } from '../src/legal';
 import { applyAction, createGame } from '../src/reducer';
 import { makeRuleset } from '../src/ruleset';
-import { act, readyAll } from './helpers';
+import { act } from './helpers';
 
 function openAuction(seed = 'auction', dealer: 0 | 1 | 2 | 3 = 0) {
-  return readyAll(createGame({ seed, dealer }));
+  return createGame({ seed, dealer });
 }
 
 describe('bidding', () => {
@@ -18,7 +18,7 @@ describe('bidding', () => {
 
   it('requires the opener to bid rather than pass', () => {
     const state = openAuction();
-    expect(legalMoves(state, 1)).toEqual({
+    expect(legalMoves(state, 1)).toMatchObject({
       kind: 'bid',
       minBid: 175_000,
       step: 5_000,
@@ -50,7 +50,7 @@ describe('bidding', () => {
 
   it('requires each raise to exceed the previous bid by at least $10,000', () => {
     const state = act(openAuction(), 1, { type: 'bid', amount: 175_000 });
-    expect(legalMoves(state, 2)).toEqual({
+    expect(legalMoves(state, 2)).toMatchObject({
       kind: 'bid',
       minBid: 185_000,
       step: 5_000,
@@ -65,7 +65,7 @@ describe('bidding', () => {
 
   it('supports the $5,000 raise house rule', () => {
     const ruleset = makeRuleset({ bidding: { raiseIncrement: 5_000 } });
-    let state = readyAll(createGame({ seed: 'house', ruleset }));
+    let state = createGame({ seed: 'house', ruleset });
     state = act(state, 1, { type: 'bid', amount: 175_000 });
     expect(legalMoves(state, 2)).toMatchObject({ minBid: 180_000 });
   });
@@ -125,11 +125,11 @@ describe('bidding', () => {
 
   it('with the opener allowed to pass, a hand everyone passes is thrown in and redealt by the next dealer', () => {
     const ruleset = makeRuleset({ bidding: { openerMustBid: false } });
-    let state = readyAll(createGame({ seed: 'pass-out', ruleset, dealer: 0 }));
+    let state = createGame({ seed: 'pass-out', ruleset, dealer: 0 });
     expect(legalMoves(state, 1)).toMatchObject({ canPass: true });
     for (const seat of [1, 2, 3, 0] as const) state = act(state, seat, { type: 'pass' });
     expect(state.hand?.dealer).toBe(1);
     expect(state.hand?.handNumber).toBe(1);
-    expect(state.hand?.phase).toBe('misdeal-window');
+    expect(state.hand?.phase).toBe('bidding');
   });
 });

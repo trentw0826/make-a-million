@@ -152,11 +152,6 @@ async function act(page: Page, shoot: Shoot): Promise<boolean> {
   const quick = { timeout: 2_000 };
   try {
     if (!(await page.locator('.action-turn').isVisible())) return false;
-    const ready = page.getByRole('button', { name: 'Ready to bid' });
-    if (await ready.isVisible()) {
-      await ready.click(quick);
-      return true;
-    }
     const pass = page.getByRole('button', { name: 'Pass', exact: true });
     if (await pass.isVisible()) {
       await shoot('3-bidding');
@@ -258,7 +253,26 @@ async function fullHand(browser: Browser, base: string): Promise<void> {
 
   await openTable(page, base);
   await shoot('2-dealt');
-  check(await page.locator('.me.me-turn').isVisible(), 'the table marks your turn after the deal');
+  check(
+    /Bidding opens|High bid/.test((await page.locator('.contract-bar').textContent()) ?? ''),
+    'bidding begins as soon as the cards are dealt',
+  );
+  await until(() => page.locator('.me.me-turn').isVisible(), 'your turn to bid');
+  check(
+    await page.getByRole('button', { name: /^Bid \$/ }).isVisible(),
+    'the table marks your turn to bid',
+  );
+  const seatText = (await page.locator('.seat-panel, .me-line').allTextContents()).join(' ');
+  check(
+    !/\b(dealer|Partner|Opponent|You)\b/.test(seatText.replace(/your partner|opponent/g, '')),
+    'seats carry no dealer, partner, opponent or You tags',
+  );
+  check(
+    (await page.locator('.table-corner').getByRole('button', { name: 'How to play' }).count()) ===
+      1 &&
+      (await page.locator('.topbar').getByRole('button', { name: 'How to play' }).count()) === 0,
+    'How to play and sound sit in the corner by your seat at the table',
+  );
 
   // Leaving mid-game asks first.
   await page.getByRole('button', { name: 'Leave', exact: true }).click();

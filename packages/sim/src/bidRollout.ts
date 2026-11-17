@@ -110,11 +110,7 @@ export async function bidRolloutTask(input: PlayInput): Promise<BidRolloutLine |
   });
   const first = state.hand?.hands[0].join();
   const pick = Rng.fromSeed(`${input.seed}:branch`);
-  for (
-    let step = 0;
-    state.hand && ['misdeal-window', 'bidding'].includes(state.hand.phase);
-    step++
-  ) {
+  for (let step = 0; state.hand?.phase === 'bidding'; step++) {
     if (state.hand.hands[0].join() !== first) return null; // redealt
     const seat = actor(state);
     if (seat === undefined) return null;

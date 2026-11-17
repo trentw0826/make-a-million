@@ -44,7 +44,6 @@ function obsFor(partial: Partial<Observation> & { hand: CardId[] }): Observation
     scores: [0, 0],
     handHistory: [],
     handSizes: [partial.hand.length, 13, 13, 13],
-    misdeal: { pending: [], canCall: false },
     auction: [],
     contract: { bidder: 0, amount: 175_000 },
     trump: 'red',

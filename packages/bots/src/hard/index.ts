@@ -94,6 +94,13 @@ export const EXPERT_DEFAULTS: HardOptions = {
  * The "hard" bot: card play by PIMC search over sampled deals (pimc.ts); contract decisions
  * by simulation over sampled deals (contract/). Every input is the Observation.
  */
+/** The moment halfway from now to `deadline` (no deadline stays none). */
+function halfway(deadline: number): number {
+  if (!Number.isFinite(deadline)) return deadline;
+  const now = Date.now();
+  return now + Math.max(0, deadline - now) / 2;
+}
+
 export class HardBot implements BotStrategy {
   readonly id: string = 'hard';
   private readonly heuristic = new HeuristicBot();
@@ -108,12 +115,16 @@ export class HardBot implements BotStrategy {
     const legal = obs.legal;
     const deadline = ctx.deadline ?? Number.POSITIVE_INFINITY;
     switch (legal.kind) {
-      case 'misdeal':
-        return o.searchMisdeal
-          ? decideMisdeal(obs, rng, o, deadline)
-          : this.heuristic.decide(obs, rng);
-      case 'bid':
+      case 'bid': {
+        // A first turn may call a misdeal instead; that check gets half the time.
+        if (legal.canCallMisdeal) {
+          const call = o.searchMisdeal
+            ? decideMisdeal(obs, rng, o, halfway(deadline))
+            : ({ type: 'callMisdeal' } as const);
+          if (call) return call;
+        }
         return o.searchBid ? decideBid(obs, rng, o, deadline) : this.heuristic.decide(obs, rng);
+      }
       case 'discard':
         return o.searchDiscard
           ? decideDiscard(obs, rng, o, deadline)

@@ -50,8 +50,8 @@ function room(phase: RoomView['phase']): RoomView {
 }
 
 const welcome: ServerMessage = { type: 'welcome', playerId: 'p1', token: 't', name: 'Ann' };
-/** A fresh deal: every seat must confirm it is ready to bid. */
-const dealt = tableView(observe(createGame({ seed: 'ui' }), 0));
+/** A fresh deal by seat 3, so Ann (seat 0) opens the bidding. */
+const dealt = tableView(observe(createGame({ seed: 'ui', dealer: 3 }), 0));
 const atTable: readonly ServerMessage[] = [
   welcome,
   { type: 'room', room: room('playing') },
@@ -132,9 +132,9 @@ describe('top bar', () => {
 });
 
 describe('keyboard', () => {
-  it('Enter confirms Ready to bid', () => {
+  it('Enter places the bid shown', () => {
     renderWith(atTable);
-    expect(screen.getByRole('button', { name: 'Ready to bid' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^Bid \$/ })).toBeInTheDocument();
     fireEvent.keyDown(document.body, { key: 'Enter' });
     expect(screen.getByText(NOT_CONNECTED)).toBeInTheDocument();
   });

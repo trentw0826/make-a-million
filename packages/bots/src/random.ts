@@ -21,9 +21,8 @@ export class RandomBot implements BotStrategy {
     switch (legal.kind) {
       case 'none':
         throw new Error('RandomBot asked to act with no legal moves');
-      case 'misdeal':
-        return legal.canCall ? { type: 'callMisdeal' } : { type: 'declineMisdeal' };
       case 'bid':
+        if (legal.canCallMisdeal) return { type: 'callMisdeal' };
         return legal.canPass && obs.auction.some((e) => e.kind === 'bid')
           ? { type: 'pass' }
           : { type: 'bid', amount: legal.minBid };

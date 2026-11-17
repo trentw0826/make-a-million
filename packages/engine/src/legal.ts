@@ -19,12 +19,13 @@ import type { GameState, Trick } from './state';
  */
 export type LegalMoves =
   | { readonly kind: 'none' }
-  | { readonly kind: 'misdeal'; readonly canCall: boolean }
   | {
       readonly kind: 'bid';
       readonly minBid: number;
       readonly step: number;
       readonly canPass: boolean;
+      /** A first turn in the auction with a hand at or under the misdeal threshold. */
+      readonly canCallMisdeal: boolean;
     }
   | {
       readonly kind: 'discard';
@@ -68,17 +69,19 @@ export function legalMoves(state: GameState, seat: Seat): LegalMoves {
   if (state.phase === 'game-over' || !hand) return NONE;
 
   switch (hand.phase) {
-    case 'misdeal-window':
-      if (!hand.misdeal.pending.includes(seat)) return NONE;
-      return { kind: 'misdeal', canCall: hand.misdeal.eligible.includes(seat) };
-
     case 'bidding': {
       if (hand.auction.turn !== seat) return NONE;
       const { bidding } = state.ruleset;
       const high = hand.auction.highBid;
       const minBid = high ? high.amount + bidding.raiseIncrement : bidding.minOpeningBid;
       const mustOpen = high === null && bidding.openerMustBid;
-      return { kind: 'bid', minBid, step: bidding.bidStep, canPass: !mustOpen };
+      return {
+        kind: 'bid',
+        minBid,
+        step: bidding.bidStep,
+        canPass: !mustOpen,
+        canCallMisdeal: hand.misdeal.eligible.includes(seat),
+      };
     }
 
     case 'discarding': {
@@ -113,11 +116,13 @@ export function validate(state: GameState, seat: Seat, action: Action): RuleErro
   const moves = legalMoves(state, seat);
 
   switch (action.type) {
-    case 'callMisdeal':
-    case 'declineMisdeal': {
-      if (moves.kind !== 'misdeal') return wrongTurnOrPhase(state, moves, 'misdeal');
-      if (action.type === 'callMisdeal' && !moves.canCall) {
-        return ruleError('NOT_ELIGIBLE_FOR_MISDEAL', 'your hand is above the misdeal threshold');
+    case 'callMisdeal': {
+      if (moves.kind !== 'bid') return wrongTurnOrPhase(state, moves, 'bidding');
+      if (!moves.canCallMisdeal) {
+        return ruleError(
+          'NOT_ELIGIBLE_FOR_MISDEAL',
+          'a misdeal needs Money at or under the threshold, called on your first turn to bid',
+        );
       }
       return null;
     }
@@ -204,8 +209,6 @@ function wrongTurnOrPhase(state: GameState, moves: LegalMoves, wanted: string): 
 
 function phaseMatches(phase: string, wanted: string): boolean {
   switch (wanted) {
-    case 'misdeal':
-      return phase === 'misdeal-window';
     case 'bidding':
       return phase === 'bidding';
     case 'discarding':

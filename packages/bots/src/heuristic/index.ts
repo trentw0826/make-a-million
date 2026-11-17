@@ -19,9 +19,9 @@ export class HeuristicBot implements BotStrategy {
     switch (legal.kind) {
       case 'none':
         throw new Error('HeuristicBot asked to act with no legal moves');
-      case 'misdeal':
-        return legal.canCall ? { type: 'callMisdeal' } : { type: 'declineMisdeal' };
       case 'bid':
+        // Any hand weak enough for a misdeal is worth re-dealing.
+        if (legal.canCallMisdeal) return { type: 'callMisdeal' };
         return chooseBid(analyze(obs));
       case 'discard': {
         const a = analyze(obs);

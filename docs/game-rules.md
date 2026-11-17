@@ -16,7 +16,7 @@
 
 - **Partnerships:** 4 players form two fixed teams of two (partners sit opposite each other). 
 - **Dealer:** Passes clockwise each hand. The dealer shuffles and deals **all** cards, one by one. After dealing, 3 cards remain – these form the hidden **widow** (also called the nest).  
-- **Misdeal:** Any player dealt money totalling \$15,000 or less is may call for a re-deal (called a "misdeal"). A misdeal must be called out before bidding begins, and the same dealer repeats the deal. The only condition for calling a misdeal is the \$15,000 condition (having special cards or having already called multiple other misdeals does not matter)
+- **Misdeal:** Any player dealt money totalling \$15,000 or less is may call for a re-deal (called a "misdeal"). A misdeal is called on the player's first turn in the auction, in place of a bid or pass; once a player has bid or passed they can no longer call one. Bids already made are void, and the same dealer repeats the deal. The only condition for calling a misdeal is the \$15,000 condition (having special cards or having already called multiple other misdeals does not matter)
 
 ## Bidding (Auction)
 
@@ -70,7 +70,7 @@ There is **no** record of cards played in earlier tricks and **no** running mone
 
 ## Other Notes
 
-- **Misdeal window:** In the application, after each deal **every** player confirms they are ready to bid; a player whose Money totals \$15,000 or less is additionally offered the option to call a misdeal. Bidding begins once all four players have confirmed. Any call re‑deals immediately with the same dealer. (Everyone confirms, not only eligible players, so that waiting on a player does not reveal that their hand is weak.)
+- **Misdeal calls:** In the application, bidding begins as soon as the cards are dealt. A player whose Money totals \$15,000 or less is offered "Call misdeal" alongside bidding and passing on their first turn in the auction, and only then; nobody else sees the offer. A call re‑deals immediately with the same dealer.
 - **Raise Increment ($5k vs $10k):** All official text uses \$10,000 steps. Any \$5k rule is a non‑standard but common variant.
 - **Simultaneous Win:** There are no official rules addressing the rare case in which both sides reach   \$1,000,000  *and* end up with the same score in one hand. In this case, let the bidding team win.
 - **Table talk:** Any verbal or non-verbal communication between partners that conveys information about a player's hand, strategy, or intent during active play is strictly forbidden. 

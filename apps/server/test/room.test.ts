@@ -135,9 +135,11 @@ describe('play', () => {
     expect(Object.keys(view.view)).not.toContain('tricks');
     expect(view.view.trickCounts).toEqual([0, 0]);
 
-    // Misdeal window: the three bots confirm after their fixed delays; Ann has not.
+    // Bidding opens with the deal: the bots call in turn after their fixed delays, and
+    // every seat gets a turn before the auction can end, so it comes round to Ann.
     await vi.advanceTimersByTimeAsync(10);
-    expect(h.room.game?.hand?.misdeal.pending).toEqual([0]);
+    expect(h.room.game?.hand?.phase).toBe('bidding');
+    expect(h.room.game?.hand?.turn).toBe(0);
   });
 
   it('plays a whole game with one human and three bots', async () => {
@@ -295,7 +297,7 @@ describe('hand result', () => {
     expect(h.room.game?.phase).toBe('hand-complete');
     await vi.advanceTimersByTimeAsync(1_100);
     expect(h.room.game?.hand?.handNumber).toBe(2);
-    expect(h.room.game?.hand?.phase).toBe('misdeal-window');
+    expect(h.room.game?.hand?.phase).toBe('bidding');
   });
 
   it('does not let one human close the result for another', async () => {

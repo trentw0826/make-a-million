@@ -154,7 +154,7 @@ describe('hand result', () => {
     expect(next.hand?.continuePending).toEqual([]);
     expect(next.hand?.handNumber).toBe(2);
     expect(next.hand?.dealer).toBe(1);
-    expect(next.hand?.phase).toBe('misdeal-window');
+    expect(next.hand?.phase).toBe('bidding');
     expect(next.scores).toEqual([40_000, 0]);
     expect(next.handHistory).toHaveLength(1);
   });

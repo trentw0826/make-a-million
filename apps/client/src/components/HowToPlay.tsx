@@ -12,7 +12,7 @@ const SHORTCUTS: readonly (readonly [string, string])[] = [
   ['?', 'Open or close How to play'],
   ['Esc', 'Close a dialog'],
   ['← →', 'Lower or raise your bid'],
-  ['Enter', 'Main action: Ready to bid, Bid, Discard, Next hand'],
+  ['Enter', 'Main action: Bid, Discard, Next hand'],
 ];
 
 /** The rules in brief. Every number comes from the ruleset the table is playing. */
@@ -72,10 +72,9 @@ export function HowToPlay({
       <section>
         <h3>Deal{misdeal.enabled ? ' and misdeal' : ''}</h3>
         <p>
-          Every card is dealt; three form the hidden widow. Everyone looks at their hand and
-          confirms they are ready to bid.
+          Every card is dealt; three form the hidden widow, and bidding begins.
           {misdeal.enabled &&
-            ` A player holding ${money(misdeal.threshold)} or less in Money may call a misdeal instead, and the same dealer deals again.`}
+            ` A player holding ${money(misdeal.threshold)} or less in Money may call a misdeal on their first turn to bid, instead of bidding or passing, and the same dealer deals again.`}
         </p>
       </section>
 

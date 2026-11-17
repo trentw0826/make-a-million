@@ -79,25 +79,23 @@ describe('handOutcome', () => {
         const legal = legalMoves(state, seat);
         const hand = state.hand?.hands[seat] ?? [];
         const action =
-          legal.kind === 'misdeal'
-            ? ({ type: 'declineMisdeal' } as const)
-            : legal.kind === 'bid'
-              ? legal.canPass
-                ? ({ type: 'pass' } as const)
-                : ({ type: 'bid', amount: legal.minBid } as const)
-              : legal.kind === 'discard'
-                ? ({
-                    type: 'discard',
-                    cardIds: [
-                      ...hand.filter((id) => isNumberCard(cardById(id))),
-                      ...hand.filter((id) => isMoney(cardById(id))),
-                    ].slice(0, 3),
-                  } as const)
-                : legal.kind === 'trump'
-                  ? ({ type: 'nameTrump', suit: rng.pick(legal.suits) } as const)
-                  : legal.kind === 'play'
-                    ? ({ type: 'playCard', cardId: rng.pick(legal.cardIds) } as const)
-                    : ({ type: 'continue' } as const);
+          legal.kind === 'bid'
+            ? legal.canPass
+              ? ({ type: 'pass' } as const)
+              : ({ type: 'bid', amount: legal.minBid } as const)
+            : legal.kind === 'discard'
+              ? ({
+                  type: 'discard',
+                  cardIds: [
+                    ...hand.filter((id) => isNumberCard(cardById(id))),
+                    ...hand.filter((id) => isMoney(cardById(id))),
+                  ].slice(0, 3),
+                } as const)
+              : legal.kind === 'trump'
+                ? ({ type: 'nameTrump', suit: rng.pick(legal.suits) } as const)
+                : legal.kind === 'play'
+                  ? ({ type: 'playCard', cardId: rng.pick(legal.cardIds) } as const)
+                  : ({ type: 'continue' } as const);
         state = applyActionOrThrow(state, seat, action).state;
         // Each hand once: its result stays up until every seat has confirmed it.
         const r = state.handHistory.at(-1);

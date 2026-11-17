@@ -45,11 +45,6 @@ const trick = (plays: TrickPlay[], suit: Suit | null) => ({
 const contract = { bidder: 1 as const, amount: 185_000 };
 
 describe('waitingText', () => {
-  it('names who is still looking at their hand, leaving out this seat', () => {
-    const v = view({ phase: 'misdeal-window', misdeal: { pending: [0, 1, 3], canCall: false } });
-    expect(waitingText(v, room)).toBe('Waiting for Bot 2 and Bot 4 to look at their hands…');
-  });
-
   it('names the player the table is waiting on', () => {
     expect(waitingText(view({ phase: 'bidding', turn: 2 }), room)).toBe('Waiting for Cid to bid…');
     expect(waitingText(view({ phase: 'discarding', contract }), room)).toBe(
@@ -133,12 +128,6 @@ describe('blockedReason', () => {
 });
 
 describe('seatChip', () => {
-  it('shows who has said they are ready', () => {
-    const v = view({ phase: 'misdeal-window', misdeal: { pending: [2], canCall: false } });
-    expect(seatChip(v, 1)).toEqual({ text: 'Ready', kind: 'ready' });
-    expect(seatChip(v, 2)).toBeNull();
-  });
-
   it("shows each seat's latest call, marking the high bid", () => {
     const v = view({
       phase: 'bidding',

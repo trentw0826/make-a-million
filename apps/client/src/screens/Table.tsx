@@ -19,6 +19,7 @@ import { HandResult } from '../components/HandResult';
 import { Scoreboard } from '../components/Scoreboard';
 import { SeatPanel } from '../components/SeatPanel';
 import { TableDrawer } from '../components/TableDrawer';
+import { HelpButton, SoundToggle } from '../components/TopBar';
 import { TrickArea } from '../components/TrickArea';
 import { TrickPile } from '../components/TrickPile';
 import { blockedReason, isMyTurn, seatChip } from '../hints';
@@ -156,9 +157,6 @@ export function Table({ room, view }: { room: RoomView; view: TableView }) {
               }}
             />
             <div className="me-line side-us">
-              <span className="side-dot" aria-hidden="true" />
-              You
-              {view.dealer === me && <span className="tag">dealer</span>}
               {view.contract?.bidder === me && <span className="tag">bidder</span>}
               {myChip && <span className={`seat-chip chip-${myChip.kind}`}>{myChip.text}</span>}
             </div>
@@ -166,6 +164,10 @@ export function Table({ room, view }: { room: RoomView; view: TableView }) {
           {/* Your side's tricks lie to your left. */}
           <TrickPile side="us" {...pile(view.team)} />
         </LayoutGroup>
+        <div className="table-corner">
+          <SoundToggle />
+          <HelpButton />
+        </div>
       </section>
 
       {view.phase === 'hand-complete' && view.result && (
