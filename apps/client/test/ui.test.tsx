@@ -8,6 +8,7 @@ import { ContractBar } from '../src/components/ContractBar';
 import { EventLog } from '../src/components/EventLog';
 import { Hand, partOffset } from '../src/components/Hand';
 import { Scoreboard } from '../src/components/Scoreboard';
+import { SeatPanel } from '../src/components/SeatPanel';
 import { TableDrawer } from '../src/components/TableDrawer';
 import { TrickPile } from '../src/components/TrickPile';
 import { GameProvider, useGame } from '../src/store';
@@ -263,6 +264,24 @@ describe('table status', () => {
     renderWith(atTable);
     expect(document.querySelector('.me')).toHaveClass('me-turn');
     expect(screen.getByText('Your turn')).toBeInTheDocument();
+  });
+
+  it('fades a seat that has passed, leaving its Pass chip clear', () => {
+    const bidding: TableView = {
+      ...dealt,
+      phase: 'bidding',
+      auction: [
+        { seat: 0, kind: 'bid', amount: 175_000 },
+        { seat: 1, kind: 'pass' },
+      ],
+    };
+    const { rerender } = render(
+      <SeatPanel seat={1} room={room('playing')} view={bidding} position="left" />,
+    );
+    expect(document.querySelector('.seat-panel')).toHaveClass('seat-passed');
+    expect(screen.getByText('Pass')).toBeInTheDocument();
+    rerender(<SeatPanel seat={2} room={room('playing')} view={bidding} position="top" />);
+    expect(document.querySelector('.seat-panel')).not.toHaveClass('seat-passed');
   });
 });
 

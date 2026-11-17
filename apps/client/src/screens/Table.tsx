@@ -22,7 +22,7 @@ import { TableDrawer } from '../components/TableDrawer';
 import { HelpButton, SoundToggle } from '../components/TopBar';
 import { TrickArea } from '../components/TrickArea';
 import { TrickPile } from '../components/TrickPile';
-import { blockedReason, isMyTurn, seatChip } from '../hints';
+import { blockedReason, hasPassed, isMyTurn, seatChip } from '../hints';
 import { sound } from '../sound/player';
 import { spotOf } from '../spots';
 import { useGame } from '../store';
@@ -128,7 +128,11 @@ export function Table({ room, view }: { room: RoomView; view: TableView }) {
             completed={completed}
           />
 
-          <div className={myTurn ? 'me me-turn' : 'me'}>
+          <div
+            className={['me', myTurn && 'me-turn', hasPassed(view, me) && 'seat-passed']
+              .filter(Boolean)
+              .join(' ')}
+          >
             <ActionBar
               view={view}
               room={room}

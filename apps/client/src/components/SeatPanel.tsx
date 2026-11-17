@@ -1,7 +1,7 @@
 import { partnerOf, type Seat, type TableView } from '@mam/engine';
 import type { RoomView } from '@mam/protocol';
 import { seatLabel } from '../format';
-import { seatChip } from '../hints';
+import { hasPassed, seatChip } from '../hints';
 import { CardBack } from './CardFace';
 
 interface Props {
@@ -24,6 +24,7 @@ export function SeatPanel({ seat, room, view, position }: Props) {
   const chip = seatChip(view, seat);
   const classes = ['seat-panel', `seat-${position}`, partner ? 'side-us' : 'side-them'];
   if (acting) classes.push('seat-acting');
+  if (hasPassed(view, seat)) classes.push('seat-passed');
   return (
     <div className={classes.join(' ')}>
       <div className="seat-name">

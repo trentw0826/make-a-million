@@ -3,6 +3,10 @@
 A scratchpad for future fixes, features, and updates
 
 ## Immediate
+- [ ] Remove 'bidder' label below user when they've taken the bid
+- [ ] Move 'score sheet and log' button to bottom right
+- [ ] Replace all bottom right buttons with icons: sheet icon for score sheet, sound icon + muted version for sound, question mark for how to play
+- [ ] Remove 'your turn' badge in all cases (golden box around user denotes whose turn it is)
 
 ## Later
 - [ ] Create a phone-friendly UI
