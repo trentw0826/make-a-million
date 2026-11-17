@@ -4,7 +4,6 @@ A scratchpad for future fixes, features, and updates
 
 ## Immediate
 - [ ] Add gentle animations throughout the whole experience to make it feel smoother. As part of that, Include animations that more clearly indicate whose turn it is
-- [ ] Choose an elegant and clean new approach to fonts throughout the project
 
 ## Later
 - [ ] Create a phone-friendly UI

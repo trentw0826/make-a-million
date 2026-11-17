@@ -55,8 +55,11 @@
   --disabled-veil: 0.55;
 
   /* Type ---------------------------------------------------------------- */
-  --font-display: Georgia, "Times New Roman", serif;
-  --font-body: Georgia, "Times New Roman", serif;
+  /* Fraunces, a soft old-style serif, for the name, headings and the card indices, in the
+     spirit of printed playing cards; Inter for everything else, clean at small sizes, with
+     even-width figures for sums of money. */
+  --font-display: "Fraunces Variable", Georgia, serif;
+  --font-body: "Inter Variable", system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-mono: ui-monospace, monospace;
 
   /* Shape and depth ----------------------------------------------------- */
