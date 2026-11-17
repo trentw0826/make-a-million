@@ -107,9 +107,6 @@ export function Table({ room, view }: { room: RoomView; view: TableView }) {
       <section className="felt">
         <ContractBar view={view} room={room} />
         <Scoreboard view={view} room={room} />
-        <div className="felt-tools">
-          <TableDrawer view={view} room={room} log={state.log} />
-        </div>
         {/* One group per deal: a card you play flies from your hand to the felt, and on to
             the winners' pile, and ids never carry over from an earlier deal. */}
         <LayoutGroup id={dealKey}>
@@ -161,7 +158,6 @@ export function Table({ room, view }: { room: RoomView; view: TableView }) {
               }}
             />
             <div className="me-line side-us">
-              {view.contract?.bidder === me && <span className="tag">bidder</span>}
               {myChip && <span className={`seat-chip chip-${myChip.kind}`}>{myChip.text}</span>}
             </div>
           </div>
@@ -169,8 +165,9 @@ export function Table({ room, view }: { room: RoomView; view: TableView }) {
           <TrickPile side="us" {...pile(view.team)} />
         </LayoutGroup>
         <div className="table-corner">
+          <TableDrawer view={view} room={room} log={state.log} />
           <SoundToggle />
-          <HelpButton />
+          <HelpButton icon />
         </div>
       </section>
 

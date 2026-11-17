@@ -282,11 +282,18 @@ async function fullHand(browser: Browser, base: string): Promise<void> {
     !/\b(dealer|Partner|Opponent|You)\b/.test(seatText.replace(/your partner|opponent/g, '')),
     'seats carry no dealer, partner, opponent or You tags',
   );
+  const corner = page.locator('.table-corner');
   check(
-    (await page.locator('.table-corner').getByRole('button', { name: 'How to play' }).count()) ===
-      1 &&
+    (await corner.locator('.icon-btn svg').count()) === 3 &&
+      (await corner.getByRole('button', { name: 'Score sheet & log' }).count()) === 1 &&
+      (await corner.getByRole('button', { name: 'How to play' }).count()) === 1 &&
       (await page.locator('.topbar').getByRole('button', { name: 'How to play' }).count()) === 0,
-    'How to play and sound sit in the corner by your seat at the table',
+    'the score sheet, sound and How to play sit as icons in the corner by your seat',
+  );
+  check(
+    (await page.locator('.action-bar .turn-pill').count()) === 0 &&
+      (await page.locator('.action-bar .visually-hidden').getByText('Your turn.').count()) === 1,
+    'no "Your turn" badge: the ring round your seat marks the turn',
   );
 
   // Leaving mid-game asks first.

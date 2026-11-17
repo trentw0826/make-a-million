@@ -1,9 +1,10 @@
 import { createGame, observe, type TableView, tableView } from '@mam/engine';
 import type { RoomView, ServerMessage } from '@mam/protocol';
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { useEffect } from 'react';
 import { describe, expect, it } from 'vitest';
 import { Shell } from '../src/App';
+import { ActionBar } from '../src/components/ActionBar';
 import { ContractBar } from '../src/components/ContractBar';
 import { EventLog } from '../src/components/EventLog';
 import { Hand, partOffset } from '../src/components/Hand';
@@ -263,7 +264,53 @@ describe('table status', () => {
   it('marks the turn and names who else must still confirm', () => {
     renderWith(atTable);
     expect(document.querySelector('.me')).toHaveClass('me-turn');
-    expect(screen.getByText('Your turn')).toBeInTheDocument();
+    // The gold ring is the visible cue; the words are there for screen readers only.
+    expect(screen.getByText('Your turn.')).toHaveClass('visually-hidden');
+  });
+
+  it('keeps the score sheet, sound and How to play as icons in the corner', () => {
+    renderWith(atTable);
+    const corner = document.querySelector('.table-corner') as HTMLElement;
+    for (const name of ['Score sheet & log', 'Mute sounds', 'How to play']) {
+      const button = within(corner).getByRole('button', { name });
+      expect(button).toHaveClass('icon-btn');
+      expect(button.querySelector('svg')).not.toBeNull();
+    }
+  });
+
+  it("doesn't tag your own seat as the bidder", () => {
+    renderWith([
+      welcome,
+      { type: 'room', room: room('playing') },
+      {
+        type: 'view',
+        view: { ...dealt, phase: 'playing', contract: { bidder: 0, amount: 175_000 } },
+      },
+    ]);
+    expect(document.querySelector('.me-line')).not.toHaveTextContent('bidder');
+  });
+
+  it('asks for the discard in two words, with the rules behind a ?', () => {
+    const discarding: TableView = {
+      ...dealt,
+      phase: 'discarding',
+      legal: { kind: 'discard', requiredNumberCards: 2, forbiddenIds: [] },
+    };
+    render(
+      <GameProvider url={URL}>
+        <ActionBar
+          view={discarding}
+          room={room('playing')}
+          selected={new Set()}
+          onClearSelection={() => {}}
+        />
+      </GameProvider>,
+    );
+    const bar = document.querySelector('.action-bar') as HTMLElement;
+    expect(bar).toHaveTextContent(/^Your turn\.Discard 3Discard\?/);
+    const tip = screen.getByRole('button', { name: 'Discard rules' });
+    expect(tip).toHaveAccessibleDescription(/Number cards must go before Money/);
+    expect(screen.getByRole('button', { name: 'Discard' })).toBeDisabled();
   });
 
   it('fades a seat that has passed, leaving its Pass chip clear', () => {
