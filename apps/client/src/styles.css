@@ -1151,30 +1151,243 @@ button.modal-close {
   margin: 0 0 6px;
   font-size: 1em;
 }
-.result-tricks {
-  display: grid;
-  gap: 6px;
-  margin-top: 8px;
+.result-modal {
+  max-width: 820px;
 }
-.result-trick {
+/* Where the window is tall enough that the result never scrolls, a trick's cards may show
+   past the dialog's edge rather than be cut off by it. */
+@media (min-height: 760px) {
+  .result-modal {
+    overflow: visible;
+    max-height: none;
+  }
+}
+.result-contract {
+  margin: 0 0 10px;
+}
+.suit-word {
+  font-weight: bold;
+}
+
+/* The bid meter: the bidders' Money from the left, the other side's from the right. */
+.bid-meter {
+  margin: 0 0 18px;
+}
+.bid-meter-track {
+  position: relative;
+  height: 14px;
+  margin-top: 22px;
+  border-radius: 7px;
+  background: var(--line);
+}
+.bid-meter-fill {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  border-radius: 7px 0 0 7px;
+  background: var(--team-them);
+}
+.bid-meter-fill.side-us {
+  background: var(--team-us);
+}
+.bid-meter-other {
+  left: auto;
+  right: 0;
+  border-radius: 0 7px 7px 0;
+  opacity: 0.45;
+}
+.bid-meter-notch {
+  position: absolute;
+  top: -5px;
+  bottom: -5px;
+  width: 2px;
+  margin-left: -1px;
+  background: var(--ink);
+}
+.bid-meter-bid {
+  position: absolute;
+  bottom: calc(100% + 2px);
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  font-size: 0.75em;
+  font-weight: bold;
+}
+.bid-meter-caption {
+  margin-top: 6px;
+  font-size: 0.85em;
+  color: var(--muted);
+}
+.bid-meter-caption.made {
+  color: var(--good-ink);
+}
+.bid-meter-caption.set {
+  color: var(--danger);
+}
+
+.result-delta {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 1.6em;
+  font-weight: bold;
+  font-variant-numeric: tabular-nums;
+}
+.result-delta.pos {
+  color: var(--good-ink);
+}
+.result-delta.neg {
+  color: var(--danger);
+}
+.result-delta-label {
+  font-size: 0.5em;
+  font-weight: normal;
+  color: var(--muted);
+}
+.result-total .progress {
+  height: 5px;
+  background: var(--line);
+}
+.result-trick-count {
+  margin: 12px 0 6px;
+}
+
+/* Each side's taken tricks, as tiles: value, a pip per card, the Bull or Bear marked. */
+.trick-tiles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.trick-tip {
+  position: relative;
+  display: block;
+}
+.trick-tile {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  width: 64px;
+  padding: 6px 4px 5px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-m);
+  background: var(--paper-raised);
+  color: var(--ink);
+  box-shadow: var(--shadow-1);
+  font-size: 0.85em;
+  font-weight: bold;
+  font-variant-numeric: tabular-nums;
+}
+.trick-tile:hover,
+.trick-tile:focus-visible {
+  border-color: var(--accent);
+}
+.trick-tile-empty .trick-tile-value {
+  color: var(--muted);
+  font-weight: normal;
+}
+.trick-tile.mod-bull {
+  border-color: var(--accent);
+  box-shadow:
+    0 0 0 1px var(--accent),
+    var(--shadow-1);
+}
+.trick-tile.mod-bear .trick-tile-value {
+  text-decoration: line-through;
+}
+.trick-tile-mod {
+  position: absolute;
+  top: -7px;
+  right: -6px;
+  padding: 0 4px;
+  border-radius: 6px;
+  font-size: 0.75em;
+  background: var(--accent);
+  color: var(--on-accent);
+}
+.mod-bear .trick-tile-mod {
+  background: var(--bear);
+}
+.trick-tile-pips {
   display: flex;
   gap: 3px;
-  align-items: center;
 }
-.result-trick .card {
+.pip {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 2px solid currentColor;
+  background: currentColor;
+}
+.pip-plain {
+  background: transparent;
+}
+.pip-red {
+  color: var(--red);
+}
+.pip-yellow {
+  color: var(--yellow);
+}
+.pip-black {
+  color: var(--black);
+}
+.pip-green {
+  color: var(--green);
+}
+.pip-tiger {
+  color: var(--tiger);
+  border-radius: 2px;
+}
+.pip-bull {
+  color: var(--bull);
+  border-radius: 2px;
+}
+.pip-bear {
+  color: var(--bear);
+  border-radius: 2px;
+}
+.trick-tip-cards {
+  position: absolute;
+  z-index: 3;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  display: flex;
+  gap: 3px;
+  padding: 6px;
+  border-radius: var(--radius-m);
+  background: var(--felt);
+  box-shadow: var(--shadow-2);
+  transform: translateX(-50%);
+  visibility: hidden;
+  opacity: 0;
+  transition:
+    opacity var(--dur-fast),
+    visibility var(--dur-fast);
+}
+.trick-tip:hover .trick-tip-cards,
+.trick-tile:focus-visible + .trick-tip-cards,
+.trick-tile:focus + .trick-tip-cards {
+  visibility: visible;
+  opacity: 1;
+}
+.trick-tip-cards .card {
   width: 36px;
   height: 50px;
 }
-.result-trick .card-label {
+.trick-tip-cards .card-label {
   top: 2px;
   left: 3px;
   font-size: 0.7em;
 }
-.result-trick .card-art {
+.trick-tip-cards .card-art {
   width: 50%;
   top: 62%;
 }
-.result-trick .card-sub {
+.trick-tip-cards .card-sub {
   display: none;
 }
 .result-foot {
@@ -1348,6 +1561,9 @@ button.modal-close {
 
 /* A phone: the seats stack and the page scrolls (see "phone-friendly UI" in docs/todo.md). */
 @media (max-width: 600px) {
+  .result-teams {
+    grid-template-columns: 1fr;
+  }
   .felt {
     height: auto;
     overflow: visible;

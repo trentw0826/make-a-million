@@ -482,4 +482,47 @@ describe('Hand result', () => {
     expect(screen.queryByRole('button', { name: 'Ready' })).toBeNull();
     expect(screen.getByText('Waiting for the others…')).toBeInTheDocument();
   });
+
+  it("weighs the capture against the bid and lays out each side's tricks as tiles", () => {
+    const result = scored.result;
+    if (!result) throw new Error('fixture has a result');
+    renderWith([
+      welcome,
+      { type: 'room', room: room('playing') },
+      {
+        type: 'view',
+        view: {
+          ...scored,
+          result: {
+            ...result,
+            tricks: [
+              // Bot 2 (them) takes Green $40k and the Bull: doubled.
+              {
+                leader: 1,
+                winner: 1,
+                cardIds: [51, 53, 39, 0],
+                money: 40_000,
+                modifier: 'bull',
+                value: 80_000,
+              },
+              // Ann (us) takes a trick with no Money in it.
+              { leader: 0, winner: 0, cardIds: [1, 2, 3, 4], money: 0, modifier: 'none', value: 0 },
+            ],
+          },
+        },
+      },
+    ]);
+    expect(
+      screen.getByRole('img', {
+        name: /captured \$120,000 against a \$100,000 bid: made by \$20k/,
+      }),
+    ).toBeInTheDocument();
+    const them = screen.getByRole('region', { name: 'Them' });
+    const bull = within(them).getByRole('button', { name: 'Trick 1: $80,000 (Bull ×2)' });
+    expect(bull).toHaveAccessibleDescription(/Bull/);
+    expect(within(them).getByText('1 trick')).toBeInTheDocument();
+    const us = screen.getByRole('region', { name: 'Us' });
+    expect(within(us).getByRole('button', { name: 'Trick 2: $0' })).toBeInTheDocument();
+    expect(us).toHaveTextContent('Captured $60,000 · Total $60,000');
+  });
 });
