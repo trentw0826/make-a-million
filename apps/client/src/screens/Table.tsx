@@ -89,7 +89,10 @@ export function Table({ room, view }: { room: RoomView; view: TableView }) {
     }
   };
 
-  const myChip = seatChip(view, me);
+  // Your own bid stays under your hand only while it is the high one: once outbid, it is no
+  // longer in play. A pass stays, since it is final.
+  const chip = seatChip(view, me);
+  const myChip = chip?.kind === 'bid' ? null : chip;
   const dealKey = `${view.handNumber}-${view.redeals}`;
 
   // Each side's taken tricks. The view counts a trick as soon as it is won, but until it is

@@ -341,27 +341,82 @@ describe('table status', () => {
     expect(document.querySelector('.me-line')).not.toHaveTextContent('bidder');
   });
 
-  it('asks for the discard in two words, with the rules behind a ?', () => {
+  it('asks for the discard on the button itself, counting down, with the rules behind a ?', () => {
     const discarding: TableView = {
       ...dealt,
       phase: 'discarding',
-      legal: { kind: 'discard', requiredNumberCards: 2, forbiddenIds: [] },
+      legal: { kind: 'discard', requiredNumberCards: 0, forbiddenIds: [] },
     };
-    render(
+    const bar = (selected: ReadonlySet<number>) => (
       <GameProvider url={URL}>
         <ActionBar
           view={discarding}
           room={room('playing')}
-          selected={new Set()}
+          selected={selected}
           onClearSelection={() => {}}
         />
-      </GameProvider>,
+      </GameProvider>
     );
-    const bar = document.querySelector('.action-bar') as HTMLElement;
-    expect(bar).toHaveTextContent(/^Your turn\.Discard 3Discard\?/);
+    const { rerender } = render(bar(new Set()));
+    expect(document.querySelector('.action-bar')).toHaveTextContent(
+      /^Your turn\.Discard \(3 left\)\?/,
+    );
+    expect(screen.getByRole('button', { name: 'Discard (3 left)' })).toBeDisabled();
     const tip = screen.getByRole('button', { name: 'Discard rules' });
     expect(tip).toHaveAccessibleDescription(/Number cards must go before Money/);
-    expect(screen.getByRole('button', { name: 'Discard' })).toBeDisabled();
+    rerender(bar(new Set([1, 2])));
+    expect(screen.getByRole('button', { name: 'Discard (1 left)' })).toBeDisabled();
+    rerender(bar(new Set([1, 2, 3])));
+    expect(screen.getByRole('button', { name: 'Discard' })).toBeEnabled();
+  });
+
+  it('puts the bid amount on the button, − and + beside it, and Pass to the right', () => {
+    renderWith(atTable);
+    const stepper = document.querySelector('.bid-stepper') as HTMLElement;
+    expect(
+      within(stepper)
+        .getAllByRole('button')
+        .map((b) => b.getAttribute('aria-label') ?? b.textContent),
+    ).toEqual(['lower bid', 'Bid $175k', 'raise bid']);
+    fireEvent.click(screen.getByRole('button', { name: 'raise bid' }));
+    expect(within(stepper).getByRole('button', { name: 'Bid $180k' })).toBeInTheDocument();
+    expect(document.querySelector('.bid-amount')).toBeNull();
+    expect(document.querySelector('.bid-bar-end')).toContainElement(
+      screen.getByRole('button', { name: 'Pass' }),
+    );
+  });
+
+  it('says nothing while you wait, keeping the empty bar through the auction', () => {
+    const waiting = (phase: TableView['phase']): readonly ServerMessage[] => [
+      welcome,
+      { type: 'room', room: room('playing') },
+      { type: 'view', view: { ...dealt, phase, turn: 1, legal: { kind: 'none' } } },
+    ];
+    const { unmount } = renderWith(waiting('bidding'));
+    expect(document.querySelector('.action-bar')).toHaveClass('action-idle');
+    expect(document.querySelector('.action-bar')).toBeEmptyDOMElement();
+    expect(screen.getByText('Waiting for Bot 2 to bid…')).toHaveClass('visually-hidden');
+    unmount();
+    renderWith(waiting('playing'));
+    expect(document.querySelector('.action-bar')).toHaveClass('action-hidden');
+  });
+
+  it('drops your bid from under your hand once you are outbid', () => {
+    const auction = (entries: TableView['auction']): readonly ServerMessage[] => [
+      welcome,
+      { type: 'room', room: room('playing') },
+      { type: 'view', view: { ...dealt, turn: 1, legal: { kind: 'none' }, auction: entries } },
+    ];
+    const { unmount } = renderWith(auction([{ seat: 0, kind: 'bid', amount: 175_000 }]));
+    expect(document.querySelector('.me-line')).toHaveTextContent('$175k');
+    unmount();
+    renderWith(
+      auction([
+        { seat: 0, kind: 'bid', amount: 175_000 },
+        { seat: 1, kind: 'bid', amount: 180_000 },
+      ]),
+    );
+    expect(document.querySelector('.me-line')).not.toHaveTextContent('$175k');
   });
 
   it('fades a seat that has passed, leaving its Pass chip clear', () => {

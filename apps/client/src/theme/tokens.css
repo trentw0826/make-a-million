@@ -84,7 +84,7 @@
   /* How much of each card the next one covers, at most (a narrow hand closes up further). */
   --hand-overlap: 0.3;
   /* The extra space before a new color in the hand. */
-  --group-gap: 14px;
+  --group-gap: 24px;
   /* Hovering a card in the hand: it rises and grows a little, and the next card moves aside
      by --part-gap, enough to uncover it. A card picked for the discard rises further. */
   --hover-lift: 12px;
@@ -127,6 +127,6 @@
     --fan-angle: 1.2deg;
     --fan-drop: 0.4px;
     --hand-overlap: 0.5;
-    --group-gap: 8px;
+    --group-gap: 12px;
   }
 }

@@ -856,14 +856,38 @@ input {
   visibility: visible;
   opacity: 1;
 }
+/* The bid bar: anything to say on the left, the bid in the middle, Pass on the right. */
+.bid-bar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+}
+.bid-bar-start {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9em;
+}
+.bid-bar-end {
+  justify-self: end;
+}
 .bid-stepper {
   display: flex;
   align-items: center;
   gap: 6px;
 }
-.bid-amount {
-  min-width: 110px;
-  text-align: center;
+.bid-step {
+  width: 34px;
+  padding-left: 0;
+  padding-right: 0;
+}
+.bid-button {
+  min-width: 120px;
+  font-variant-numeric: tabular-nums;
+}
+/* While you wait, the bar is empty: kept in view through the auction, held unseen after. */
+.action-hidden {
+  visibility: hidden;
 }
 .suit-btn {
   font-weight: bold;

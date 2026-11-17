@@ -26,6 +26,7 @@ const VIEWPORT = { width: 1280, height: 860 };
 const failures: string[] = [];
 /** Checked once, on the first turn that has an unplayable card. */
 let passedSeatChecked = false;
+let discardChecked = false;
 let blockedCardChecked = false;
 function check(ok: boolean, what: string): void {
   console.log(`${ok ? '✓' : '✗'} ${what}`);
@@ -180,16 +181,26 @@ async function act(page: Page, shoot: Shoot): Promise<boolean> {
       else await page.getByRole('button', { name: /^Bid \$/ }).click(quick);
       return true;
     }
-    const discard = page.getByRole('button', { name: 'Discard', exact: true });
+    // The button counts down, "Discard (3 left)", until three cards are chosen.
+    const discard = page.getByRole('button', { name: /^Discard( \(\d left\))?$/ });
     if (await discard.isVisible()) {
+      if (!discardChecked) {
+        check(
+          (await discard.textContent()) === 'Discard (3 left)',
+          'the discard button counts the cards still to choose',
+        );
+        discardChecked = true;
+      }
       await shoot('4-discard');
+      // The fanned cards overlap, so a pointer click can land on a neighbour; choose by
+      // the card's own click, as a keyboard or screen reader would.
       for (let i = 0; i < 3; i++) {
         await page
           .locator('.hand button.card:not([aria-disabled])[aria-pressed="false"]')
           .first()
-          .click(quick);
+          .dispatchEvent('click');
       }
-      await discard.click(quick);
+      await page.getByRole('button', { name: 'Discard', exact: true }).click(quick);
       return true;
     }
     const suit = page.locator('.suit-btn').first();
