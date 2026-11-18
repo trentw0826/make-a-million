@@ -1457,18 +1457,25 @@ button.card-selected:hover:not([aria-disabled="true"]) {
    opaque card, rather than a see-through card, so where cards overlap in the hand the one
    underneath doesn't show through. Each card keeps its veil to itself (isolation), or a
    covered card's veil would paint over the card on top of it too. */
+/* The veil over a card that can't be chosen: always there, clear until the card is greyed
+   out, so it fades in and out as the turn comes and goes rather than jumping. (Isolation only
+   on a greyed-out card: on every card it would flatten the card turning over.) */
 .card-disabled {
   isolation: isolate;
 }
-.card-disabled::before {
+.card::before {
   content: "";
   position: absolute;
   z-index: 2;
   inset: -1px;
   border-radius: inherit;
   background: var(--felt);
-  opacity: var(--disabled-veil);
+  opacity: 0;
   pointer-events: none;
+  transition: opacity var(--dur-base) var(--ease-out);
+}
+.card-disabled::before {
+  opacity: var(--disabled-veil);
 }
 .card-star {
   position: absolute;
@@ -2114,6 +2121,7 @@ button.modal-close {
     animation: none;
   }
   .card,
+  .card::before,
   .hand-fan,
   .trump-pick,
   .progress span,
