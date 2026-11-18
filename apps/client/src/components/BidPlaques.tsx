@@ -1,0 +1,155 @@
+import type { LegalMoves, Seat, TableView } from '@mam/engine';
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
+import { useEffect, useState } from 'react';
+import { shortMoney } from '../format';
+import { hasPassed, highBid } from '../hints';
+import { type Spot, spotOf } from '../spots';
+import { useGame } from '../store';
+import { useGameKeys } from '../useHotkeys';
+
+const SEATS: readonly Seat[] = [0, 1, 2, 3];
+
+/**
+ * The auction, told on the felt: each player still in it has a plaque in front of them,
+ * reading "No bid" until they bid and then their bid. The standing high bid glows. A player
+ * who passes is out, and their plaque goes. On your turn your own plaque is the bid button,
+ * with − and + either side of it and Pass below.
+ */
+export function BidPlaques({ view, me }: { view: TableView; me: Seat }) {
+  const still = useReducedMotion() ?? false;
+  const bidding = view.phase === 'bidding';
+  const high = highBid(view.auction);
+  const legal = view.legal;
+
+  return (
+    <AnimatePresence>
+      {bidding &&
+        SEATS.filter((seat) => !hasPassed(view, seat)).map((seat) => {
+          const spot = spotOf(seat, me);
+          const last = view.auction.findLast((e) => e.seat === seat);
+          const amount = last?.kind === 'bid' ? last.amount : null;
+          const isHigh = high !== null && high.seat === seat;
+          const yours = seat === me && legal.kind === 'bid';
+          return (
+            <motion.div
+              key={seat}
+              className={`plaque-spot plaque-${spot}`}
+              initial={still ? false : { opacity: 0, scale: 0.85 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={still ? { opacity: 0 } : { opacity: 0, scale: 0.6 }}
+              transition={{ type: 'spring', stiffness: 260, damping: 24 }}
+            >
+              {yours ? (
+                <YourBid legal={legal} view={view} />
+              ) : (
+                <Plaque spot={spot} amount={amount} high={isHigh} still={still} />
+              )}
+            </motion.div>
+          );
+        })}
+    </AnimatePresence>
+  );
+}
+
+function Plaque({
+  spot,
+  amount,
+  high,
+  still,
+}: {
+  spot: Spot;
+  amount: number | null;
+  high: boolean;
+  still: boolean;
+}) {
+  const classes = ['plaque', amount === null ? 'plaque-none' : 'plaque-bid'];
+  if (high) classes.push('plaque-high');
+  return (
+    <div className={classes.join(' ')} data-spot={spot} aria-hidden="true">
+      <motion.span
+        key={amount ?? 'none'}
+        className="plaque-amount"
+        initial={still || amount === null ? false : { scale: 1.3 }}
+        animate={{ scale: 1 }}
+        transition={{ type: 'spring', stiffness: 320, damping: 18 }}
+      >
+        {amount === null ? 'No bid' : shortMoney(amount)}
+      </motion.span>
+    </div>
+  );
+}
+
+/**
+ * Your plaque on your turn: the bid button, its amount on its face, with − and + either side
+ * of it and Pass beneath. Arrow keys step the amount, Enter bids. On a first turn with a weak
+ * enough hand, "Call misdeal" sits beside Pass.
+ */
+function YourBid({
+  legal,
+  view,
+}: {
+  legal: Extract<LegalMoves, { kind: 'bid' }>;
+  view: TableView;
+}) {
+  const { act } = useGame();
+  const [amount, setAmount] = useState(legal.minBid);
+  useEffect(() => setAmount(legal.minBid), [legal.minBid]);
+  const step = legal.step;
+  const lower = () => setAmount((a) => Math.max(legal.minBid, a - step));
+  const raise = () => setAmount((a) => a + step);
+  const bid = () => act({ type: 'bid', amount });
+  useGameKeys({
+    ArrowLeft: lower,
+    ArrowDown: lower,
+    ArrowRight: raise,
+    ArrowUp: raise,
+    Enter: bid,
+  });
+  const threshold = view.ruleset.misdeal.threshold;
+  return (
+    <fieldset className="your-bid" aria-label="Your bid">
+      <button
+        type="button"
+        className="plaque-step plaque-lower"
+        onClick={lower}
+        disabled={amount <= legal.minBid}
+        aria-label="lower bid"
+      >
+        −
+      </button>
+      <button type="button" className="plaque plaque-yours" onClick={bid} aria-keyshortcuts="Enter">
+        <span className="plaque-verb">Bid</span>{' '}
+        <span className="plaque-amount">{shortMoney(amount)}</span>
+      </button>
+      <button
+        type="button"
+        className="plaque-step plaque-raise"
+        onClick={raise}
+        aria-label="raise bid"
+      >
+        +
+      </button>
+      <div className="plaque-below">
+        {legal.canCallMisdeal && (
+          <button
+            type="button"
+            className="warn-btn small"
+            title={`Your Money totals ${shortMoney(threshold)} or less: you may have the hand re-dealt instead of bidding.`}
+            onClick={() => act({ type: 'callMisdeal' })}
+          >
+            Call misdeal
+          </button>
+        )}
+        <button
+          type="button"
+          className="plaque-pass"
+          disabled={!legal.canPass}
+          title={legal.canPass ? undefined : 'You open the bidding, so you must bid.'}
+          onClick={() => act({ type: 'pass' })}
+        >
+          Pass
+        </button>
+      </div>
+    </fieldset>
+  );
+}

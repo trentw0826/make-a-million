@@ -17,7 +17,10 @@ export function isActing(view: TableView, seat: Seat): boolean {
   return view.turn === seat;
 }
 
-/** Another player's place at the table: name, side, what they said, face-down cards. */
+/**
+ * Another player's place at the table: name, side, the contract badge if they hold it, and
+ * face-down cards. During the auction it fades back once they pass.
+ */
 export function SeatPanel({ seat, room, view, position }: Props) {
   const s = room.seats[seat];
   const acting = isActing(view, seat);
@@ -25,13 +28,17 @@ export function SeatPanel({ seat, room, view, position }: Props) {
   const chip = seatChip(view, seat);
   const classes = ['seat-panel', `seat-${position}`, partner ? 'side-us' : 'side-them'];
   if (acting) classes.push('seat-acting');
-  if (hasPassed(view, seat)) classes.push('seat-passed');
+  const passed = hasPassed(view, seat);
+  if (passed) classes.push('seat-passed');
   return (
     <div className={classes.join(' ')}>
       <div className="seat-name">
         <span className="side-dot" aria-hidden="true" />
         <SeatName seat={s} />
-        <span className="visually-hidden">, {partner ? 'your partner' : 'opponent'}</span>
+        <span className="visually-hidden">
+          , {partner ? 'your partner' : 'opponent'}
+          {passed && ', passed'}
+        </span>
         {s?.kind === 'human' && !s.connected && (
           <span className="tag warn">{s.botControlled ? 'bot playing' : 'reconnecting…'}</span>
         )}

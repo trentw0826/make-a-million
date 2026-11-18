@@ -6,11 +6,14 @@
  *
  *   pnpm e2e                         # builds first
  *   CHROMIUM_PATH=/path/to/chrome pnpm e2e
+ *   E2E_HAND_TIMEOUT_MS=5000 pnpm e2e   # stall on purpose, to see the stall report
  *
- * Screenshots land in apps/client/e2e/out/. Exits non-zero if any check fails.
+ * Screenshots land in apps/client/e2e/out/. Exits non-zero if any check fails. If a hand
+ * stalls, out/stall.png and out/stall.json show the table as it stood, and the actions that
+ * kept failing (see describeStall).
  */
 import { type ChildProcess, spawn } from 'node:child_process';
-import { mkdir } from 'node:fs/promises';
+import { mkdir, writeFile } from 'node:fs/promises';
 import { createServer } from 'node:net';
 import path from 'node:path';
 import type { CardId, Suit } from '@mam/engine';
@@ -20,7 +23,8 @@ import { displayOrder } from '../src/handOrder';
 const ROOT = path.resolve(import.meta.dirname, '../../..');
 const OUT = path.join(import.meta.dirname, 'out');
 const CHROMIUM = process.env.CHROMIUM_PATH ?? '/usr/bin/chromium';
-const HAND_TIMEOUT_MS = 4 * 60_000;
+/** E2E_HAND_TIMEOUT_MS=5000 makes a hand stall fast, to see the stall report. */
+const HAND_TIMEOUT_MS = Number(process.env.E2E_HAND_TIMEOUT_MS) || 4 * 60_000;
 /** E2E_VIEWPORT=1366x768 tries another window size. */
 const VIEWPORT = (() => {
   const [w, h] = (process.env.E2E_VIEWPORT ?? '1280x860').split('x').map(Number);
@@ -62,6 +66,67 @@ function check(ok: boolean, what: string): void {
 }
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+/** The last few actions that threw, newest last: what to look at when a hand stalls. */
+const actFailures: string[] = [];
+function noteActFailure(e: unknown): void {
+  // Playwright's message is a headline then a call log; keep the locator it was waiting for
+  // and the last steps, which say what got in the way (such as "<div> intercepts pointer
+  // events").
+  const lines = (e instanceof Error ? e.message : String(e))
+    .split('\n')
+    .map((l) => l.trim().replace(/^- /, ''))
+    .filter((l) => l !== '' && l !== 'Call log:');
+  const [headline = '', ...log] = lines;
+  const waiting = log.find((l) => l.startsWith('waiting for'));
+  const tail = log.slice(-3).filter((l) => l !== waiting);
+  const detail = [headline, waiting, ...tail].filter(Boolean).join(' | ');
+  actFailures.push(`${new Date().toISOString().slice(11, 23)} ${detail.slice(0, 600)}`);
+  if (actFailures.length > 8) actFailures.shift();
+}
+
+/**
+ * Why a hand stalled: saves a screenshot and a JSON snapshot of the table to e2e/out/
+ * (stall.png, stall.json) and returns a summary for the error. The snapshot names whose
+ * turn the table shows, the hand's status in words, every button on the felt and whether it
+ * is enabled and visible, the auction plaques, and the actions that kept failing.
+ */
+async function describeStall(page: Page): Promise<string> {
+  const shot = path.join(OUT, 'stall.png');
+  await page.screenshot({ path: shot }).catch(() => {});
+  const table = await page
+    // No named helpers inside: tsx would wrap them in a `__name` call the page lacks.
+    .evaluate(() => ({
+      yourTurn: document.querySelector('.me.me-turn') !== null,
+      status: document.querySelector('.contract-bar')?.textContent?.trim() ?? null,
+      said: [...document.querySelectorAll('.felt output')].map((el) => el.textContent?.trim()),
+      actionBar: document.querySelector('.action-bar')?.className ?? null,
+      plaques: [...document.querySelectorAll('.plaque-spot')].map(
+        (el) => `${el.className.replace('plaque-spot ', '')}: ${el.textContent?.trim()}`,
+      ),
+      passed: [...document.querySelectorAll('.seat-passed .seat-name')].map((el) =>
+        el.textContent?.trim(),
+      ),
+      buttons: [...document.querySelectorAll<HTMLButtonElement>('.felt button')]
+        .filter((b) => !b.closest('.hand'))
+        .map((b) => {
+          const r = b.getBoundingClientRect();
+          const hidden =
+            r.width === 0 || r.height === 0 || getComputedStyle(b).visibility === 'hidden';
+          return `${b.getAttribute('aria-label') ?? b.textContent?.trim()}${b.disabled ? ' (disabled)' : ''}${hidden ? ' (hidden)' : ''}`;
+        }),
+      playableCards: document.querySelectorAll(
+        '.hand .hand-present:not([inert]) button.card:not([aria-disabled])',
+      ).length,
+      modal: document.querySelector('.modal h2')?.textContent?.trim() ?? null,
+    }))
+    .catch((e: unknown) => ({ unreadable: String(e) }));
+  const report = { at: new Date().toISOString(), table, recentActFailures: actFailures };
+  await writeFile(path.join(OUT, 'stall.json'), `${JSON.stringify(report, null, 2)}\n`).catch(
+    () => {},
+  );
+  return `${JSON.stringify(report, null, 2)}\nScreenshot: ${shot}`;
+}
 
 async function until(test: () => Promise<boolean>, what: string, ms = 15_000): Promise<void> {
   const deadline = Date.now() + ms;
@@ -199,18 +264,26 @@ async function act(page: Page, shoot: Shoot): Promise<boolean> {
     const pass = page.getByRole('button', { name: 'Pass', exact: true });
     if (await pass.isVisible()) {
       await shoot('3-bidding');
-      const passed = page.locator('.seat-panel:has(.chip-pass)');
+      const felt = {
+        yours: await page.locator('.plaque-bottom .your-bid').isVisible(),
+        bars: await page.locator('.action-bar').count(),
+        chips: await page.locator('.seat-chip').count(),
+      };
+      const ok = felt.yours && felt.bars === 0 && felt.chips === 0;
+      check(
+        ok,
+        `the auction is bid on the felt, with no badges on the seats and no action bar${
+          ok ? '' : ` (your plaque shown: ${felt.yours}, bars: ${felt.bars}, badges: ${felt.chips})`
+        }`,
+      );
+      const passed = page.locator('.seat-panel.seat-passed');
       if (!passedSeatChecked && (await passed.count()) > 0) {
         await sleep(400); // let the fade finish
         const faded = await passed.first().evaluate((el) => ({
-          marked: el.classList.contains('seat-passed'),
           name: Number(getComputedStyle(el.querySelector('.seat-name') as Element).opacity),
-          chip: Number(getComputedStyle(el.querySelector('.seat-role') as Element).opacity),
+          cards: Number(getComputedStyle(el.querySelector('.card-backs') as Element).opacity),
         }));
-        check(
-          faded.marked && faded.name < 1 && faded.chip > faded.name,
-          'a seat that has passed fades back, its Pass chip still clear',
-        );
+        check(faded.name < 1 && faded.cards < 1, 'a seat that has passed fades back');
         passedSeatChecked = true;
       }
       if (await pass.isEnabled()) await pass.click(quick);
@@ -324,8 +397,10 @@ async function act(page: Page, shoot: Shoot): Promise<boolean> {
       await card.click(quick);
       return true;
     }
-  } catch {
-    // The table moved on between looking and clicking; look again.
+  } catch (e) {
+    // Usually the table moved on between looking and clicking: look again. Each failure is
+    // kept, so that if the hand then stalls, the report says what kept failing.
+    noteActFailure(e);
   }
   return false;
 }
@@ -343,7 +418,7 @@ async function playUntil(
     await each();
     if (!(await act(page, shoot))) await sleep(120);
   }
-  throw new Error('the hand did not finish in time');
+  throw new Error(`the hand did not finish in time\n${await describeStall(page)}`);
 }
 
 async function handIds(page: Page): Promise<CardId[]> {
@@ -410,7 +485,10 @@ async function fullHand(browser: Browser, base: string): Promise<void> {
   );
   check(
     (await page.locator('.action-bar .turn-pill').count()) === 0 &&
-      (await page.locator('.action-bar .visually-hidden').getByText('Your turn.').count()) === 1,
+      (await page
+        .locator('.me .visually-hidden')
+        .getByText(/^Your turn/)
+        .count()) === 1,
     'no "Your turn" badge: the ring round your seat marks the turn',
   );
 

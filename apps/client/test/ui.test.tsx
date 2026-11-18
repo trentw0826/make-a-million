@@ -356,7 +356,7 @@ describe('table status', () => {
     renderWith(atTable);
     expect(document.querySelector('.me')).toHaveClass('me-turn');
     // The gold ring is the visible cue; the words are there for screen readers only.
-    expect(screen.getByText('Your turn.')).toHaveClass('visually-hidden');
+    expect(screen.getByText('Your turn to bid.')).toHaveClass('visually-hidden');
   });
 
   it('keeps the score sheet, sound and How to play as icons in the corner', () => {
@@ -550,61 +550,67 @@ describe('table status', () => {
     expect(screen.getByRole('button', { name: 'Discard (3 left)' })).toBeDisabled();
   });
 
-  it('puts the bid amount on the button, − and + beside it, and Pass to the right', () => {
+  it('makes your plaque the bid button, − and + beside it and Pass below, with no bar', () => {
     renderWith(atTable);
-    const stepper = document.querySelector('.bid-stepper') as HTMLElement;
+    const yours = document.querySelector('.plaque-bottom .your-bid') as HTMLElement;
     expect(
-      within(stepper)
+      within(yours)
         .getAllByRole('button')
         .map((b) => b.getAttribute('aria-label') ?? b.textContent),
-    ).toEqual(['lower bid', 'Bid $175k', 'raise bid']);
+    ).toEqual(['lower bid', 'Bid $175k', 'raise bid', 'Pass']);
     fireEvent.click(screen.getByRole('button', { name: 'raise bid' }));
-    expect(within(stepper).getByRole('button', { name: 'Bid $180k' })).toBeInTheDocument();
-    expect(document.querySelector('.bid-amount')).toBeNull();
-    expect(document.querySelector('.bid-bar-end')).toContainElement(
+    expect(within(yours).getByRole('button', { name: 'Bid $180k' })).toHaveClass('plaque-yours');
+    expect(document.querySelector('.plaque-below')).toContainElement(
       screen.getByRole('button', { name: 'Pass' }),
     );
+    expect(document.querySelector('.action-bar')).toBeNull();
   });
 
-  it('says nothing while you wait, keeping the empty bar through the auction', () => {
+  it('says nothing while you wait, with no bar through the auction', () => {
     const waiting = (phase: TableView['phase']): readonly ServerMessage[] => [
       welcome,
       { type: 'room', room: room('playing') },
       { type: 'view', view: { ...dealt, phase, turn: 1, legal: { kind: 'none' } } },
     ];
     const { unmount } = renderWith(waiting('bidding'));
-    expect(document.querySelector('.action-bar')).toHaveClass('action-idle');
-    expect(document.querySelector('.action-bar')).toBeEmptyDOMElement();
+    expect(document.querySelector('.action-bar')).toBeNull();
     expect(screen.getByText('Waiting for Bot 2 to bid…')).toHaveClass('visually-hidden');
     unmount();
     renderWith(waiting('playing'));
     expect(document.querySelector('.action-bar')).toHaveClass('action-hidden');
   });
 
-  it('keeps your outbid bid under your hand, as a quiet outline', () => {
+  it('gives each player in the auction a plaque, the high bid glowing, and none once passed', () => {
     const auction = (entries: TableView['auction']): readonly ServerMessage[] => [
       welcome,
       { type: 'room', room: room('playing') },
-      { type: 'view', view: { ...dealt, turn: 1, legal: { kind: 'none' }, auction: entries } },
+      { type: 'view', view: { ...dealt, turn: 2, legal: { kind: 'none' }, auction: entries } },
     ];
-    const { unmount } = renderWith(auction([{ seat: 0, kind: 'bid', amount: 175_000 }]));
-    expect(
-      within(document.querySelector('.me-line') as HTMLElement).getByText('Winning bid: $175k'),
-    ).toHaveClass('chip-high');
+    const plaque = (spot: string) => document.querySelector(`.plaque-${spot} .plaque`);
+    const { unmount } = renderWith(auction([]));
+    for (const spot of ['bottom', 'left', 'top', 'right']) {
+      expect(plaque(spot)).toHaveTextContent('No bid');
+      expect(plaque(spot)).toHaveClass('plaque-none');
+    }
     unmount();
     renderWith(
       auction([
         { seat: 0, kind: 'bid', amount: 175_000 },
         { seat: 1, kind: 'bid', amount: 180_000 },
+        { seat: 2, kind: 'pass' },
       ]),
     );
-    expect(
-      within(document.querySelector('.me-line') as HTMLElement).getByText('Bid: $175k'),
-    ).toHaveClass('chip-bid');
-    expect(screen.getAllByText('No bid yet')).toHaveLength(2);
+    expect(plaque('bottom')).toHaveTextContent('$175k');
+    expect(plaque('bottom')).not.toHaveClass('plaque-high');
+    expect(plaque('left')).toHaveTextContent('$180k');
+    expect(plaque('left')).toHaveClass('plaque-high');
+    expect(plaque('left')).not.toHaveTextContent(/high/i);
+    expect(document.querySelector('.plaque-top')).toBeNull();
+    expect(plaque('right')).toHaveTextContent('No bid');
+    expect(document.querySelector('.seat-chip')).toBeNull();
   });
 
-  it('fades a seat that has passed, leaving its Passed badge readable', () => {
+  it('fades the whole of a seat that has passed, and says so to screen readers', () => {
     const bidding: TableView = {
       ...dealt,
       phase: 'bidding',
@@ -617,7 +623,8 @@ describe('table status', () => {
       <SeatPanel seat={1} room={room('playing')} view={bidding} position="left" />,
     );
     expect(document.querySelector('.seat-panel')).toHaveClass('seat-passed');
-    expect(screen.getByText('Passed')).toHaveClass('chip-pass');
+    expect(document.querySelector('.seat-name')).toHaveTextContent(/passed/);
+    expect(document.querySelector('.seat-chip')).toBeNull();
     rerender(<SeatPanel seat={2} room={room('playing')} view={bidding} position="top" />);
     expect(document.querySelector('.seat-panel')).not.toHaveClass('seat-passed');
   });
