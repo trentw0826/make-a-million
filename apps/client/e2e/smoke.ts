@@ -512,7 +512,7 @@ async function fullHand(browser: Browser, base: string): Promise<void> {
   check(await confirm.isHidden(), 'Stay keeps you at the table');
 
   let orderChecked = false;
-  const result = page.getByRole('dialog', { name: /^Hand \d+$/ });
+  const result = page.getByRole('dialog', { name: /^Hand \d+\b/ });
   await playUntil(
     page,
     () => result.isVisible(),
@@ -546,8 +546,8 @@ async function fullHand(browser: Browser, base: string): Promise<void> {
   await shoot('6-result');
   await checkNoScroll(page, 'the hand review');
   check(
-    await result.locator('.result-banner').isVisible(),
-    'the hand result shows a made/set banner',
+    await result.locator('h2 .result-status').isVisible(),
+    'the hand result names the outcome in its title',
   );
   check(orderChecked, 'trump was named during the hand');
   check(blockedCardChecked, 'a greyed-out card was checked during the hand');

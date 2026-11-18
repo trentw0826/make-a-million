@@ -1598,20 +1598,20 @@ button.modal-close {
 .keys dd {
   margin: 0;
 }
-.result-banner {
-  position: relative;
-  margin: 0 0 8px;
-  padding: 8px 12px;
-  border-radius: 8px;
-  font-weight: bold;
-  font-size: 1.15em;
+.result-sep {
+  margin: 0 0.4em;
+  color: var(--muted);
+  font-weight: normal;
 }
-.result-banner.good {
-  background: var(--good-bg);
+/* The hand's outcome, in the title: green when it went your way, red when it didn't. */
+.result-status {
+  position: relative;
+  display: inline-block;
+}
+.result-status.good {
   color: var(--good-ink);
 }
-.result-banner.bad {
-  background: var(--bad-bg);
+.result-status.bad {
   color: var(--danger);
 }
 .result-modal {
@@ -1715,10 +1715,28 @@ button.modal-close {
 }
 
 /* The cards each trick was taken with, behind "Show the cards". */
+/* A quiet button, but plainly a button: a tinted pill with a chevron that turns over. */
 .result-cards-toggle {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 6px;
   margin: 0 auto 12px;
-  border-color: var(--line);
+  padding: 4px 12px 4px 14px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--paper-raised);
+  color: var(--ink);
+  box-shadow: var(--shadow-1);
+}
+.result-cards-toggle:hover {
+  border-color: var(--accent);
+}
+.result-cards-chevron {
+  font-size: 0.8em;
+  transition: transform var(--dur-base) var(--ease-out);
+}
+.result-cards-toggle[aria-expanded="true"] .result-cards-chevron {
+  transform: rotate(180deg);
 }
 .result-cards {
   overflow: hidden;
@@ -2053,7 +2071,7 @@ button.modal-close {
   animation: float-away 2.6s ease-out forwards;
 }
 
-/* Sparks fly out from the middle of the banner and fade (HandResult's Burst). */
+/* Sparks fly out from the middle of the outcome in the title and fade (HandResult's Burst). */
 @keyframes spark {
   from {
     opacity: 1;

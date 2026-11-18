@@ -53,16 +53,28 @@ export function HandResult({
   const [showCards, setShowCards] = useState(false);
   const cardsId = useId();
   return (
-    <Modal title={`Hand ${result.handNumber}`} className="result-modal">
-      <motion.p
-        className={`result-banner ${good ? 'good' : 'bad'}`}
-        initial={still ? false : { scale: 0.85, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        transition={{ type: 'spring', stiffness: 420, damping: 18, delay: 0.12 }}
-      >
-        {good && !still && <Burst />}
-        {banner}
-      </motion.p>
+    <Modal
+      title={
+        <>
+          Hand {result.handNumber}
+          <span className="result-sep" aria-hidden="true">
+            •
+          </span>
+          {/* Green when the hand went your way, red when it didn't. */}
+          <motion.span
+            className={`result-status ${good ? 'good' : 'bad'}`}
+            initial={still ? false : { scale: 0.85, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ type: 'spring', stiffness: 420, damping: 18, delay: 0.12 }}
+          >
+            {good && !still && <Burst />}
+            <span className="visually-hidden">: </span>
+            {banner}
+          </motion.span>
+        </>
+      }
+      className="result-modal"
+    >
       <p className="result-contract">
         {nameOf(room, result.bidder)} bid <strong>{money(result.bid)}</strong> in{' '}
         <span className={`suit-word suit-${result.trump}`}>{SUIT_NAMES[result.trump]}</span>
@@ -70,12 +82,15 @@ export function HandResult({
       <ScoreBar result={result} team={team} still={still} />
       <button
         type="button"
-        className="ghost small result-cards-toggle"
+        className="small result-cards-toggle"
         aria-expanded={showCards}
         aria-controls={cardsId}
         onClick={() => setShowCards((v) => !v)}
       >
         {showCards ? 'Hide the cards' : 'Show the cards'}
+        <span className="result-cards-chevron" aria-hidden="true">
+          ▾
+        </span>
       </button>
       <AnimatePresence initial={false}>
         {showCards && (

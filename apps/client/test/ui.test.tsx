@@ -761,7 +761,9 @@ describe('Hand result', () => {
       { type: 'room', room: room('playing') },
       { type: 'view', view: scored, resultTimer: { remainingMs: 12_400, totalMs: 20_000 } },
     ]);
-    const dialog = screen.getByRole('dialog', { name: 'Hand 1' });
+    const dialog = screen.getByRole('dialog', { name: /^Hand 1\W+They made their bid$/ });
+    // The outcome is in the title, in green or red as it went for this seat's side.
+    expect(dialog.querySelector('.result-status')).toHaveClass('bad');
     expect(screen.getByRole('timer')).toHaveAccessibleName('Next hand in 13 seconds');
     const list = screen.getByRole('list', { name: 'Ready for the next hand' });
     expect(list).toHaveTextContent('You: still reading');
