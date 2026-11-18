@@ -142,7 +142,11 @@ export class Room {
     this.checkIdle();
   }
 
-  /** A member deliberately leaves. During a game their seat is handed to a bot at once. */
+  /**
+   * A member deliberately leaves. During a game their seat is handed to a bot at once, unless
+   * they were the last human still at the table (every other human seat is already played by
+   * a bot): then the game would be bots alone, so the room closes.
+   */
   leave(playerId: string): void {
     const member = this.members.get(playerId);
     if (!member) return;
@@ -153,6 +157,14 @@ export class Room {
     member.connected = false;
     this.clearGrace(member);
     this.deps.send(playerId, { type: 'left', reason: 'left' });
+    const othersAtTable = this.seats.some(
+      (s) => s?.kind === 'human' && s.playerId !== playerId && !s.botControlled,
+    );
+    if (!othersAtTable) {
+      this.deps.log('info', 'last human left; closing the room', { room: this.code });
+      this.close();
+      return;
+    }
     this.takeOver(playerId);
   }
 

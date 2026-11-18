@@ -125,10 +125,37 @@ describe('top bar', () => {
     expect(screen.getByText(NOT_CONNECTED)).toBeInTheDocument();
   });
 
-  it('asks before leaving a game in progress', () => {
-    renderWith(atTable);
+  it('asks before leaving a game in progress, and says when it ends the game', () => {
+    // Ann is the only human: leaving ends the game.
+    const { unmount } = renderWith(atTable);
     fireEvent.click(screen.getByRole('button', { name: 'Leave' }));
-    expect(screen.getByRole('dialog', { name: 'Leave the game?' })).toBeInTheDocument();
+    const ending = screen.getByRole('dialog', { name: 'End the game?' });
+    expect(ending).toHaveTextContent("You're the last player at the table");
+    expect(within(ending).getByRole('button', { name: 'Leave and end the game' })).toBeVisible();
+    unmount();
+
+    // With Bob still at the table, a bot takes Ann's seat and the game goes on.
+    const withBob = room('playing');
+    renderWith([
+      welcome,
+      {
+        type: 'room',
+        room: {
+          ...withBob,
+          seats: [
+            withBob.seats[0],
+            withBob.seats[1],
+            { kind: 'human', playerId: 'p3', name: 'Bob', connected: true, botControlled: false },
+            withBob.seats[3],
+          ],
+        },
+      },
+      { type: 'view', view: dealt },
+    ]);
+    fireEvent.click(screen.getByRole('button', { name: 'Leave' }));
+    expect(screen.getByRole('dialog', { name: 'Leave the game?' })).toHaveTextContent(
+      'A bot will play your seat',
+    );
     expect(screen.queryByText(NOT_CONNECTED)).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Stay' }));
     expect(screen.queryByRole('dialog')).toBeNull();

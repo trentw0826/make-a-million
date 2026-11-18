@@ -515,10 +515,13 @@ async function fullHand(browser: Browser, base: string): Promise<void> {
     'no "Your turn" badge: the ring round your seat marks the turn',
   );
 
-  // Leaving mid-game asks first.
+  // Leaving mid-game asks first; you're the only human here, so it would end the game.
   await page.getByRole('button', { name: 'Leave', exact: true }).click();
-  const confirm = page.getByRole('dialog', { name: 'Leave the game?' });
-  check(await confirm.isVisible(), 'Leave mid-game asks for confirmation');
+  const confirm = page.getByRole('dialog', { name: 'End the game?' });
+  check(
+    await confirm.isVisible(),
+    'Leave mid-game asks first, and warns the last human that it ends the game',
+  );
   await page.getByRole('button', { name: 'Stay' }).click();
   check(await confirm.isHidden(), 'Stay keeps you at the table');
 

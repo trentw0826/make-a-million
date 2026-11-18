@@ -33,6 +33,7 @@ How rooms, seats and connections behave. The aim is a small, predictable set of 
 ## Room lifetime
 
 - A room with no human connected for **10 minutes** is closed and its game is discarded, whether or not the game was in progress.
+- **The last human to leave ends the game.** Leaving mid‑game normally hands your seat to a bot at once. But if every other human seat is already played by a bot (its player left, or stayed away past the grace period), the game would be bots alone, so the room closes instead. A player still inside their grace period counts as at the table. The Leave dialog says which will happen before you confirm.
 - State lives in server memory only. A server restart ends all games in progress; players will need to create a new room.
 
 ## Timers

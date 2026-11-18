@@ -64,6 +64,11 @@ export function TopBar() {
   const [confirming, setConfirming] = useState(false);
   // Leaving mid-game hands the seat to a bot at once (see Room.leave), so ask first.
   const midGame = room?.phase === 'playing' && room.yourSeat !== null;
+  // If no other human is still at the table (every other human seat is played by a bot), the
+  // game ends when you go, so say so.
+  const mine = room?.yourSeat;
+  const lastHuman =
+    room?.seats.every((s, i) => i === mine || s?.kind !== 'human' || s.botControlled) ?? false;
 
   const leave = () => {
     setConfirming(false);
@@ -100,17 +105,27 @@ export function TopBar() {
         )}
       </nav>
       {confirming && room && (
-        <Modal title="Leave the game?" onClose={() => setConfirming(false)}>
-          <p>
-            A bot will play your seat right away. Rejoin with room code{' '}
-            <strong className="room-code">{room.code}</strong> to take it back.
-          </p>
+        <Modal
+          title={lastHuman ? 'End the game?' : 'Leave the game?'}
+          onClose={() => setConfirming(false)}
+        >
+          {lastHuman ? (
+            <p>
+              You're the last player at the table, so leaving ends the game. It can't be rejoined
+              afterwards.
+            </p>
+          ) : (
+            <p>
+              A bot will play your seat right away. Rejoin with room code{' '}
+              <strong className="room-code">{room.code}</strong> to take it back.
+            </p>
+          )}
           <div className="row">
             <button type="button" onClick={() => setConfirming(false)}>
               Stay
             </button>
             <button type="button" className="warn-btn" onClick={leave}>
-              Leave game
+              {lastHuman ? 'Leave and end the game' : 'Leave game'}
             </button>
           </div>
         </Modal>
