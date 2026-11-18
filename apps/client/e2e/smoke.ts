@@ -272,12 +272,17 @@ async function act(page: Page, shoot: Shoot): Promise<boolean> {
     if (!(await page.locator('.me.me-turn').isVisible())) return false;
     const pass = page.getByRole('button', { name: 'Pass', exact: true });
     if (await pass.isVisible()) {
-      await shoot('3-bidding');
-      const felt = {
-        yours: await page.locator('.plaque-bottom .your-bid').isVisible(),
-        bars: await page.locator('.action-bar').count(),
-        chips: await page.locator('.seat-chip').count(),
-      };
+      // One look at the felt, before the screenshot gives the table time to move on: Pass
+      // and the Bid button sit in your plaque at the bottom spot, and nothing else is shown.
+      const felt = await page.evaluate(() => ({
+        yours:
+          document
+            .querySelector('.plaque-bottom .your-bid .plaque-pass')
+            ?.closest('.your-bid')
+            ?.querySelector('.plaque-yours') != null,
+        bars: document.querySelectorAll('.action-bar').length,
+        chips: document.querySelectorAll('.seat-chip').length,
+      }));
       const ok = felt.yours && felt.bars === 0 && felt.chips === 0;
       check(
         ok,
@@ -285,6 +290,7 @@ async function act(page: Page, shoot: Shoot): Promise<boolean> {
           ok ? '' : ` (your plaque shown: ${felt.yours}, bars: ${felt.bars}, badges: ${felt.chips})`
         }`,
       );
+      await shoot('3-bidding');
       const passed = page.locator('.seat-panel.seat-passed');
       if (!passedSeatChecked && (await passed.count()) > 0) {
         await sleep(400); // let the fade finish
@@ -297,6 +303,11 @@ async function act(page: Page, shoot: Shoot): Promise<boolean> {
       }
       if (!TAKE_BID && (await pass.isEnabled())) await pass.click(quick);
       else await page.getByRole('button', { name: /^Bid \$/ }).click(quick);
+      // Your controls stay up until the server answers; don't take them for a new turn.
+      await page
+        .locator('.your-bid')
+        .waitFor({ state: 'detached', timeout: 5_000 })
+        .catch(() => {});
       return true;
     }
     // The tray on the felt counts the picks, "Discards (0/3)", above its Discard button.
