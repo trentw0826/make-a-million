@@ -138,8 +138,8 @@ export function Table({ room, view }: { room: RoomView; view: TableView }) {
         {/* One group per deal: a card you play flies from your hand to the felt, and on to
             the winners' pile, and ids never carry over from an earlier deal. */}
         <LayoutGroup id={dealKey}>
-          {/* Each side's score in its own corner, its taken tricks beside it: ours bottom
-              left, by your seat, theirs top right. */}
+          {/* Each side's score in its own top corner, its taken tricks beside it: ours on
+              the left, theirs on the right. */}
           <ScoreTracker view={view} room={room} side="us" pile={pile('us')} />
           <ScoreTracker view={view} room={room} side="them" pile={pile('them')} />
           <div className="top-side">

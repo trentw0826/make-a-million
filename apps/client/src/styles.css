@@ -540,18 +540,18 @@ button.icon-btn {
   margin: 0 0 6px;
   border-bottom: 1px solid var(--line);
 }
-/* Each side's score (ScoreTracker), in its own corner of the felt, its taken tricks lying
-   beside it toward the middle: ours bottom left, by your seat, theirs top right. */
+/* Each side's score (ScoreTracker), in its own top corner of the felt, its taken tricks
+   lying beside it toward the middle: ours top left, theirs top right. */
 .tracker {
   display: flex;
   align-items: center;
   gap: 14px;
 }
 .tracker-us {
-  grid-area: me;
+  grid-area: score;
   justify-self: start;
-  align-self: end;
-  align-items: flex-end;
+  align-self: start;
+  align-items: flex-start;
 }
 .tracker-them {
   grid-area: tools;
@@ -590,8 +590,7 @@ button.icon-btn {
   text-align: right;
   color: var(--on-felt-muted);
 }
-/* The change from the last hand, floating up off the score toward the middle of the felt:
-   above ours, below theirs. */
+/* The change from the last hand, floating up just below each side's score. */
 .delta-float {
   position: absolute;
   left: 10px;
@@ -605,9 +604,7 @@ button.icon-btn {
 .delta-float.neg {
   color: var(--bad-on-felt);
 }
-.delta-float-us {
-  bottom: calc(100% + 6px);
-}
+.delta-float-us,
 .delta-float-them {
   top: calc(100% + 6px);
 }
@@ -1304,9 +1301,9 @@ button.icon-btn {
   width: var(--card-w);
   height: var(--card-h);
 }
-/* A pile grows upward as tricks land, so theirs, at the top of the felt, starts a little
-   lower to keep within it. */
-.tracker-them > .trick-pile {
+/* A pile grows upward as tricks land, so at the top of the felt it starts a little lower to
+   keep within it. */
+.tracker > .trick-pile {
   margin-top: 24px;
 }
 .pile-card {
@@ -2003,10 +2000,6 @@ button.modal-close {
   }
   .table-corner {
     grid-area: corner;
-  }
-  .tracker-us {
-    grid-area: score;
-    align-self: start;
   }
   .brand {
     display: none;

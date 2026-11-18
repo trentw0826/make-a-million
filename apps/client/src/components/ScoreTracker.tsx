@@ -4,8 +4,8 @@ import { type ReactNode, useState } from 'react';
 import { money, signedShortMoney, teamLabel } from '../format';
 
 /**
- * One side's total and how far it is toward the target, in its own corner of the felt: ours
- * bottom left, by your seat, and theirs top right. The side's taken tricks (`pile`) lie
+ * One side's total and how far it is toward the target, in its own top corner of the felt:
+ * ours on the left and theirs on the right. The side's taken tricks (`pile`) lie
  * beside it, toward the middle. The change from the last hand floats up once the result
  * dialog closes; the other side's corner also says which hand this is and the target.
  */
