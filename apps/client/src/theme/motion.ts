@@ -29,6 +29,11 @@ export const TRICK_DIGEST_MS = 900;
 export const TRICK_HOLD_MS = TRICK_ENTER_MS + TRICK_SKID_MS + TRICK_DIGEST_MS;
 /** How long gathering a trick to its winner takes. */
 export const TRICK_SWEEP_MS = 350;
+/**
+ * After the last trick of a hand has been gathered, how long the table rests before the
+ * hand review opens over it, so the end of the hand can sink in.
+ */
+export const RESULT_PAUSE_MS = 1500;
 /** How far it slides, in px. */
 export const TRICK_SKID_PX = 16;
 /** A thrown card's flight: it leaves the hand gently and is still moving when it lands. */

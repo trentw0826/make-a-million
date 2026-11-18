@@ -2,7 +2,7 @@ import { createGame, observe, type TableView, tableView } from '@mam/engine';
 import type { RoomView, ServerMessage } from '@mam/protocol';
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { useEffect } from 'react';
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Shell } from '../src/App';
 import { ContractBar } from '../src/components/ContractBar';
 import { DiscardTray } from '../src/components/DiscardTray';
@@ -14,6 +14,7 @@ import { TableDrawer } from '../src/components/TableDrawer';
 import { TrickPile } from '../src/components/TrickPile';
 import { displayOrder } from '../src/handOrder';
 import { GameProvider, useGame } from '../src/store';
+import { RESULT_PAUSE_MS } from '../src/theme/motion';
 
 /** Nothing listens here, so every send fails and shows the "Not connected" toast. */
 const URL = 'ws://127.0.0.1:1/ws';
@@ -768,16 +769,34 @@ describe('Hand result', () => {
     },
   };
 
+  // The review opens a moment after the hand ends (the last trick is already gathered here).
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+  const openReview = () => act(() => vi.advanceTimersByTime(RESULT_PAUSE_MS));
+
+  it('lets the end of the hand sink in before the review opens', () => {
+    renderWith([welcome, { type: 'room', room: room('playing') }, { type: 'view', view: scored }]);
+    act(() => vi.advanceTimersByTime(RESULT_PAUSE_MS - 100));
+    expect(screen.queryByRole('dialog')).toBeNull();
+    act(() => vi.advanceTimersByTime(100));
+    expect(screen.getByRole('dialog', { name: /^Hand 1/ })).toBeInTheDocument();
+  });
+
   it('shows who is ready and how long is left, and readies this seat', () => {
     renderWith([
       welcome,
       { type: 'room', room: room('playing') },
       { type: 'view', view: scored, resultTimer: { remainingMs: 12_400, totalMs: 20_000 } },
     ]);
+    openReview();
     const dialog = screen.getByRole('dialog', { name: /^Hand 1\W+They made their bid$/ });
     // The outcome is in the title, in green or red as it went for this seat's side.
     expect(dialog.querySelector('.result-status')).toHaveClass('bad');
-    expect(screen.getByRole('timer')).toHaveAccessibleName('Next hand in 13 seconds');
+    expect(screen.getByRole('timer')).toHaveAccessibleName('Next hand in 11 seconds');
     const list = screen.getByRole('list', { name: 'Ready for the next hand' });
     expect(list).toHaveTextContent('You: still reading');
     expect(list).toHaveTextContent('Bot 2: ready');
@@ -797,6 +816,7 @@ describe('Hand result', () => {
         resultTimer: { remainingMs: 5_000, totalMs: 20_000 },
       },
     ]);
+    openReview();
     expect(screen.queryByRole('button', { name: 'Ready' })).toBeNull();
     expect(screen.getByText('Waiting for the others…')).toBeInTheDocument();
   });
@@ -830,6 +850,7 @@ describe('Hand result', () => {
         },
       },
     ]);
+    openReview();
     expect(
       screen.getByRole('img', {
         name: /captured \$120,000 against a \$100,000 bid: made by \$20k/,

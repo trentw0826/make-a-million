@@ -30,7 +30,7 @@ import { blockedReason, hasPassed, isMyTurn, seatChip } from '../hints';
 import { sound } from '../sound/player';
 import { spotOf } from '../spots';
 import { useGame } from '../store';
-import { TRICK_HOLD_MS, TRICK_SWEEP_MS } from '../theme/motion';
+import { RESULT_PAUSE_MS, TRICK_HOLD_MS, TRICK_SWEEP_MS } from '../theme/motion';
 import { useTurnTitle } from '../useTurnTitle';
 
 export function Table({ room, view }: { room: RoomView; view: TableView }) {
@@ -51,6 +51,18 @@ export function Table({ room, view }: { room: RoomView; view: TableView }) {
     const timer = setTimeout(() => dispatch({ kind: 'advanceCompletedTrick' }), ms);
     return () => clearTimeout(timer);
   }, [completed, dispatch]);
+
+  // The hand review waits until the last trick has been gathered, then a moment more.
+  const handOver = view.phase === 'hand-complete';
+  const [reviewOpen, setReviewOpen] = useState(false);
+  useEffect(() => {
+    if (!handOver || completed) {
+      setReviewOpen(false);
+      return;
+    }
+    const timer = setTimeout(() => setReviewOpen(true), RESULT_PAUSE_MS);
+    return () => clearTimeout(timer);
+  }, [handOver, completed]);
 
   // Selection only matters while discarding.
   useEffect(() => {
@@ -225,7 +237,7 @@ export function Table({ room, view }: { room: RoomView; view: TableView }) {
         </div>
       </section>
 
-      {view.phase === 'hand-complete' && view.result && (
+      {handOver && reviewOpen && view.result && (
         <HandResult
           result={view.result}
           room={room}
