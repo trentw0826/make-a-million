@@ -393,7 +393,12 @@ describe('table status', () => {
     expect(document.querySelector('.trick-area .suit-red')).toBeNull();
     expect(screen.getByRole('region', { name: 'Scores' })).toHaveTextContent(/^Hand 2/);
     expect(screen.getByRole('region', { name: 'Hand status' })).toHaveClass('visually-hidden');
-    expect(document.querySelector('.me-line .you-tag')).toHaveTextContent('You');
+    // Your name tag is like the others', above your hand, with no bar between them in play.
+    const name = document.querySelector('.me > .seat-name.me-name') as HTMLElement;
+    expect(name).toHaveTextContent(/^You$/);
+    expect(name.querySelector('.side-dot')).not.toBeNull();
+    expect(name.nextElementSibling).toHaveClass('visually-hidden');
+    expect(name.nextElementSibling?.nextElementSibling).toHaveClass('hand');
   });
 
   it('points the turn marker at the seat the table waits on', () => {
@@ -427,7 +432,7 @@ describe('table status', () => {
     ]);
     expect(document.querySelector('.trick-area')).not.toHaveTextContent(/\d+\/13/);
     expect(document.querySelector('.seat-left')).not.toHaveTextContent('bidder');
-    expect(document.querySelector('.action-bar')).toHaveClass('action-hidden');
+    expect(document.querySelector('.action-bar')).toBeNull();
     expect(screen.getByText(/^Your turn\./)).toHaveClass('visually-hidden');
   });
 
@@ -480,7 +485,7 @@ describe('table status', () => {
         view: { ...dealt, phase: 'playing', contract: { bidder: 0, amount: 175_000 } },
       },
     ]);
-    expect(document.querySelector('.me-line')).not.toHaveTextContent('bidder');
+    expect(document.querySelector('.me-name')).not.toHaveTextContent('bidder');
   });
 
   it('counts the discards on the felt, with the button below and the rules behind a ?', () => {
@@ -544,7 +549,7 @@ describe('table status', () => {
     expect(tray).toHaveTextContent('Discards (0/3)');
     expect(within(tray).getByRole('button', { name: 'Discard' })).toBeDisabled();
     // The bar below your hand has nothing to add.
-    expect(document.querySelector('.me .action-bar:not(.action-hidden)')).toBeNull();
+    expect(document.querySelector('.me .action-bar')).toBeNull();
   });
 
   it('makes your plaque the bid button, − and + beside it and Pass below, with no bar', () => {
@@ -563,7 +568,7 @@ describe('table status', () => {
     expect(document.querySelector('.action-bar')).toBeNull();
   });
 
-  it('says nothing while you wait, with no bar through the auction', () => {
+  it('says nothing while you wait, with no bar', () => {
     const waiting = (phase: TableView['phase']): readonly ServerMessage[] => [
       welcome,
       { type: 'room', room: room('playing') },
@@ -574,7 +579,7 @@ describe('table status', () => {
     expect(screen.getByText('Waiting for Bot 2 to bid…')).toHaveClass('visually-hidden');
     unmount();
     renderWith(waiting('playing'));
-    expect(document.querySelector('.action-bar')).toHaveClass('action-hidden');
+    expect(document.querySelector('.action-bar')).toBeNull();
   });
 
   it('gives each player in the auction a plaque, the high bid glowing, and none once passed', () => {

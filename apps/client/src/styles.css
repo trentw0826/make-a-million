@@ -772,6 +772,14 @@ button.icon-btn {
 .seat-name {
   margin-bottom: 4px;
 }
+/* Yours, above your hand, with the contract badge beside it when you hold it. */
+.me-name {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 24px;
+  margin: 0;
+}
 /* A bot's strength, after its name: there if you look, quiet if you don't. */
 .seat-difficulty {
   font-weight: normal;
@@ -816,15 +824,8 @@ button.icon-btn {
   width: 0.85em;
   height: 0.85em;
 }
-/* Your own seat says so. */
-.you-tag {
-  margin-right: 6px;
-  padding: 1px 8px;
-  border-radius: var(--radius-l);
-  background: var(--team-us);
-  color: var(--on-accent);
+.me-name .seat-chip {
   font-size: 0.85em;
-  font-weight: bold;
 }
 .scoreboard-hand {
   font-size: 0.8em;
@@ -1109,14 +1110,6 @@ button.icon-btn {
 .turn-marker svg {
   display: block;
 }
-.me-line {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 2px;
-  min-height: 24px;
-  font-size: 0.85em;
-}
 .action-bar {
   position: relative;
   display: flex;
@@ -1127,8 +1120,7 @@ button.icon-btn {
   background: rgba(0, 0, 0, 0.2);
   padding: 0 14px;
   border-radius: var(--radius-l);
-  /* A fixed height, whatever the bar holds or whether it shows at all, so the table above
-     never grows or shrinks with it. */
+  /* A fixed height, whatever the bar holds. It shows only while you name trump. */
   height: var(--action-h);
 }
 /* The "?" just off the last discard slot's bottom-right corner, and the rules it shows on
@@ -1217,10 +1209,6 @@ button.icon-btn {
   align-items: center;
   gap: 6px;
 }
-/* While you wait, the bar is empty and held unseen, so your hand doesn't jump. */
-.action-hidden {
-  visibility: hidden;
-}
 .suit-btn {
   font-weight: bold;
 }
@@ -1231,13 +1219,14 @@ button.icon-btn {
   justify-content: center;
   padding: 16px 0 calc(var(--fan-drop) * 40);
 }
-/* A seat that has passed is out of the auction: its name and cards fade back. Your own
-   action bar stays readable. */
+/* A seat that has passed is out of the auction: its name and cards fade back. */
 .seat-panel > *,
+.me > .me-name,
 .me > .hand {
   transition: opacity var(--dur-slow) var(--ease-out);
 }
 .seat-passed.seat-panel > *,
+.seat-passed.me > .me-name,
 .seat-passed.me > .hand {
   opacity: var(--passed-opacity);
 }

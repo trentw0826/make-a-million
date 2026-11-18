@@ -476,7 +476,7 @@ async function fullHand(browser: Browser, base: string): Promise<void> {
   const seatText = (await page.locator('.seat-panel').allTextContents()).join(' ');
   check(
     !/\b(dealer|Partner|Opponent|You)\b/.test(seatText.replace(/your partner|opponent/g, '')) &&
-      (await page.locator('.me-line .you-tag').textContent()) === 'You',
+      (await page.locator('.me > .me-name').textContent()) === 'You',
     'only your own seat is tagged, with You',
   );
   const corner = page.locator('.table-corner');

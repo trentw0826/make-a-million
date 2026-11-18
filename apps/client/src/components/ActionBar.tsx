@@ -12,23 +12,18 @@ interface Props {
   trumpPreview?: Suit | null;
 }
 
-/** The controls for whatever decision the seat faces right now. */
+/**
+ * The bar under your name for a decision the felt can't hold: naming a color the hand has
+ * none of. Every other decision is made on the felt or in the hand, so the bar only speaks,
+ * to screen readers.
+ */
 export function ActionBar({ view, room, trumpPreview = null }: Props) {
   const legal = view.legal;
   switch (legal.kind) {
     case 'none':
-      // Whose turn it is shows on the table (the ring round the seat), so the bar says
-      // nothing while you wait; screen readers still hear it. Through the auction there is
-      // no bar at all, since the bidding happens on the felt (BidPlaques); later it holds its
-      // space unseen, so your hand doesn't jump.
-      return (
-        <>
-          {view.phase !== 'bidding' && (
-            <div className="action-bar action-hidden" aria-hidden="true" />
-          )}
-          <output className="visually-hidden">{waitingText(view, room)}</output>
-        </>
-      );
+      // Whose turn it is shows on the table (the marker on the rim and the ring round the
+      // seat), so there is no bar while you wait; screen readers still hear it.
+      return <output className="visually-hidden">{waitingText(view, room)}</output>;
     case 'bid':
       // Your plaque on the felt is the bid button, with − and + and Pass round it.
       return <output className="visually-hidden">Your turn to bid.</output>;
@@ -38,17 +33,12 @@ export function ActionBar({ view, room, trumpPreview = null }: Props) {
     case 'trump':
       return <TrumpControls legal={legal} view={view} preview={trumpPreview} />;
     case 'play':
-      // The cards you can't play are dimmed, each saying why on hover, so the bar stays
-      // empty (held unseen, as while you wait); screen readers still hear the hint.
-      return (
-        <>
-          <div className="action-bar action-hidden" aria-hidden="true" />
-          <output className="visually-hidden">Your turn. {playHint(view)}</output>
-        </>
-      );
+      // The cards you can't play are dimmed, each saying why on hover, so there is no bar
+      // and your seat is no taller than your name and hand; screen readers hear the hint.
+      return <output className="visually-hidden">Your turn. {playHint(view)}</output>;
     case 'continue':
-      // The hand-result dialog asks; the bar holds its space so the table doesn't shift.
-      return <div className="action-bar action-hidden" aria-hidden="true" />;
+      // The hand-result dialog asks.
+      return null;
   }
 }
 

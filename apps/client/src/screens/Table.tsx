@@ -180,6 +180,14 @@ export function Table({ room, view }: { room: RoomView; view: TableView }) {
               .filter(Boolean)
               .join(' ')}
           >
+            {/* Your name tag, as the other seats have theirs, with the contract badge if you
+                hold it. */}
+            <div className="seat-name me-name side-us">
+              <span className="side-dot" aria-hidden="true" />
+              You
+              {hasPassed(view, me) && <span className="visually-hidden">, passed</span>}
+              <SeatBadge chip={myChip} />
+            </div>
             <ActionBar view={view} room={room} trumpPreview={naming ? trumpPreview : null} />
             <Hand
               key={dealKey}
@@ -214,11 +222,6 @@ export function Table({ room, view }: { room: RoomView; view: TableView }) {
                 };
               }}
             />
-            <div className="me-line side-us">
-              <span className="you-tag">You</span>
-              {hasPassed(view, me) && <span className="visually-hidden">, passed</span>}
-              <SeatBadge chip={myChip} />
-            </div>
           </div>
           {/* Your tricks lie to your left. */}
           {pile(me, 'pile-me')}
