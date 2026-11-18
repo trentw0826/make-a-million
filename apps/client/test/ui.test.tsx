@@ -8,7 +8,7 @@ import { ContractBar } from '../src/components/ContractBar';
 import { DiscardTray } from '../src/components/DiscardTray';
 import { EventLog } from '../src/components/EventLog';
 import { Hand, partOffset } from '../src/components/Hand';
-import { Scoreboard } from '../src/components/Scoreboard';
+import { ScoreTracker } from '../src/components/ScoreTracker';
 import { SeatPanel } from '../src/components/SeatPanel';
 import { TableDrawer } from '../src/components/TableDrawer';
 import { TrickPile } from '../src/components/TrickPile';
@@ -170,14 +170,26 @@ describe('table log', () => {
   });
 });
 
-describe('scoreboard', () => {
-  it("shows each side's total on the felt, our side first", () => {
+describe('score trackers', () => {
+  it("shows each side's total in its own tracker, with its pile beside it", () => {
     const view: TableView = { ...dealt, team: 1, scores: [-40_000, 250_000] };
-    render(<Scoreboard view={view} room={room('playing')} />);
-    const totals = [...document.querySelectorAll('.scoreboard .total')].map((t) => t.textContent);
-    expect(totals[0]).toMatch(/^Us\$250,000/);
-    expect(totals[1]).toMatch(/^Them−\$40,000/);
-    expect(screen.getByText('to $1,000,000')).toBeInTheDocument();
+    render(
+      <>
+        <ScoreTracker view={view} room={room('playing')} side="us" pile={<i>our pile</i>} />
+        <ScoreTracker view={view} room={room('playing')} side="them" pile={<i>their pile</i>} />
+      </>,
+    );
+    const us = screen.getByRole('region', { name: 'Us' });
+    const them = screen.getByRole('region', { name: 'Them' });
+    expect(us).toHaveClass('tracker-us');
+    expect(us.querySelector('.total')).toHaveTextContent(/^Us\$250,000$/);
+    expect(us).toHaveTextContent('our pile');
+    expect(them).toHaveClass('tracker-them');
+    expect(them.querySelector('.total')).toHaveTextContent(/^Them−\$40,000/);
+    expect(them).toHaveTextContent('their pile');
+    // The other side's corner also says which hand it is, and the target.
+    expect(them).toHaveTextContent('to $1,000,000');
+    expect(us).not.toHaveTextContent('to $1,000,000');
   });
 });
 
@@ -295,7 +307,7 @@ describe('trick piles', () => {
 });
 
 describe('trick piles at the table', () => {
-  it("lays each player's pile on their left as they face the table", () => {
+  it("gathers each side's tricks into one pile beside its score", () => {
     renderWith([
       welcome,
       { type: 'room', room: room('playing') },
@@ -311,15 +323,16 @@ describe('trick piles at the table', () => {
         },
       },
     ]);
-    const pile = (name: string) => screen.getByRole('img', { name });
-    expect(pile('Your: 1 trick taken')).toHaveClass('pile-me', 'pile-us');
-    expect(pile("Bot 2's: 2 tricks taken")).toHaveClass('pile-left', 'pile-them');
-    expect(pile("Bot 3's: 2 tricks taken")).toHaveClass('pile-top', 'pile-us');
-    expect(pile("Bot 4's: 0 tricks taken")).toHaveClass('pile-right', 'pile-them');
-    // Your partner's pile is to their right on screen; the right player's is below them.
-    expect(document.querySelector('.top-side')?.lastElementChild).toHaveClass('pile-top');
-    expect(document.querySelector('.right-side')?.lastElementChild).toHaveClass('pile-right');
-    expect(document.querySelector('.left-side')?.firstElementChild).toHaveClass('pile-left');
+    const piles = document.querySelectorAll('.trick-pile');
+    expect(piles).toHaveLength(2);
+    const us = screen.getByRole('img', { name: 'Us: 3 tricks taken' });
+    expect(us.closest('.tracker-us')).not.toBeNull();
+    const them = screen.getByRole('img', { name: 'Them: 2 tricks taken' });
+    expect(them.closest('.tracker-them')).not.toBeNull();
+    // The seats hold only the players: name, badge and cards.
+    for (const side of ['.top-side', '.left-side', '.right-side']) {
+      expect(document.querySelector(side)?.children).toHaveLength(1);
+    }
   });
 });
 
@@ -392,7 +405,7 @@ describe('table status', () => {
     expect(badge.querySelector('[data-trump-suit="red"]')).not.toBeNull();
     // Trump is on the bidder's badge only, with no mark in the middle of the felt.
     expect(document.querySelector('.trick-area .suit-red')).toBeNull();
-    expect(screen.getByRole('region', { name: 'Scores' })).toHaveTextContent(/^Hand 2/);
+    expect(screen.getByRole('region', { name: 'Them' })).toHaveTextContent(/Hand 2 · to/);
     expect(screen.getByRole('region', { name: 'Hand status' })).toHaveClass('visually-hidden');
     // Your name tag is like the others', above your hand, with no bar between them in play.
     const name = document.querySelector('.me > .seat-name.me-name') as HTMLElement;

@@ -607,8 +607,10 @@ async function fullHand(browser: Browser, base: string): Promise<void> {
       )) as number[];
   const counts = await piled();
   check(
-    counts.length === 4 && counts.reduce((a, b) => a + b, 0) === 13,
-    `each player's taken tricks lie in their own pile (${counts.join(' + ')})`,
+    counts.length === 2 &&
+      counts.reduce((a, b) => a + b, 0) === 13 &&
+      (await page.locator('.tracker-us .trick-pile, .tracker-them .trick-pile').count()) === 2,
+    `each side's taken tricks lie in one pile beside its score (${counts.join(' + ')})`,
   );
   check(
     (await page.locator('.trick-pile .pile-card').count()) === 52 &&

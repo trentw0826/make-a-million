@@ -3,8 +3,8 @@ import {
   cardById,
   isNumberCard,
   nextSeat,
+  otherTeam,
   partnerOf,
-  type Seat,
   type Suit,
   type TableView,
   teamOf,
@@ -17,7 +17,7 @@ import { DiscardTray } from '../components/DiscardTray';
 import { GameOver } from '../components/GameOver';
 import { Hand } from '../components/Hand';
 import { HandResult } from '../components/HandResult';
-import { Scoreboard } from '../components/Scoreboard';
+import { ScoreTracker } from '../components/ScoreTracker';
 import { SeatBadge } from '../components/SeatBadge';
 import { SeatPanel } from '../components/SeatPanel';
 import { TableDrawer } from '../components/TableDrawer';
@@ -26,7 +26,6 @@ import { TrickArea } from '../components/TrickArea';
 import { TrickPile } from '../components/TrickPile';
 import { TrumpPicker } from '../components/TrumpPicker';
 import { TurnNotice } from '../components/TurnNotice';
-import { nameOf } from '../format';
 import { blockedReason, hasPassed, isMyTurn, seatChip } from '../hints';
 import { sound } from '../sound/player';
 import { spotOf } from '../spots';
@@ -111,18 +110,18 @@ export function Table({ room, view }: { room: RoomView; view: TableView }) {
   const myChip = seatChip(view, me);
   const dealKey = `${view.handNumber}-${view.redeals}`;
 
-  // Each player's taken tricks, in a pile on their left as they face the table. The view
-  // counts a trick as soon as it is won, but until it is gathered it lies on the felt; while
-  // it is gathered, it flies into its winner's pile.
-  const pile = (seat: Seat, className: string) => {
-    const theirs = completed !== null && completed.winner === seat;
+  // Each side's taken tricks, in one pile beside its score. The view counts a trick as soon
+  // as it is won, but until it is gathered it lies on the felt; while it is gathered, it flies
+  // into the winning side's pile.
+  const pile = (side: 'us' | 'them') => {
+    const team = side === 'us' ? view.team : otherTeam(view.team);
+    const theirs = completed !== null && teamOf(completed.winner) === team;
     return (
       <TrickPile
-        owner={seat === me ? 'Your' : `${nameOf(room, seat)}'s`}
-        side={teamOf(seat) === view.team ? 'us' : 'them'}
-        count={Math.max(0, view.tricksWon[seat] - (theirs ? 1 : 0))}
+        owner={side === 'us' ? 'Us' : 'Them'}
+        side={side}
+        count={Math.max(0, view.trickCounts[team] - (theirs ? 1 : 0))}
         incoming={theirs && completed?.stage === 'sweep' ? completed.plays : null}
-        className={className}
       />
     );
   };
@@ -134,25 +133,23 @@ export function Table({ room, view }: { room: RoomView; view: TableView }) {
     <main className="table-screen">
       <section className="felt">
         {/* The hand's status in words, for screen readers; on screen it is shown by the
-            bid on the felt, the bidder's badge (with trump) and the piles. */}
+            bid on the felt, the bidder's badge (with trump) and each side's pile. */}
         <ContractBar view={view} room={room} />
-        <Scoreboard view={view} room={room} />
         {/* One group per deal: a card you play flies from your hand to the felt, and on to
             the winners' pile, and ids never carry over from an earlier deal. */}
         <LayoutGroup id={dealKey}>
-          {/* Each pile lies on its player's left as they face the middle: your partner's to
-              their right on screen, the left player's above them, the right player's below. */}
+          {/* Each side's score in its own corner, its taken tricks beside it: ours bottom
+              left, by your seat, theirs top right. */}
+          <ScoreTracker view={view} room={room} side="us" pile={pile('us')} />
+          <ScoreTracker view={view} room={room} side="them" pile={pile('them')} />
           <div className="top-side">
             <SeatPanel seat={top} room={room} view={view} position="top" />
-            {pile(top, 'pile-top')}
           </div>
           <div className="left-side">
-            {pile(left, 'pile-left')}
             <SeatPanel seat={left} room={room} view={view} position="left" />
           </div>
           <div className="right-side">
             <SeatPanel seat={right} room={room} view={view} position="right" />
-            {pile(right, 'pile-right')}
           </div>
           <TrickArea
             me={me}
@@ -220,8 +217,6 @@ export function Table({ room, view }: { room: RoomView; view: TableView }) {
               }}
             />
           </div>
-          {/* Your tricks lie to your left. */}
-          {pile(me, 'pile-me')}
         </LayoutGroup>
         <div className="table-corner">
           <TableDrawer view={view} room={room} log={state.log} />

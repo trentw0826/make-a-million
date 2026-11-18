@@ -540,11 +540,28 @@ button.icon-btn {
   margin: 0 0 6px;
   border-bottom: 1px solid var(--line);
 }
-/* Each side's total, in the top corner of the felt. */
-.scoreboard {
-  grid-area: score;
-  align-self: start;
+/* Each side's score (ScoreTracker), in its own corner of the felt, its taken tricks lying
+   beside it toward the middle: ours bottom left, by your seat, theirs top right. */
+.tracker {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.tracker-us {
+  grid-area: me;
   justify-self: start;
+  align-self: end;
+  align-items: flex-end;
+}
+.tracker-them {
+  grid-area: tools;
+  justify-self: end;
+  align-self: start;
+  align-items: flex-start;
+  flex-direction: row-reverse;
+}
+.total {
+  position: relative;
   display: grid;
   gap: 6px;
   min-width: 170px;
@@ -568,16 +585,16 @@ button.icon-btn {
 .total-score.neg {
   color: var(--bad-on-felt);
 }
-.scoreboard-target {
+.total-caption {
   font-size: 0.75em;
   text-align: right;
   color: var(--on-felt-muted);
 }
-/* Beside the scoreboard, on the felt, so it never covers the other side's line. */
+/* The change from the last hand, floating up off the score toward the middle of the felt:
+   above ours, below theirs. */
 .delta-float {
   position: absolute;
-  left: calc(100% + 16px);
-  top: 0;
+  left: 10px;
   font-size: 0.85em;
   font-weight: bold;
   white-space: nowrap;
@@ -587,6 +604,12 @@ button.icon-btn {
 }
 .delta-float.neg {
   color: var(--bad-on-felt);
+}
+.delta-float-us {
+  bottom: calc(100% + 6px);
+}
+.delta-float-them {
+  top: calc(100% + 6px);
 }
 .progress {
   height: 4px;
@@ -724,40 +747,25 @@ button.icon-btn {
   padding: 10px;
   text-align: center;
 }
-/* Each seat with its trick pile on the player's own left as they face the middle: your
-   partner's to their right on screen, the left player's above them, the right player's
-   below them. */
+/* The other three seats, each centred on its side of the table. */
 .top-side {
   grid-area: top;
   justify-self: center;
-  display: flex;
-  align-items: center;
-  gap: 12px;
 }
-/* The player on your left, with the opponents' tricks on their left: seen from their seat,
-   facing the middle of the table, that is above them on screen. */
-.left-side {
-  grid-area: left;
+.left-side,
+.right-side {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  align-items: stretch;
-  gap: 8px;
+  align-items: center;
   min-height: 0;
   min-width: 0;
 }
-.pile-left {
-  align-self: center;
+.left-side {
+  grid-area: left;
 }
 .right-side {
   grid-area: right;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  gap: 8px;
-  min-height: 0;
-  min-width: 0;
 }
 /* Each seat's name tag; the gold ring goes round the name of whoever the table waits on,
    fading in and out as the turn passes. */
@@ -833,11 +841,6 @@ button.icon-btn {
 }
 .me-name .seat-chip {
   font-size: 0.85em;
-}
-.scoreboard-hand {
-  font-size: 0.8em;
-  letter-spacing: 0.04em;
-  color: var(--on-felt-muted);
 }
 
 /* Sized to its fan (inline), so it centres under the seat's name. */
@@ -1294,18 +1297,17 @@ button.icon-btn {
   color: var(--on-accent);
 }
 
-/* Taken tricks: a loose, face-down pile beside each partnership. */
+/* Taken tricks: a loose, face-down pile beside each side's score. */
 .trick-pile {
   position: relative;
   flex: none;
   width: var(--card-w);
   height: var(--card-h);
 }
-.pile-me {
-  grid-area: me;
-  justify-self: start;
-  align-self: center;
-  margin-left: max(16px, (25% - var(--card-w)) / 2);
+/* A pile grows upward as tricks land, so theirs, at the top of the felt, starts a little
+   lower to keep within it. */
+.tracker-them > .trick-pile {
+  margin-top: 24px;
 }
 .pile-card {
   position: absolute;
@@ -1988,7 +1990,8 @@ button.modal-close {
       "top top"
       "left right"
       "trick trick"
-      "me me";
+      "me me"
+      "corner corner";
   }
   .drawer,
   .drawer-scrim {
@@ -1999,13 +2002,11 @@ button.modal-close {
     width: 100%;
   }
   .table-corner {
-    grid-area: score;
+    grid-area: corner;
   }
-  .pile-me {
-    grid-area: tools;
-    justify-self: start;
-    align-self: end;
-    margin: 0;
+  .tracker-us {
+    grid-area: score;
+    align-self: start;
   }
   .brand {
     display: none;
