@@ -859,7 +859,8 @@ button.icon-btn {
   position: relative;
   min-height: 220px;
 }
-/* The bidder's discards, laid out in the middle of the felt as they are picked. */
+/* The bidder's discards, laid out in the middle of the felt as they are picked, with the
+   button that sends them below. */
 .discard-tray {
   grid-area: trick;
   place-self: center;
@@ -880,6 +881,7 @@ button.icon-btn {
   gap: 14px;
 }
 .discard-slot {
+  position: relative;
   width: var(--card-w);
   height: var(--card-h);
   border: 2px dashed rgba(255, 255, 255, 0.28);
@@ -887,6 +889,9 @@ button.icon-btn {
 }
 .discard-card {
   position: relative;
+}
+.discard-go {
+  min-width: 120px;
 }
 /* The playing surface leans away from you. Only this backdrop tilts: the cards stay flat, so
    Motion can measure them for the flight from your hand. */
@@ -1126,13 +1131,13 @@ button.icon-btn {
      never grows or shrinks with it. */
   height: var(--action-h);
 }
-/* The "?" at the action bar's right end, and the rules it shows on hover or focus. */
+/* The "?" just off the last discard slot's bottom-right corner, and the rules it shows on
+   hover or focus, opening up and away from the tray. */
 .rules-tip {
   position: absolute;
-  top: 50%;
-  right: 8px;
+  left: calc(100% + 6px);
+  bottom: 0;
   display: flex;
-  transform: translateY(-50%);
 }
 .rules-tip-btn {
   width: 20px;
@@ -1153,7 +1158,7 @@ button.icon-btn {
 .rules-tip-text {
   position: absolute;
   z-index: 4;
-  right: 0;
+  left: 0;
   bottom: calc(100% + 8px);
   width: min(300px, 80vw);
   padding: 10px 12px;

@@ -1,29 +1,19 @@
-import {
-  type CardId,
-  cardById,
-  isNumberCard,
-  type LegalMoves,
-  type Suit,
-  type TableView,
-} from '@mam/engine';
+import { cardById, type LegalMoves, type Suit, type TableView } from '@mam/engine';
 import type { RoomView } from '@mam/protocol';
-import { type ReactNode, useId } from 'react';
+import type { ReactNode } from 'react';
 import { SUIT_NAMES } from '../format';
 import { playHint, waitingText } from '../hints';
 import { useGame } from '../store';
-import { useGameKeys } from '../useHotkeys';
 
 interface Props {
   view: TableView;
   room: RoomView;
-  selected: ReadonlySet<CardId>;
-  onClearSelection: () => void;
   /** Choosing trump: the color the pointer is on in the hand. */
   trumpPreview?: Suit | null;
 }
 
 /** The controls for whatever decision the seat faces right now. */
-export function ActionBar({ view, room, selected, onClearSelection, trumpPreview = null }: Props) {
+export function ActionBar({ view, room, trumpPreview = null }: Props) {
   const legal = view.legal;
   switch (legal.kind) {
     case 'none':
@@ -43,7 +33,8 @@ export function ActionBar({ view, room, selected, onClearSelection, trumpPreview
       // Your plaque on the felt is the bid button, with − and + and Pass round it.
       return <output className="visually-hidden">Your turn to bid.</output>;
     case 'discard':
-      return <DiscardControls legal={legal} selected={selected} onDone={onClearSelection} />;
+      // The discard tray on the felt holds the picks and the Discard button.
+      return <output className="visually-hidden">Your turn to discard.</output>;
     case 'trump':
       return <TrumpControls legal={legal} view={view} preview={trumpPreview} />;
     case 'play':
@@ -71,57 +62,6 @@ function TurnBar({ children, className }: { children: ReactNode; className?: str
       <span className="visually-hidden">Your turn.</span>
       {children}
     </div>
-  );
-}
-
-/**
- * A quiet "?" in the corner of the action bar: hovering or focusing it (a tap, on a touch
- * screen) shows the rules behind the decision, which the bar itself leaves out.
- */
-function RulesTip({ label, children }: { label: string; children: ReactNode }) {
-  const id = useId();
-  return (
-    <span className="rules-tip">
-      <button type="button" className="rules-tip-btn" aria-label={label} aria-describedby={id}>
-        ?
-      </button>
-      <span id={id} role="tooltip" className="rules-tip-text">
-        {children}
-      </span>
-    </span>
-  );
-}
-
-function DiscardControls({
-  legal,
-  selected,
-  onDone,
-}: {
-  legal: Extract<LegalMoves, { kind: 'discard' }>;
-  selected: ReadonlySet<CardId>;
-  onDone: () => void;
-}) {
-  const { act } = useGame();
-  const chosen = [...selected];
-  const numbers = chosen.filter((id) => isNumberCard(cardById(id))).length;
-  const ok = chosen.length === 3 && numbers >= legal.requiredNumberCards;
-  const left = 3 - chosen.length;
-  const discard = () => {
-    act({ type: 'discard', cardIds: chosen });
-    onDone();
-  };
-  useGameKeys(ok ? { Enter: discard } : {});
-  return (
-    <TurnBar>
-      <button type="button" className="primary" disabled={!ok} onClick={discard}>
-        {left > 0 ? `Discard (${left} left)` : 'Discard'}
-      </button>
-      <RulesTip label="Discard rules">
-        The three widow cards are now in your hand, outlined in gold. Choose three to put out of play for
-        this hand. Number cards must go before Money; the Tiger, Bull and Bear can never be
-        discarded.
-      </RulesTip>
-    </TurnBar>
   );
 }
 

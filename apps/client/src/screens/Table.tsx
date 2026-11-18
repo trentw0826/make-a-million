@@ -166,20 +166,21 @@ export function Table({ room, view }: { room: RoomView; view: TableView }) {
             plays={state.trickPlays}
             completed={completed}
           />
-          {discarding && <DiscardTray ids={[...selected]} onReturn={onCard} />}
+          {view.legal.kind === 'discard' && (
+            <DiscardTray
+              ids={[...selected]}
+              legal={view.legal}
+              onReturn={onCard}
+              onDone={() => setSelected(new Set())}
+            />
+          )}
 
           <div
             className={['me', myTurn && 'me-turn', hasPassed(view, me) && 'seat-passed']
               .filter(Boolean)
               .join(' ')}
           >
-            <ActionBar
-              view={view}
-              room={room}
-              selected={selected}
-              onClearSelection={() => setSelected(new Set())}
-              trumpPreview={naming ? trumpPreview : null}
-            />
+            <ActionBar view={view} room={room} trumpPreview={naming ? trumpPreview : null} />
             <Hand
               key={dealKey}
               ids={handIds}

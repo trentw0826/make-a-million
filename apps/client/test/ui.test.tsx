@@ -4,8 +4,8 @@ import { act, fireEvent, render, screen, waitFor, within } from '@testing-librar
 import { useEffect } from 'react';
 import { describe, expect, it } from 'vitest';
 import { Shell } from '../src/App';
-import { ActionBar } from '../src/components/ActionBar';
 import { ContractBar } from '../src/components/ContractBar';
+import { DiscardTray } from '../src/components/DiscardTray';
 import { EventLog } from '../src/components/EventLog';
 import { Hand, partOffset } from '../src/components/Hand';
 import { Scoreboard } from '../src/components/Scoreboard';
@@ -483,32 +483,25 @@ describe('table status', () => {
     expect(document.querySelector('.me-line')).not.toHaveTextContent('bidder');
   });
 
-  it('asks for the discard on the button itself, counting down, with the rules behind a ?', () => {
-    const discarding: TableView = {
-      ...dealt,
-      phase: 'discarding',
-      legal: { kind: 'discard', requiredNumberCards: 0, forbiddenIds: [] },
-    };
-    const bar = (selected: ReadonlySet<number>) => (
+  it('counts the discards on the felt, with the button below and the rules behind a ?', () => {
+    const legal = { kind: 'discard', requiredNumberCards: 0, forbiddenIds: [] } as const;
+    const tray = (ids: readonly number[]) => (
       <GameProvider url={URL}>
-        <ActionBar
-          view={discarding}
-          room={room('playing')}
-          selected={selected}
-          onClearSelection={() => {}}
-        />
+        <DiscardTray ids={ids} legal={legal} onReturn={() => {}} onDone={() => {}} />
       </GameProvider>
     );
-    const { rerender } = render(bar(new Set()));
-    expect(document.querySelector('.action-bar')).toHaveTextContent(
-      /^Your turn\.Discard \(3 left\)\?/,
-    );
-    expect(screen.getByRole('button', { name: 'Discard (3 left)' })).toBeDisabled();
+    const { rerender } = render(tray([]));
+    const region = screen.getByRole('region', { name: 'Your discards' });
+    expect(region.querySelector('.discard-tray-label')).toHaveTextContent('Discards (0/3)');
+    expect(screen.getByRole('button', { name: 'Discard' })).toBeDisabled();
+    // The ? sits on the last slot.
     const tip = screen.getByRole('button', { name: 'Discard rules' });
+    expect(tip.closest('.discard-slot')).toBe(region.querySelectorAll('.discard-slot')[2]);
     expect(tip).toHaveAccessibleDescription(/Number cards must go before Money/);
-    rerender(bar(new Set([1, 2])));
-    expect(screen.getByRole('button', { name: 'Discard (1 left)' })).toBeDisabled();
-    rerender(bar(new Set([1, 2, 3])));
+    rerender(tray([1, 2]));
+    expect(region.querySelector('.discard-tray-label')).toHaveTextContent('Discards (2/3)');
+    expect(screen.getByRole('button', { name: 'Discard' })).toBeDisabled();
+    rerender(tray([1, 2, 3]));
     expect(screen.getByRole('button', { name: 'Discard' })).toBeEnabled();
   });
 
@@ -543,12 +536,15 @@ describe('table status', () => {
     fireEvent.click(document.querySelector('.hand [data-card-id="1"]') as Element);
     // It flies to the tray (in jsdom the hand's copy lingers, as its exit never runs).
     await waitFor(() => expect(tray.querySelector('[data-card-id="1"]')).not.toBeNull());
-    expect(screen.getByRole('button', { name: 'Discard (2 left)' })).toBeDisabled();
+    expect(tray).toHaveTextContent('Discards (1/3)');
 
     fireEvent.click(tray.querySelector('[data-card-id="1"]') as Element);
     expect(tray.querySelector('[data-card-id="1"]')).toBeNull();
     expect(handIds()).toContain(1);
-    expect(screen.getByRole('button', { name: 'Discard (3 left)' })).toBeDisabled();
+    expect(tray).toHaveTextContent('Discards (0/3)');
+    expect(within(tray).getByRole('button', { name: 'Discard' })).toBeDisabled();
+    // The bar below your hand has nothing to add.
+    expect(document.querySelector('.me .action-bar:not(.action-hidden)')).toBeNull();
   });
 
   it('makes your plaque the bid button, − and + beside it and Pass below, with no bar', () => {

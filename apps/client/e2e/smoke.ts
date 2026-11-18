@@ -290,13 +290,17 @@ async function act(page: Page, shoot: Shoot): Promise<boolean> {
       else await page.getByRole('button', { name: /^Bid \$/ }).click(quick);
       return true;
     }
-    // The button counts down, "Discard (3 left)", until three cards are chosen.
-    const discard = page.getByRole('button', { name: /^Discard( \(\d left\))?$/ });
+    // The tray on the felt counts the picks, "Discards (0/3)", above its Discard button.
+    const discard = page.getByRole('button', { name: 'Discard', exact: true });
     if (await discard.isVisible()) {
       if (!discardChecked) {
+        const tray = page.getByRole('region', { name: 'Your discards' });
+        const label = await tray.locator('.discard-tray-label').textContent();
         check(
-          (await discard.textContent()) === 'Discard (3 left)',
-          'the discard button counts the cards still to choose',
+          label === 'Discards (0/3)' &&
+            (await tray.getByRole('button', { name: 'Discard rules' }).isVisible()) &&
+            (await discard.isDisabled()),
+          `the discard tray counts the picks, with its button and rules on the felt (label: ${label})`,
         );
         discardChecked = true;
       }
