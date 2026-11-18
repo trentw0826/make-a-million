@@ -12,7 +12,6 @@ import {
 import type { RoomView } from '@mam/protocol';
 import { LayoutGroup } from 'motion/react';
 import { useEffect, useState } from 'react';
-import { ActionBar } from '../components/ActionBar';
 import { ContractBar } from '../components/ContractBar';
 import { DiscardTray } from '../components/DiscardTray';
 import { GameOver } from '../components/GameOver';
@@ -25,6 +24,8 @@ import { TableDrawer } from '../components/TableDrawer';
 import { HelpButton, SoundToggle } from '../components/TopBar';
 import { TrickArea } from '../components/TrickArea';
 import { TrickPile } from '../components/TrickPile';
+import { TrumpPicker } from '../components/TrumpPicker';
+import { TurnNotice } from '../components/TurnNotice';
 import { nameOf } from '../format';
 import { blockedReason, hasPassed, isMyTurn, seatChip } from '../hints';
 import { sound } from '../sound/player';
@@ -57,7 +58,7 @@ export function Table({ room, view }: { room: RoomView; view: TableView }) {
     if (view.legal.kind !== 'discard') setSelected(new Set());
   }, [view.legal.kind]);
 
-  // Choosing trump: the color the pointer is on in the hand, shown in the bar.
+  // Choosing trump: the color the pointer is on in the hand, lit in the picker on the felt.
   const naming = view.legal.kind === 'trump';
   const nameable = new Set<Suit>(view.legal.kind === 'trump' ? view.legal.suits : []);
   const [trumpPreview, setTrumpPreview] = useState<Suit | null>(null);
@@ -166,6 +167,9 @@ export function Table({ room, view }: { room: RoomView; view: TableView }) {
             plays={state.trickPlays}
             completed={completed}
           />
+          {view.legal.kind === 'trump' && (
+            <TrumpPicker legal={view.legal} hand={view.hand} preview={trumpPreview} />
+          )}
           {view.legal.kind === 'discard' && (
             <DiscardTray
               ids={[...selected]}
@@ -188,7 +192,7 @@ export function Table({ room, view }: { room: RoomView; view: TableView }) {
               {hasPassed(view, me) && <span className="visually-hidden">, passed</span>}
               <SeatBadge chip={myChip} />
             </div>
-            <ActionBar view={view} room={room} trumpPreview={naming ? trumpPreview : null} />
+            <TurnNotice view={view} room={room} />
             <Hand
               key={dealKey}
               ids={handIds}

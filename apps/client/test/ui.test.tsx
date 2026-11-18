@@ -436,7 +436,7 @@ describe('table status', () => {
     expect(screen.getByText(/^Your turn\./)).toHaveClass('visually-hidden');
   });
 
-  it('names trump from the hand: a color rises under the pointer and shows in the bar', () => {
+  it('names trump from the felt or the hand: pointing at a color lights its token', () => {
     renderWith([
       welcome,
       { type: 'room', room: room('playing') },
@@ -453,11 +453,19 @@ describe('table status', () => {
         },
       },
     ]);
-    const bar = document.querySelector('.trump-bar') as HTMLElement;
-    expect(bar.querySelector('.trump-badge')).toHaveTextContent(/^Choose\s+a color\s+as trump$/);
-    // Yellow and Black aren't in the hand, so they can still be named from the bar.
-    expect(within(bar).getByRole('button', { name: 'Yellow' })).toBeInTheDocument();
-    expect(within(bar).queryByRole('button', { name: 'Red' })).toBeNull();
+    const picker = screen.getByRole('region', { name: 'Choose trump' });
+    expect(picker.closest('.me')).toBeNull();
+    expect(document.querySelector('.action-bar')).toBeNull();
+    // Every color has a token, with how many of it the hand holds, none lit yet.
+    const tokens = within(picker).getAllByRole('button');
+    expect(tokens.map((b) => b.getAttribute('aria-label'))).toEqual([
+      'Red, 2 in your hand',
+      'Yellow, 0 in your hand',
+      'Black, 0 in your hand',
+      'Green, 1 in your hand',
+    ]);
+    expect(picker.querySelector('.trump-pick-lit')).toBeNull();
+    expect(screen.getByText('Your turn to name trump.')).toHaveClass('visually-hidden');
 
     const slot = (id: number) =>
       document.querySelector(`[data-card-id="${id}"]`)?.closest('.hand-slot') as HTMLElement;
@@ -467,12 +475,11 @@ describe('table status', () => {
     expect(fan(1).style.getPropertyValue('--raise')).toBe('1');
     expect(fan(39).style.getPropertyValue('--raise')).toBe('0');
     expect(Number(fan(39).style.getPropertyValue('--part'))).toBeGreaterThan(0);
-    expect(bar.querySelector('.trump-badge')).toHaveTextContent(/^Choose\s+red\s+as trump$/);
-    expect(bar.querySelector('.trump-word')).toHaveClass('suit-red');
+    expect(picker.querySelector('.trump-pick-lit')).toHaveAccessibleName('Red, 2 in your hand');
 
     // The Tiger has no color: it fades back and can't be chosen.
     expect(document.querySelector('[data-card-id="52"]')).toHaveClass('card-disabled');
-    fireEvent.click(screen.getByRole('button', { name: /Green/ }));
+    fireEvent.click(within(picker).getByRole('button', { name: /^Yellow/ }));
     expect(screen.getByText(NOT_CONNECTED)).toBeInTheDocument();
   });
 

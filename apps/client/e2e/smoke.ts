@@ -7,6 +7,7 @@
  *   pnpm e2e                         # builds first
  *   CHROMIUM_PATH=/path/to/chrome pnpm e2e
  *   E2E_HAND_TIMEOUT_MS=5000 pnpm e2e   # stall on purpose, to see the stall report
+ *   E2E_TAKE_BID=1 pnpm e2e          # keep bidding, to reach the discard and trump on the felt
  *
  * Screenshots land in apps/client/e2e/out/. Exits non-zero if any check fails. If a hand
  * stalls, out/stall.png and out/stall.json show the table as it stood, and the actions that
@@ -25,6 +26,11 @@ const OUT = path.join(import.meta.dirname, 'out');
 const CHROMIUM = process.env.CHROMIUM_PATH ?? '/usr/bin/chromium';
 /** E2E_HAND_TIMEOUT_MS=5000 makes a hand stall fast, to see the stall report. */
 const HAND_TIMEOUT_MS = Number(process.env.E2E_HAND_TIMEOUT_MS) || 4 * 60_000;
+/**
+ * E2E_TAKE_BID=1 makes your seat keep bidding instead of passing, so it usually wins the
+ * auction and the discard tray and trump picker get checked and photographed.
+ */
+const TAKE_BID = process.env.E2E_TAKE_BID === '1';
 /** E2E_VIEWPORT=1366x768 tries another window size. */
 const VIEWPORT = (() => {
   const [w, h] = (process.env.E2E_VIEWPORT ?? '1280x860').split('x').map(Number);
@@ -289,7 +295,7 @@ async function act(page: Page, shoot: Shoot): Promise<boolean> {
         check(faded.name < 1 && faded.cards < 1, 'a seat that has passed fades back');
         passedSeatChecked = true;
       }
-      if (await pass.isEnabled()) await pass.click(quick);
+      if (!TAKE_BID && (await pass.isEnabled())) await pass.click(quick);
       else await page.getByRole('button', { name: /^Bid \$/ }).click(quick);
       return true;
     }
@@ -330,40 +336,27 @@ async function act(page: Page, shoot: Shoot): Promise<boolean> {
       await page.getByRole('button', { name: 'Discard', exact: true }).click(quick);
       return true;
     }
-    // Trump is named from the hand: point at a color, read it in the bar, click.
-    if (await page.locator('.trump-bar').isVisible()) {
+    // Trump is named from the picker on the felt, or from the hand: pointing at a color in
+    // the hand raises its group and lights its token on the felt.
+    const picker = page.getByRole('region', { name: 'Choose trump' });
+    if (await picker.isVisible()) {
       const colored = page
         .locator('.hand .hand-present:not([inert]) button.card:not([aria-disabled])')
         .first();
-      if ((await colored.count()) > 0) {
+      if (!trumpChecked && (await colored.count()) > 0) {
         await colored.hover(onCard);
         await sleep(350);
-        if (!trumpChecked) {
-          const raised = await page.locator('.hand-fan-hovered').count();
-          const preview = (await page.locator('.trump-word').textContent()) ?? '';
-          const ofColor = await page
-            .locator(`.hand [data-card-id]`)
-            .evaluateAll(
-              (cards, color) =>
-                cards.filter((c) =>
-                  (c.getAttribute('aria-label') ?? '').toLowerCase().includes(color),
-                ).length,
-              preview,
-            );
-          check(
-            raised === ofColor && raised > 0 && /^(red|yellow|black|green)$/.test(preview),
-            `pointing at a color raises its group and names it in the bar (${raised} cards, ${preview})`,
-          );
-          trumpChecked = true;
-        }
+        const raised = await page.locator('.hand-fan-hovered').count();
+        const lit = (await picker.locator('.trump-pick-lit').getAttribute('aria-label')) ?? '';
+        const held = Number(/, (\d+) in your hand$/.exec(lit)?.[1]);
+        check(
+          raised > 0 && raised === held && (await page.locator('.action-bar').count()) === 0,
+          `pointing at a color raises its group and lights its token on the felt (${raised} raised, ${lit})`,
+        );
+        trumpChecked = true;
         await shoot('4b-trump');
-        await colored.click(onCard);
-        return true;
       }
-    }
-    const suit = page.locator('.suit-btn').first();
-    if (await suit.isVisible()) {
-      await suit.click(quick);
+      await picker.getByRole('button').first().click(quick);
       return true;
     }
     const card = page

@@ -877,7 +877,8 @@ button.icon-btn {
   justify-items: center;
   gap: 8px;
 }
-.discard-tray-label {
+.discard-tray-label,
+.felt-label {
   margin: 0;
   font-size: 0.85em;
   letter-spacing: 0.08em;
@@ -900,6 +901,53 @@ button.icon-btn {
 }
 .discard-go {
   min-width: 120px;
+}
+/* Naming trump (TrumpPicker), in the middle of the felt: a token per color, lit while the
+   pointer is on that color in the hand. */
+.trump-picker {
+  grid-area: trick;
+  place-self: center;
+  z-index: 2;
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+}
+.trump-picks {
+  display: flex;
+  gap: 12px;
+}
+.trump-pick {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  width: 78px;
+  padding: 10px 6px 8px;
+  border: 2px solid transparent;
+  border-radius: var(--radius-m);
+  background: var(--paper);
+  box-shadow: var(--shadow-1);
+  transition:
+    transform var(--dur-base) var(--ease-out),
+    border-color var(--dur-base) var(--ease-out);
+}
+.trump-pick:hover,
+.trump-pick:focus-visible,
+.trump-pick-lit {
+  border-color: currentColor;
+  transform: translateY(-4px);
+}
+.trump-pick-glyph {
+  width: 30px;
+  height: 30px;
+}
+.trump-pick-name {
+  font-weight: bold;
+  font-size: 0.85em;
+  color: var(--ink);
+}
+.trump-pick-count {
+  font-size: 0.75em;
+  color: var(--muted);
 }
 /* The playing surface leans away from you. Only this backdrop tilts: the cards stay flat, so
    Motion can measure them for the flight from your hand. */
@@ -1108,19 +1156,6 @@ button.icon-btn {
 .turn-marker svg {
   display: block;
 }
-.action-bar {
-  position: relative;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  align-items: center;
-  justify-content: center;
-  background: rgba(0, 0, 0, 0.2);
-  padding: 0 14px;
-  border-radius: var(--radius-l);
-  /* A fixed height, whatever the bar holds. It shows only while you name trump. */
-  height: var(--action-h);
-}
 /* The "?" just off the last discard slot's bottom-right corner, and the rules it shows on
    hover or focus, opening up and away from the tray. */
 .rules-tip {
@@ -1171,45 +1206,7 @@ button.icon-btn {
   visibility: visible;
   opacity: 1;
 }
-/* Naming trump: one wide badge, "Choose ___ as trump", its blank filled with the color under
-   the pointer. */
-.trump-badge {
-  display: inline-flex;
-  align-items: baseline;
-  justify-content: center;
-  gap: 0;
-  min-width: min(340px, 100%);
-  padding: 6px 20px;
-  border-radius: 999px;
-  background: var(--paper);
-  color: var(--ink);
-  font-weight: bold;
-  white-space: pre;
-}
-.trump-blank,
-.trump-word {
-  display: inline-block;
-  min-width: 3.6em;
-  text-align: center;
-}
-.trump-blank {
-  height: 1em;
-  border-bottom: 2px solid var(--line);
-}
-.trump-word {
-  text-decoration: underline;
-  text-decoration-thickness: 2px;
-  text-underline-offset: 3px;
-  animation: fade-in var(--dur-base) var(--ease-out);
-}
-.trump-missing {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-.suit-btn {
-  font-weight: bold;
-}
+
 .hand {
   position: relative;
   min-width: 0;
@@ -1953,9 +1950,6 @@ button.modal-close {
     padding: 4px 8px;
     gap: 4px;
   }
-  .action-bar {
-    padding: 0 12px;
-  }
   .hand {
     padding: 6px 0 calc(var(--fan-drop) * 24);
   }
@@ -2013,16 +2007,6 @@ button.modal-close {
   50% {
     box-shadow: 0 0 0 7px rgba(184, 134, 11, 0);
   }
-}
-/* A decision's controls ease in as the bar changes to them. */
-@keyframes bar-in {
-  from {
-    opacity: 0;
-    transform: translateY(4px);
-  }
-}
-.action-turn {
-  animation: bar-in var(--dur-base) var(--ease-out);
 }
 
 @keyframes fade-in {
@@ -2107,9 +2091,7 @@ button.modal-close {
 @media (prefers-reduced-motion: reduce) {
   .seat-acting > .seat-name,
   .me-turn > .me-name,
-  .action-turn,
   .screen,
-  .trump-word,
   .plaque-high,
   .modal-backdrop,
   .modal,
@@ -2119,6 +2101,7 @@ button.modal-close {
   }
   .card,
   .hand-fan,
+  .trump-pick,
   .progress span,
   .countdown-fill {
     transition: none;
