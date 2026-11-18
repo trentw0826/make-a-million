@@ -3,7 +3,6 @@
 A scratchpad for future fixes, features, and updates
 
 ## Immediate
-- [ ] The hand review UI has nice elements but is very busy to look at. Reduce it down an animated sliding bar (much like the current one) that simply denotes the bid, how much the two sides made, and how much they currently have. Have a button that can optionally show the cards played during the hand. Keep the ready-up features at the bottom
 
 
 ## Later

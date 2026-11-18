@@ -559,6 +559,24 @@ async function fullHand(browser: Browser, base: string): Promise<void> {
     'the bots ready up',
   );
   await shoot('6b-result-ready');
+  // The cards of each trick wait behind a button.
+  check(
+    (await result.getByRole('region', { name: 'Cards played' }).count()) === 0,
+    "the hand review keeps the tricks' cards put away",
+  );
+  await result.getByRole('button', { name: 'Show the cards' }).click();
+  const played = result.getByRole('region', { name: 'Cards played' });
+  await until(
+    async () => (await played.getByRole('listitem').count()) === 13,
+    'the hand review shows every trick',
+  );
+  check(
+    (await played.locator('[data-card-id]').count()) === 52,
+    'the hand review shows the four cards of each trick',
+  );
+  await sleep(300); // let it open fully
+  await shoot('6c-result-cards');
+  await result.getByRole('button', { name: 'Hide the cards' }).click();
   // By now the last trick has been gathered too: every trick lies in a pile, face down.
   const piled = async () =>
     (await page

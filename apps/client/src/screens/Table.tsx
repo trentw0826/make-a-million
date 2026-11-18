@@ -240,7 +240,6 @@ export function Table({ room, view }: { room: RoomView; view: TableView }) {
           team={view.team}
           seat={me}
           pending={view.continuePending}
-          target={view.ruleset.targetScore}
         />
       )}
       {view.phase === 'game-over' && <GameOver view={view} room={room} />}

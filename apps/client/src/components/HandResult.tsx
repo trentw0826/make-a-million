@@ -1,7 +1,4 @@
 import {
-  type CardId,
-  cardById,
-  isNumberCard,
   otherTeam,
   type HandResult as Result,
   SEATS,
@@ -11,9 +8,9 @@ import {
   teamOf,
 } from '@mam/engine';
 import type { RoomView } from '@mam/protocol';
-import { motion, useReducedMotion } from 'motion/react';
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { type CSSProperties, useEffect, useId, useState } from 'react';
-import { money, nameOf, SUIT_NAMES, shortMoney, teamLabel } from '../format';
+import { money, nameOf, SUIT_NAMES, shortMoney } from '../format';
 import type { ResultDeadline } from '../state';
 import { useGame } from '../store';
 import { EASE_OUT } from '../theme/motion';
@@ -22,9 +19,9 @@ import { CountUp } from './CountUp';
 import { Modal } from './Modal';
 
 /**
- * Shown when the last trick is taken: both sides count their Money openly. The bid meter
- * says at a glance how the contract went; each side's tricks lie below as tiles, which show
- * their four cards on hover or focus.
+ * Shown when the last trick is taken: both sides count their Money openly. One bar says how
+ * the hand went (the bid, what each side scored and now holds); the cards each trick was
+ * taken with wait behind a button.
  */
 export function HandResult({
   result,
@@ -32,22 +29,18 @@ export function HandResult({
   team,
   seat,
   pending,
-  target,
 }: {
   result: Result;
   room: RoomView;
-  /** The viewer's side, listed first. */
+  /** The viewer's side, shown on the left. */
   team: Team;
   seat: Seat;
   /** Seats still reading the result. */
   pending: readonly Seat[];
-  /** The score that wins the game. */
-  target: number;
 }) {
   const { act, state } = useGame();
-  const bt = result.biddingTeam;
   // Told from the viewer's side: their bid made is good news, the other side's is not.
-  const ours = bt === team;
+  const ours = result.biddingTeam === team;
   const banner = ours
     ? result.made
       ? 'Your side made its bid'
@@ -55,12 +48,10 @@ export function HandResult({
     : result.made
       ? 'They made their bid'
       : 'They were set';
-  const sides = [
-    { side: team, name: 'Us', key: 'us' },
-    { side: otherTeam(team), name: 'Them', key: 'them' },
-  ] as const;
   const good = ours === result.made;
   const still = useReducedMotion() ?? false;
+  const [showCards, setShowCards] = useState(false);
+  const cardsId = useId();
   return (
     <Modal title={`Hand ${result.handNumber}`} className="result-modal">
       <motion.p
@@ -76,56 +67,43 @@ export function HandResult({
         {nameOf(room, result.bidder)} bid <strong>{money(result.bid)}</strong> in{' '}
         <span className={`suit-word suit-${result.trump}`}>{SUIT_NAMES[result.trump]}</span>
       </p>
-      <BidMeter result={result} bidders={bt === team ? 'us' : 'them'} still={still} />
-      <div className="result-teams">
-        {sides.map(({ side, name, key }) => {
-          const tricks = result.tricks
-            .map((t, i) => ({ ...t, n: i + 1 }))
-            .filter((t) => teamOf(t.winner) === side);
-          const delta = result.delta[side];
-          const total = result.scoresAfter[side];
-          const progress = Math.max(0, Math.min(100, (total / target) * 100));
-          return (
-            <section key={side} className={`result-team side-${key}`} aria-label={name}>
-              <h3>
-                <span className="side-dot" aria-hidden="true" />
-                {name} <span className="muted small">{teamLabel(room, side)}</span>
-              </h3>
-              <div className={`result-delta ${delta < 0 ? 'neg' : 'pos'}`}>
-                <span className="result-delta-label">
-                  {side === bt && !result.made ? 'Set back' : 'Scores'}
-                </span>
-                <CountUp value={delta} format={signedMoney} />
-              </div>
-              <div className="result-total">
-                <span className="muted small">
-                  Captured {money(result.captured[side])} · Total {money(total)}
-                </span>
-                <div className="progress" aria-hidden="true">
-                  <span style={{ width: `${progress}%` }} />
-                </div>
-              </div>
-              <p className="result-trick-count muted small">
-                {tricks.length === 0
-                  ? 'No tricks taken'
-                  : `${tricks.length} trick${tricks.length === 1 ? '' : 's'}`}
-              </p>
-              <ol className="trick-tiles">
-                {tricks.map((t, i) => (
-                  <motion.li
-                    key={t.n}
-                    initial={still ? false : { opacity: 0, y: 8, scale: 0.9 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    transition={{ delay: 0.25 + i * 0.05, duration: 0.25 }}
-                  >
-                    <TrickTile trick={t} n={t.n} />
-                  </motion.li>
-                ))}
-              </ol>
-            </section>
-          );
-        })}
-      </div>
+      <ScoreBar result={result} team={team} still={still} />
+      <button
+        type="button"
+        className="ghost small result-cards-toggle"
+        aria-expanded={showCards}
+        aria-controls={cardsId}
+        onClick={() => setShowCards((v) => !v)}
+      >
+        {showCards ? 'Hide the cards' : 'Show the cards'}
+      </button>
+      <AnimatePresence initial={false}>
+        {showCards && (
+          <motion.section
+            key="cards"
+            id={cardsId}
+            className="result-cards"
+            aria-label="Cards played"
+            initial={still ? false : { height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={still ? { opacity: 0 } : { height: 0, opacity: 0 }}
+            transition={{ duration: 0.25, ease: EASE_OUT }}
+          >
+            <ol className="result-tricks">
+              {result.tricks.map((t, i) => (
+                <TrickRow
+                  // biome-ignore lint/suspicious/noArrayIndexKey: tricks are fixed, in play order
+                  key={i}
+                  trick={t}
+                  n={i + 1}
+                  winner={t.winner === seat ? 'You' : nameOf(room, t.winner)}
+                  side={teamOf(t.winner) === team ? 'us' : 'them'}
+                />
+              ))}
+            </ol>
+          </motion.section>
+        )}
+      </AnimatePresence>
       <div className="result-foot">
         <Countdown deadline={state.resultDeadline} />
         <ul className="ready-list" aria-label="Ready for the next hand">
@@ -165,105 +143,107 @@ function signedMoney(amount: number): string {
 }
 
 /**
- * A tug of war over the hand's Money: the bidders' capture fills from the left, the other
- * side's from the right, and a notch marks the bid the bidders had to reach.
+ * The hand on one bar, the viewer's side on the left: each side's captured Money slides in
+ * from its own end, and a notch marks the bid, counted from the bidders' end. Above each end,
+ * what that side scored this hand and the total it now holds.
  */
-function BidMeter({
-  result,
-  bidders,
-  still,
-}: {
-  result: Result;
-  bidders: 'us' | 'them';
-  still: boolean;
-}) {
+function ScoreBar({ result, team, still }: { result: Result; team: Team; still: boolean }) {
   const bt = result.biddingTeam;
-  const mine = result.captured[bt];
-  const theirs = result.captured[otherTeam(bt)];
-  const scale = Math.max(mine + theirs, result.bid, 1);
-  const pct = (n: number) => `${Math.min(100, (n / scale) * 100)}%`;
-  const margin = Math.abs(mine - result.bid);
+  const them = otherTeam(team);
+  const caught = result.captured[bt];
+  const scale = Math.max(result.captured[team] + result.captured[them], result.bid, 1);
+  const pct = (n: number) => Math.min(100, (n / scale) * 100);
+  const bidAt = bt === team ? pct(result.bid) : 100 - pct(result.bid);
+  const margin = Math.abs(caught - result.bid);
   const caption = result.made
     ? margin === 0
       ? 'made exactly'
       : `made by ${shortMoney(margin)}`
     : `short by ${shortMoney(margin)}`;
-  const other = bidders === 'us' ? 'them' : 'us';
-  const grow = (width: string, delay: number) => ({
+  const grow = (n: number) => ({
     initial: still ? false : { width: '0%' },
-    animate: { width },
-    transition: { duration: 0.7, ease: EASE_OUT, delay },
+    animate: { width: `${pct(n)}%` },
+    transition: { duration: 0.8, ease: EASE_OUT, delay: 0.2 },
   });
+  const sides = [
+    { side: team, name: 'Us', key: 'us' },
+    { side: them, name: 'Them', key: 'them' },
+  ] as const;
   return (
-    <figure className="bid-meter">
+    <figure className="score-bar">
+      <div className="score-bar-sides">
+        {sides.map(({ side, name, key }) => (
+          <section key={key} className={`score-bar-side side-${key}`} aria-label={name}>
+            <span className="score-bar-name">
+              <span className="side-dot" aria-hidden="true" />
+              {name}
+            </span>
+            <span className={`score-bar-delta ${result.delta[side] < 0 ? 'neg' : 'pos'}`}>
+              <CountUp value={result.delta[side]} format={signedMoney} />
+            </span>
+            <span className="score-bar-total">Total {money(result.scoresAfter[side])}</span>
+          </section>
+        ))}
+      </div>
       <div
-        className="bid-meter-track"
+        className="score-bar-track"
         role="img"
-        aria-label={`The bidders captured ${money(mine)} against a ${money(result.bid)} bid: ${caption}.`}
+        aria-label={`The bidders captured ${money(caught)} against a ${money(result.bid)} bid: ${caption}.`}
       >
-        <motion.span className={`bid-meter-fill side-${bidders}`} {...grow(pct(mine), 0.2)} />
+        <motion.span className="score-bar-fill side-us" {...grow(result.captured[team])} />
         <motion.span
-          className={`bid-meter-fill bid-meter-other side-${other}`}
-          {...grow(pct(theirs), 0.2)}
+          className="score-bar-fill score-bar-right side-them"
+          {...grow(result.captured[them])}
         />
-        <span className="bid-meter-notch" style={{ left: pct(result.bid) }}>
-          <span className="bid-meter-bid">Bid {shortMoney(result.bid)}</span>
+        <span className="score-bar-notch" style={{ left: `${bidAt}%` }}>
+          <span className="score-bar-bid">Bid {shortMoney(result.bid)}</span>
         </span>
       </div>
-      <figcaption className={`bid-meter-caption ${result.made ? 'made' : 'set'}`}>
-        Captured {shortMoney(mine)}, {caption}
+      <figcaption className={`score-bar-caption ${result.made ? 'made' : 'set'}`}>
+        Bidders captured {shortMoney(caught)}, {caption}
       </figcaption>
     </figure>
   );
 }
 
-function tileMoney(amount: number): string {
+function trickMoney(amount: number): string {
   return amount === 0 ? '$0' : shortMoney(amount);
 }
 
-/** What a card adds to a tile's row of pips: its colour, and filled if it carries Money. */
-function pipClass(id: CardId): string {
-  const card = cardById(id);
-  if (card.kind !== 'suit') return `pip pip-${card.kind}`;
-  return `pip pip-${card.suit}${isNumberCard(card) ? ' pip-plain' : ''}`;
-}
-
-/**
- * One taken trick: its value, a pip per card, and a mark for the Bull or Bear. Hovering or
- * focusing it lays its four cards out above it.
- */
-function TrickTile({ trick, n }: { trick: TrickSummary; n: number }) {
-  const id = useId();
-  const mod = trick.modifier === 'bull' ? ' (Bull ×2)' : trick.modifier === 'bear' ? ' (Bear)' : '';
+/** One trick, in play order: who took it, its four cards, and what it was worth. */
+function TrickRow({
+  trick,
+  n,
+  winner,
+  side,
+}: {
+  trick: TrickSummary;
+  n: number;
+  winner: string;
+  side: 'us' | 'them';
+}) {
+  const mod = trick.modifier === 'bull' ? ' ×2' : trick.modifier === 'bear' ? ' Bear' : '';
   return (
-    <span className="trick-tip">
-      <button
-        type="button"
-        className={`trick-tile mod-${trick.modifier}${trick.money === 0 ? ' trick-tile-empty' : ''}`}
-        aria-label={`Trick ${n}: ${money(trick.value)}${mod}`}
-        aria-describedby={id}
-      >
-        {/* A Bear trick shows the Money it would have been worth, struck out. */}
-        <span className="trick-tile-value">
-          {tileMoney(trick.modifier === 'bear' ? trick.money : trick.value)}
+    <li className={`result-trick side-${side} mod-${trick.modifier}`}>
+      <span className="result-trick-head">
+        <span className="result-trick-who">
+          <span className="side-dot" aria-hidden="true" />
+          {n}. {winner}
         </span>
-        <span className="trick-tile-pips" aria-hidden="true">
-          {trick.cardIds.map((c) => (
-            <span key={c} className={pipClass(c)} />
-          ))}
-        </span>
-        {trick.modifier !== 'none' && (
-          <span className="trick-tile-mod" aria-hidden="true">
-            {trick.modifier === 'bull' ? '×2' : 'Bear'}
+        <span className="result-trick-value">
+          {/* A Bear trick shows the Money it would have been worth, struck out. */}
+          <span className="result-trick-money">
+            {trickMoney(trick.modifier === 'bear' ? trick.money : trick.value)}
           </span>
-        )}
-      </button>
-      <span id={id} role="tooltip" className="trick-tip-cards">
+          {mod}
+        </span>
+      </span>
+      <span className="result-trick-cards">
         {trick.cardIds.map((c) => (
           <CardFace key={c} id={c} size="small" />
         ))}
       </span>
-    </span>
+    </li>
   );
 }
 

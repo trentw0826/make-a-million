@@ -758,7 +758,7 @@ describe('Hand result', () => {
     expect(screen.getByText('Waiting for the others…')).toBeInTheDocument();
   });
 
-  it("weighs the capture against the bid and lays out each side's tricks as tiles", () => {
+  it("puts the hand on one bar, each side's score and total at its end, the cards behind a button", () => {
     const result = scored.result;
     if (!result) throw new Error('fixture has a result');
     renderWith([
@@ -792,12 +792,27 @@ describe('Hand result', () => {
         name: /captured \$120,000 against a \$100,000 bid: made by \$20k/,
       }),
     ).toBeInTheDocument();
-    const them = screen.getByRole('region', { name: 'Them' });
-    const bull = within(them).getByRole('button', { name: 'Trick 1: $80,000 (Bull ×2)' });
-    expect(bull).toHaveAccessibleDescription(/Bull/);
-    expect(within(them).getByText('1 trick')).toBeInTheDocument();
-    const us = screen.getByRole('region', { name: 'Us' });
-    expect(within(us).getByRole('button', { name: 'Trick 2: $0' })).toBeInTheDocument();
-    expect(us).toHaveTextContent('Captured $60,000 · Total $60,000');
+    // Your side on the left, with what it scored and what it now holds.
+    const sides = screen.getAllByRole('region').filter((r) => r.closest('.score-bar'));
+    expect(sides.map((r) => r.getAttribute('aria-label'))).toEqual(['Us', 'Them']);
+    expect(sides[0]).toHaveTextContent('+$60,000');
+    expect(sides[0]).toHaveTextContent('Total $60,000');
+    expect(sides[1]).toHaveTextContent('Total $120,000');
+    // Them bid, so the bid is marked from the right: $100k of $180k.
+    const notch = document.querySelector('.score-bar-notch') as HTMLElement;
+    expect(Number.parseFloat(notch.style.left)).toBeCloseTo(100 - (100 / 180) * 100, 1);
+
+    // The cards wait behind a button.
+    expect(screen.queryByRole('region', { name: 'Cards played' })).toBeNull();
+    const toggle = screen.getByRole('button', { name: 'Show the cards' });
+    expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    fireEvent.click(toggle);
+    const cards = screen.getByRole('region', { name: 'Cards played' });
+    expect(toggle).toHaveAccessibleName('Hide the cards');
+    const tricks = within(cards).getAllByRole('listitem');
+    expect(tricks[0]).toHaveTextContent(/^1\. Bot 2\$80k ×2/);
+    expect(tricks[0]).toHaveClass('side-them');
+    expect(within(tricks[0] as HTMLElement).getAllByRole('img')).toHaveLength(4);
+    expect(tricks[1]).toHaveTextContent(/^2\. You\$0/);
   });
 });
