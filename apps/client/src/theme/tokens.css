@@ -82,8 +82,6 @@
   --card-h: 98px;
   --card-small-w: 54px;
   --card-small-h: 78px;
-  /* The action bar's fixed height. */
-  --action-h: 52px;
   --back-w: var(--card-w);
   --back-h: var(--card-h);
   /* Degrees between neighbouring cards in the fanned hand. */
@@ -124,7 +122,6 @@
     --card-h: 80px;
     --card-small-w: 46px;
     --card-small-h: 66px;
-    --action-h: 44px;
   }
 }
 

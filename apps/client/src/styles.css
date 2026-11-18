@@ -534,17 +534,33 @@ button.icon-btn {
   flex-direction: column;
   flex: 1;
 }
-.score-sheet h2,
-.event-log h2 {
+.score-sheet h2 {
   font-size: 1em;
   margin: 0 0 6px;
   border-bottom: 1px solid var(--line);
 }
-/* Each side's total, in the top corner of the felt. */
-.scoreboard {
+/* Each side's score (ScoreTracker), in its own top corner of the felt, its taken tricks
+   lying beside it toward the middle: ours top left, theirs top right. */
+.tracker {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.tracker-us {
   grid-area: score;
-  align-self: start;
   justify-self: start;
+  align-self: start;
+  align-items: flex-start;
+}
+.tracker-them {
+  grid-area: tools;
+  justify-self: end;
+  align-self: start;
+  align-items: flex-start;
+  flex-direction: row-reverse;
+}
+.total {
+  position: relative;
   display: grid;
   gap: 6px;
   min-width: 170px;
@@ -568,16 +584,15 @@ button.icon-btn {
 .total-score.neg {
   color: var(--bad-on-felt);
 }
-.scoreboard-target {
+.total-caption {
   font-size: 0.75em;
   text-align: right;
   color: var(--on-felt-muted);
 }
-/* Beside the scoreboard, on the felt, so it never covers the other side's line. */
+/* The change from the last hand, floating up just below each side's score. */
 .delta-float {
   position: absolute;
-  left: calc(100% + 16px);
-  top: 0;
+  left: 10px;
   font-size: 0.85em;
   font-weight: bold;
   white-space: nowrap;
@@ -587,6 +602,10 @@ button.icon-btn {
 }
 .delta-float.neg {
   color: var(--bad-on-felt);
+}
+.delta-float-us,
+.delta-float-them {
+  top: calc(100% + 6px);
 }
 .progress {
   height: 4px;
@@ -604,58 +623,122 @@ button.icon-btn {
 .side-us .progress span {
   background: var(--team-us);
 }
-.sheet {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.8em;
+/* The score sheet: the race to the target, then a card for each hand, newest first. */
+.sheet-race {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  border-radius: var(--radius-m);
+  background: var(--paper-raised);
+  box-shadow: var(--shadow-1);
 }
-.sheet th,
-.sheet td {
-  text-align: left;
-  padding: 2px 4px;
-  border-bottom: 1px solid var(--line);
+.sheet-race-side {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 2px 8px;
+  align-items: baseline;
+  font-size: 0.9em;
 }
-.sheet .num {
-  text-align: right;
-  white-space: nowrap;
+.sheet-race-side strong {
+  font-variant-numeric: tabular-nums;
 }
-.sheet .nowrap {
-  white-space: nowrap;
-}
-.sheet tr.set td {
+.sheet-race-side strong.neg {
   color: var(--danger);
 }
-.event-log {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
+.sheet-race-side .progress {
+  grid-column: 1 / -1;
+  height: 5px;
+  background: var(--line);
+}
+.sheet-race-target {
+  margin: 0;
+  font-size: 0.75em;
+  text-align: right;
+  color: var(--muted);
+}
+.sheet-hands {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.sheet-hand {
+  display: grid;
+  gap: 6px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-m);
   font-size: 0.85em;
 }
-.event-log ul {
+.sheet-hand-live {
+  border-color: var(--accent);
+}
+.sheet-hand-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   margin: 0;
+  font-size: 1em;
+}
+.sheet-chip {
+  padding: 0 8px;
+  border-radius: 999px;
+  font-size: 0.8em;
+  font-weight: bold;
+}
+.sheet-chip.good {
+  background: var(--good-bg);
+  color: var(--good-ink);
+}
+.sheet-chip.bad {
+  background: var(--bad-bg);
+  color: var(--danger);
+}
+.sheet-chip-live {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+.sheet-hand-bid {
+  margin: 0;
+}
+.sheet-trump {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-weight: bold;
+}
+.sheet-trump-glyph {
+  width: 0.9em;
+  height: 0.9em;
+}
+.sheet-hand-sides {
+  display: flex;
+  justify-content: space-between;
+  font-weight: bold;
+  font-variant-numeric: tabular-nums;
+}
+.sheet-hand-sides .pos {
+  color: var(--good-ink);
+}
+.sheet-hand-sides .neg {
+  color: var(--danger);
+}
+.sheet-dim {
+  font-weight: normal;
+  color: var(--muted);
+}
+.sheet-log summary {
+  cursor: pointer;
+  color: var(--muted);
+}
+.sheet-lines {
+  margin: 4px 0 0;
   padding-left: 16px;
 }
-.event-log li {
+.sheet-lines li {
   margin: 2px 0;
-}
-.event-log h3 {
-  margin: 8px 0 2px;
-  font-size: 0.8em;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--muted);
-}
-.log-hand summary {
-  cursor: pointer;
-  padding: 2px 0;
-  color: var(--muted);
-}
-.log-hand-title {
-  font-weight: bold;
-  color: var(--ink);
-}
-.log-hand[open] summary {
-  margin-bottom: 2px;
 }
 .tone-good {
   color: var(--green);
@@ -717,60 +800,61 @@ button.icon-btn {
   padding: 2px 8px;
 }
 .score-sheet {
-  max-height: 45%;
+  flex: 1;
+  min-height: 0;
   overflow-y: auto;
 }
 .seat-panel {
   padding: 10px;
-  border-radius: var(--radius-l);
-  border: 2px solid transparent;
   text-align: center;
-  /* The ring round the acting seat fades in and out as the turn passes. */
+}
+/* The other three seats, each centred on its side of the table. */
+.top-side {
+  grid-area: top;
+  justify-self: center;
+}
+.left-side,
+.right-side {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  min-height: 0;
+  min-width: 0;
+}
+.left-side {
+  grid-area: left;
+}
+.right-side {
+  grid-area: right;
+}
+/* Each seat's name tag; the gold ring goes round the name of whoever the table waits on,
+   fading in and out as the turn passes. */
+.seat-name {
+  width: fit-content;
+  margin: 0 auto 4px;
+  padding: 2px 10px;
+  border: 2px solid transparent;
+  border-radius: var(--radius-l);
   transition:
     border-color var(--dur-slow) var(--ease-out),
     background-color var(--dur-slow) var(--ease-out);
 }
-/* Each seat with its trick pile on the player's own left as they face the middle: your
-   partner's to their right on screen, the left player's above them, the right player's
-   below them. */
-.top-side {
-  grid-area: top;
+/* Yours, above your hand, with the contract badge beside it when you hold it. */
+.me-name {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   justify-self: center;
-  display: flex;
-  align-items: center;
-  gap: 12px;
+  min-height: 24px;
+  margin: 0;
 }
-/* The player on your left, with the opponents' tricks on their left: seen from their seat,
-   facing the middle of the table, that is above them on screen. */
-.left-side {
-  grid-area: left;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: stretch;
-  gap: 8px;
-  min-height: 0;
-  min-width: 0;
-}
-.pile-left {
-  align-self: center;
-}
-.right-side {
-  grid-area: right;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  gap: 8px;
-  min-height: 0;
-  min-width: 0;
-}
-.seat-acting {
+.seat-acting > .seat-name,
+.me-turn > .me-name {
   border-color: var(--accent);
   background: rgba(0, 0, 0, 0.15);
-}
-.seat-name {
-  margin-bottom: 4px;
+  /* pulse-ring is defined with the other motion, below. */
+  animation: pulse-ring 1.8s ease-in-out infinite;
 }
 /* A bot's strength, after its name: there if you look, quiet if you don't. */
 .seat-difficulty {
@@ -816,37 +900,8 @@ button.icon-btn {
   width: 0.85em;
   height: 0.85em;
 }
-/* Your own seat says so. */
-.you-tag {
-  margin-right: 6px;
-  padding: 1px 8px;
-  border-radius: var(--radius-l);
-  background: var(--team-us);
-  color: var(--on-accent);
+.me-name .seat-chip {
   font-size: 0.85em;
-  font-weight: bold;
-}
-/* Trump, as a faint watermark in the middle of the felt. */
-.trump-mark {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: min(30%, 140px);
-  aspect-ratio: 1;
-  transform: translate(-50%, -50%);
-  opacity: 0.14;
-  pointer-events: none;
-  animation: fade-in var(--dur-slow) var(--ease-out);
-}
-.trump-mark svg {
-  display: block;
-  width: 100%;
-  height: 100%;
-}
-.scoreboard-hand {
-  font-size: 0.8em;
-  letter-spacing: 0.04em;
-  color: var(--on-felt-muted);
 }
 
 /* Sized to its fan (inline), so it centres under the seat's name. */
@@ -876,7 +931,8 @@ button.icon-btn {
   position: relative;
   min-height: 220px;
 }
-/* The bidder's discards, laid out in the middle of the felt as they are picked. */
+/* The bidder's discards, laid out in the middle of the felt as they are picked, with the
+   button that sends them below. */
 .discard-tray {
   grid-area: trick;
   place-self: center;
@@ -885,7 +941,8 @@ button.icon-btn {
   justify-items: center;
   gap: 8px;
 }
-.discard-tray-label {
+.discard-tray-label,
+.felt-label {
   margin: 0;
   font-size: 0.85em;
   letter-spacing: 0.08em;
@@ -897,6 +954,7 @@ button.icon-btn {
   gap: 14px;
 }
 .discard-slot {
+  position: relative;
   width: var(--card-w);
   height: var(--card-h);
   border: 2px dashed rgba(255, 255, 255, 0.28);
@@ -904,6 +962,56 @@ button.icon-btn {
 }
 .discard-card {
   position: relative;
+}
+.discard-go {
+  min-width: 120px;
+}
+/* Naming trump (TrumpPicker), in the middle of the felt: a token per color, lit while the
+   pointer is on that color in the hand. */
+.trump-picker {
+  grid-area: trick;
+  place-self: center;
+  z-index: 2;
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+}
+.trump-picks {
+  display: flex;
+  gap: 12px;
+}
+.trump-pick {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  width: 78px;
+  padding: 10px 6px 8px;
+  border: 2px solid transparent;
+  border-radius: var(--radius-m);
+  background: var(--paper);
+  box-shadow: var(--shadow-1);
+  transition:
+    transform var(--dur-base) var(--ease-out),
+    border-color var(--dur-base) var(--ease-out);
+}
+.trump-pick:hover,
+.trump-pick:focus-visible,
+.trump-pick-lit {
+  border-color: currentColor;
+  transform: translateY(-4px);
+}
+.trump-pick-glyph {
+  width: 30px;
+  height: 30px;
+}
+.trump-pick-name {
+  font-weight: bold;
+  font-size: 0.85em;
+  color: var(--ink);
+}
+.trump-pick-count {
+  font-size: 0.75em;
+  color: var(--muted);
 }
 /* The playing surface leans away from you. Only this backdrop tilts: the cards stay flat, so
    Motion can measure them for the flight from your hand. */
@@ -953,15 +1061,6 @@ button.icon-btn {
   display: grid;
   gap: 10px;
   padding: 8px;
-  border-radius: 12px;
-  border: 2px solid transparent;
-  transition:
-    border-color var(--dur-slow) var(--ease-out),
-    background-color var(--dur-slow) var(--ease-out);
-}
-.me-turn {
-  border-color: var(--accent);
-  background: rgba(0, 0, 0, 0.1);
 }
 /* Each screen fades in as it takes over the window. */
 .screen {
@@ -1121,35 +1220,13 @@ button.icon-btn {
 .turn-marker svg {
   display: block;
 }
-.me-line {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 2px;
-  min-height: 24px;
-  font-size: 0.85em;
-}
-.action-bar {
-  position: relative;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  align-items: center;
-  justify-content: center;
-  background: rgba(0, 0, 0, 0.2);
-  padding: 0 14px;
-  border-radius: var(--radius-l);
-  /* A fixed height, whatever the bar holds or whether it shows at all, so the table above
-     never grows or shrinks with it. */
-  height: var(--action-h);
-}
-/* The "?" at the action bar's right end, and the rules it shows on hover or focus. */
+/* The "?" just off the last discard slot's bottom-right corner, and the rules it shows on
+   hover or focus, opening up and away from the tray. */
 .rules-tip {
   position: absolute;
-  top: 50%;
-  right: 8px;
+  left: calc(100% + 14px);
+  bottom: 0;
   display: flex;
-  transform: translateY(-50%);
 }
 .rules-tip-btn {
   width: 20px;
@@ -1170,7 +1247,7 @@ button.icon-btn {
 .rules-tip-text {
   position: absolute;
   z-index: 4;
-  right: 0;
+  left: 0;
   bottom: calc(100% + 8px);
   width: min(300px, 80vw);
   padding: 10px 12px;
@@ -1193,49 +1270,7 @@ button.icon-btn {
   visibility: visible;
   opacity: 1;
 }
-/* Naming trump: one wide badge, "Choose ___ as trump", its blank filled with the color under
-   the pointer. */
-.trump-badge {
-  display: inline-flex;
-  align-items: baseline;
-  justify-content: center;
-  gap: 0;
-  min-width: min(340px, 100%);
-  padding: 6px 20px;
-  border-radius: 999px;
-  background: var(--paper);
-  color: var(--ink);
-  font-weight: bold;
-  white-space: pre;
-}
-.trump-blank,
-.trump-word {
-  display: inline-block;
-  min-width: 3.6em;
-  text-align: center;
-}
-.trump-blank {
-  height: 1em;
-  border-bottom: 2px solid var(--line);
-}
-.trump-word {
-  text-decoration: underline;
-  text-decoration-thickness: 2px;
-  text-underline-offset: 3px;
-  animation: fade-in var(--dur-base) var(--ease-out);
-}
-.trump-missing {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-/* While you wait, the bar is empty and held unseen, so your hand doesn't jump. */
-.action-hidden {
-  visibility: hidden;
-}
-.suit-btn {
-  font-weight: bold;
-}
+
 .hand {
   position: relative;
   min-width: 0;
@@ -1243,13 +1278,14 @@ button.icon-btn {
   justify-content: center;
   padding: 16px 0 calc(var(--fan-drop) * 40);
 }
-/* A seat that has passed is out of the auction: its name and cards fade back. Your own
-   action bar stays readable. */
+/* A seat that has passed is out of the auction: its name and cards fade back. */
 .seat-panel > *,
+.me > .me-name,
 .me > .hand {
   transition: opacity var(--dur-slow) var(--ease-out);
 }
 .seat-passed.seat-panel > *,
+.seat-passed.me > .me-name,
 .seat-passed.me > .hand {
   opacity: var(--passed-opacity);
 }
@@ -1273,10 +1309,6 @@ button.icon-btn {
 }
 .hand-slot.group-start {
   margin-left: calc(var(--step) - var(--card-w) + var(--group-gap));
-}
-/* While discarding, the cards that must be kept sit apart at the end of the hand. */
-.hand-slot.kept-start {
-  margin-left: calc(var(--step) - var(--card-w) + var(--group-gap) * 2.5);
 }
 /* The fan: each card leans by its distance from the middle (--d) and drops a little. Around
    a hovered card the others part (--part, set by Hand) and the card itself rises (--raise);
@@ -1326,18 +1358,17 @@ button.icon-btn {
   color: var(--on-accent);
 }
 
-/* Taken tricks: a loose, face-down pile beside each partnership. */
+/* Taken tricks: a loose, face-down pile beside each side's score. */
 .trick-pile {
   position: relative;
   flex: none;
   width: var(--card-w);
   height: var(--card-h);
 }
-.pile-me {
-  grid-area: me;
-  justify-self: start;
-  align-self: center;
-  margin-left: max(16px, (25% - var(--card-w)) / 2);
+/* A pile grows upward as tricks land, so at the top of the felt it starts a little lower to
+   keep within it. */
+.tracker > .trick-pile {
+  margin-top: 24px;
 }
 .pile-card {
   position: absolute;
@@ -1489,18 +1520,25 @@ button.card-selected:hover:not([aria-disabled="true"]) {
    opaque card, rather than a see-through card, so where cards overlap in the hand the one
    underneath doesn't show through. Each card keeps its veil to itself (isolation), or a
    covered card's veil would paint over the card on top of it too. */
+/* The veil over a card that can't be chosen: always there, clear until the card is greyed
+   out, so it fades in and out as the turn comes and goes rather than jumping. (Isolation only
+   on a greyed-out card: on every card it would flatten the card turning over.) */
 .card-disabled {
   isolation: isolate;
 }
-.card-disabled::before {
+.card::before {
   content: "";
   position: absolute;
   z-index: 2;
   inset: -1px;
   border-radius: inherit;
   background: var(--felt);
-  opacity: var(--disabled-veil);
+  opacity: 0;
   pointer-events: none;
+  transition: opacity var(--dur-base) var(--ease-out);
+}
+.card-disabled::before {
+  opacity: var(--disabled-veil);
 }
 .card-star {
   position: absolute;
@@ -1512,20 +1550,6 @@ button.card-selected:hover:not([aria-disabled="true"]) {
 .card-small .card-star {
   top: 1px;
   right: 3px;
-}
-.card-tag {
-  position: absolute;
-  top: -8px;
-  left: 50%;
-  transform: translateX(-50%);
-  padding: 0 6px;
-  border-radius: 8px;
-  font-size: 0.6em;
-  font-weight: bold;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  background: var(--accent);
-  color: var(--on-accent);
 }
 .card-fresh {
   border-color: var(--accent);
@@ -1644,45 +1668,24 @@ button.modal-close {
 .keys dd {
   margin: 0;
 }
-.result-banner {
-  position: relative;
-  margin: 0 0 8px;
-  padding: 8px 12px;
-  border-radius: 8px;
-  font-weight: bold;
-  font-size: 1.15em;
-}
-.result-banner.good {
-  background: var(--good-bg);
-  color: var(--good-ink);
-}
-.result-banner.bad {
-  background: var(--bad-bg);
-  color: var(--danger);
-}
-.result-team h3 .muted {
+.result-sep {
+  margin: 0 0.4em;
+  color: var(--muted);
   font-weight: normal;
 }
-.result-teams {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
-  margin: 12px 0;
+/* The hand's outcome, in the title: green when it went your way, red when it didn't. */
+.result-status {
+  position: relative;
+  display: inline-block;
 }
-.result-team h3 {
-  margin: 0 0 6px;
-  font-size: 1em;
+.result-status.good {
+  color: var(--good-ink);
+}
+.result-status.bad {
+  color: var(--danger);
 }
 .result-modal {
-  max-width: 820px;
-}
-/* Where the window is tall enough that the result never scrolls, a trick's cards may show
-   past the dialog's edge rather than be cut off by it. */
-@media (min-height: 760px) {
-  .result-modal {
-    overflow: visible;
-    max-height: none;
-  }
+  max-width: 640px;
 }
 .result-contract {
   margin: 0 0 10px;
@@ -1691,35 +1694,74 @@ button.modal-close {
   font-weight: bold;
 }
 
-/* The bid meter: the bidders' Money from the left, the other side's from the right. */
-.bid-meter {
-  margin: 0 0 18px;
+/* The hand on one bar (ScoreBar): your side's capture from the left, theirs from the right,
+   the bid notched from the bidders' end; above each end, the hand's score and the total. */
+.score-bar {
+  margin: 14px 0 12px;
 }
-.bid-meter-track {
+.score-bar-sides {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+}
+.score-bar-side {
+  display: grid;
+  justify-items: start;
+}
+.score-bar-side.side-them {
+  justify-items: end;
+}
+.score-bar-name {
+  font-weight: bold;
+}
+.score-bar-delta {
+  font-size: 1.6em;
+  font-weight: bold;
+  line-height: 1.2;
+}
+.score-bar-delta.pos {
+  color: var(--good-ink);
+}
+.score-bar-delta.neg {
+  color: var(--danger);
+}
+.score-bar-total {
+  font-size: 0.85em;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.score-bar-track {
   position: relative;
   height: 14px;
-  margin-top: 22px;
+  margin: 30px 0 0;
   border-radius: 7px;
   background: var(--line);
 }
-.bid-meter-fill {
+/* The same bar, small, on each hand of the score sheet. */
+.score-bar-compact {
+  height: 8px;
+  margin: 0;
+  border-radius: 4px;
+}
+.score-bar-fill {
   position: absolute;
   top: 0;
   bottom: 0;
   left: 0;
   border-radius: 7px 0 0 7px;
-  background: var(--team-them);
 }
-.bid-meter-fill.side-us {
+.score-bar-fill.side-us {
   background: var(--team-us);
 }
-.bid-meter-other {
+.score-bar-fill.side-them {
+  background: var(--team-them);
+}
+.score-bar-right {
   left: auto;
   right: 0;
   border-radius: 0 7px 7px 0;
-  opacity: 0.45;
 }
-.bid-meter-notch {
+.score-bar-notch {
   position: absolute;
   top: -5px;
   bottom: -5px;
@@ -1727,7 +1769,7 @@ button.modal-close {
   margin-left: -1px;
   background: var(--ink);
 }
-.bid-meter-bid {
+.score-bar-bid {
   position: absolute;
   bottom: calc(100% + 2px);
   left: 50%;
@@ -1736,180 +1778,96 @@ button.modal-close {
   font-size: 0.75em;
   font-weight: bold;
 }
-.bid-meter-caption {
+.score-bar-caption {
   margin-top: 6px;
+  text-align: center;
   font-size: 0.85em;
-  color: var(--muted);
 }
-.bid-meter-caption.made {
+.score-bar-caption.made {
   color: var(--good-ink);
 }
-.bid-meter-caption.set {
+.score-bar-caption.set {
   color: var(--danger);
 }
 
-.result-delta {
+/* The cards each trick was taken with, behind "Show the cards". */
+/* A quiet button, but plainly a button: a tinted pill with a chevron that turns over. */
+.result-cards-toggle {
   display: flex;
-  align-items: baseline;
-  gap: 8px;
-  font-size: 1.6em;
-  font-weight: bold;
-  font-variant-numeric: tabular-nums;
-}
-.result-delta.pos {
-  color: var(--good-ink);
-}
-.result-delta.neg {
-  color: var(--danger);
-}
-.result-delta-label {
-  font-size: 0.5em;
-  font-weight: normal;
-  color: var(--muted);
-}
-.result-total .progress {
-  height: 5px;
-  background: var(--line);
-}
-.result-trick-count {
-  margin: 12px 0 6px;
-}
-
-/* Each side's taken tricks, as tiles: value, a pip per card, the Bull or Bear marked. */
-.trick-tiles {
-  display: flex;
-  flex-wrap: wrap;
+  align-items: center;
   gap: 6px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-.trick-tip {
-  position: relative;
-  display: block;
-}
-.trick-tile {
-  position: relative;
-  display: grid;
-  justify-items: center;
-  gap: 4px;
-  width: 64px;
-  padding: 6px 4px 5px;
+  margin: 0 auto 12px;
+  padding: 4px 12px 4px 14px;
   border: 1px solid var(--line);
-  border-radius: var(--radius-m);
+  border-radius: 999px;
   background: var(--paper-raised);
   color: var(--ink);
   box-shadow: var(--shadow-1);
+}
+.result-cards-toggle:hover {
+  border-color: var(--accent);
+}
+.result-cards-chevron {
+  font-size: 0.8em;
+  transition: transform var(--dur-base) var(--ease-out);
+}
+.result-cards-toggle[aria-expanded="true"] .result-cards-chevron {
+  transform: rotate(180deg);
+}
+.result-cards {
+  overflow: hidden;
+}
+.result-tricks {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(176px, 1fr));
+  gap: 8px;
+  margin: 0 0 14px;
+  padding: 0;
+  list-style: none;
+}
+.result-trick {
+  display: grid;
+  gap: 4px;
+  padding: 6px 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-m);
+  background: var(--paper-raised);
   font-size: 0.85em;
+}
+.result-trick.mod-bull {
+  border-color: var(--accent);
+}
+.result-trick-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
   font-weight: bold;
+}
+.result-trick-value {
   font-variant-numeric: tabular-nums;
 }
-.trick-tile:hover,
-.trick-tile:focus-visible {
-  border-color: var(--accent);
-}
-.trick-tile-empty .trick-tile-value {
-  color: var(--muted);
-  font-weight: normal;
-}
-.trick-tile.mod-bull {
-  border-color: var(--accent);
-  box-shadow:
-    0 0 0 1px var(--accent),
-    var(--shadow-1);
-}
-.trick-tile.mod-bear .trick-tile-value {
+.mod-bear .result-trick-money {
   text-decoration: line-through;
 }
-.trick-tile-mod {
-  position: absolute;
-  top: -7px;
-  right: -6px;
-  padding: 0 4px;
-  border-radius: 6px;
-  font-size: 0.75em;
-  background: var(--accent);
-  color: var(--on-accent);
-}
-.mod-bear .trick-tile-mod {
-  background: var(--bear);
-}
-.trick-tile-pips {
+.result-trick-cards {
   display: flex;
   gap: 3px;
 }
-.pip {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  border: 2px solid currentColor;
-  background: currentColor;
-}
-.pip-plain {
-  background: transparent;
-}
-.pip-red {
-  color: var(--red);
-}
-.pip-yellow {
-  color: var(--yellow);
-}
-.pip-black {
-  color: var(--black);
-}
-.pip-green {
-  color: var(--green);
-}
-.pip-tiger {
-  color: var(--tiger);
-  border-radius: 2px;
-}
-.pip-bull {
-  color: var(--bull);
-  border-radius: 2px;
-}
-.pip-bear {
-  color: var(--bear);
-  border-radius: 2px;
-}
-.trick-tip-cards {
-  position: absolute;
-  z-index: 3;
-  bottom: calc(100% + 6px);
-  left: 50%;
-  display: flex;
-  gap: 3px;
-  padding: 6px;
-  border-radius: var(--radius-m);
-  background: var(--felt);
-  box-shadow: var(--shadow-2);
-  transform: translateX(-50%);
-  visibility: hidden;
-  opacity: 0;
-  transition:
-    opacity var(--dur-fast),
-    visibility var(--dur-fast);
-}
-.trick-tip:hover .trick-tip-cards,
-.trick-tile:focus-visible + .trick-tip-cards,
-.trick-tile:focus + .trick-tip-cards {
-  visibility: visible;
-  opacity: 1;
-}
-.trick-tip-cards .card {
+.result-trick-cards .card {
   width: 36px;
   height: 50px;
 }
-.trick-tip-cards .card-label {
+.result-trick-cards .card-label {
   top: 2px;
   left: 3px;
   font-size: 0.7em;
 }
-.trick-tip-cards .card-art {
+.result-trick-cards .card-art {
   width: 50%;
   top: 62%;
 }
-.trick-tip-cards .card-sub {
+.result-trick-cards .card-sub {
   display: none;
 }
 .result-foot {
@@ -2082,9 +2040,6 @@ button.modal-close {
     padding: 4px 8px;
     gap: 4px;
   }
-  .action-bar {
-    padding: 0 12px;
-  }
   .hand {
     padding: 6px 0 calc(var(--fan-drop) * 24);
   }
@@ -2092,9 +2047,6 @@ button.modal-close {
 
 /* A phone: the seats stack and the page scrolls (see "phone-friendly UI" in docs/todo.md). */
 @media (max-width: 600px) {
-  .result-teams {
-    grid-template-columns: 1fr;
-  }
   .felt {
     height: auto;
     overflow: visible;
@@ -2105,7 +2057,8 @@ button.modal-close {
       "top top"
       "left right"
       "trick trick"
-      "me me";
+      "me me"
+      "corner corner";
   }
   .drawer,
   .drawer-scrim {
@@ -2116,13 +2069,7 @@ button.modal-close {
     width: 100%;
   }
   .table-corner {
-    grid-area: score;
-  }
-  .pile-me {
-    grid-area: tools;
-    justify-self: start;
-    align-self: end;
-    margin: 0;
+    grid-area: corner;
   }
   .brand {
     display: none;
@@ -2145,20 +2092,6 @@ button.modal-close {
   50% {
     box-shadow: 0 0 0 7px rgba(184, 134, 11, 0);
   }
-}
-.seat-acting,
-.me-turn {
-  animation: pulse-ring 1.8s ease-in-out infinite;
-}
-/* A decision's controls ease in as the bar changes to them. */
-@keyframes bar-in {
-  from {
-    opacity: 0;
-    transform: translateY(4px);
-  }
-}
-.action-turn {
-  animation: bar-in var(--dur-base) var(--ease-out);
 }
 
 @keyframes fade-in {
@@ -2209,7 +2142,7 @@ button.modal-close {
   animation: float-away 2.6s ease-out forwards;
 }
 
-/* Sparks fly out from the middle of the banner and fade (HandResult's Burst). */
+/* Sparks fly out from the middle of the outcome in the title and fade (HandResult's Burst). */
 @keyframes spark {
   from {
     opacity: 1;
@@ -2241,12 +2174,9 @@ button.modal-close {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .seat-acting,
-  .me-turn,
-  .action-turn,
+  .seat-acting > .seat-name,
+  .me-turn > .me-name,
   .screen,
-  .trump-mark,
-  .trump-word,
   .plaque-high,
   .modal-backdrop,
   .modal,
@@ -2255,7 +2185,9 @@ button.modal-close {
     animation: none;
   }
   .card,
+  .card::before,
   .hand-fan,
+  .trump-pick,
   .progress span,
   .countdown-fill {
     transition: none;

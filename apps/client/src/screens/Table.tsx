@@ -3,8 +3,8 @@ import {
   cardById,
   isNumberCard,
   nextSeat,
+  otherTeam,
   partnerOf,
-  type Seat,
   type Suit,
   type TableView,
   teamOf,
@@ -12,25 +12,25 @@ import {
 import type { RoomView } from '@mam/protocol';
 import { LayoutGroup } from 'motion/react';
 import { useEffect, useState } from 'react';
-import { ActionBar } from '../components/ActionBar';
 import { ContractBar } from '../components/ContractBar';
 import { DiscardTray } from '../components/DiscardTray';
 import { GameOver } from '../components/GameOver';
 import { Hand } from '../components/Hand';
 import { HandResult } from '../components/HandResult';
-import { Scoreboard } from '../components/Scoreboard';
+import { ScoreTracker } from '../components/ScoreTracker';
 import { SeatBadge } from '../components/SeatBadge';
 import { SeatPanel } from '../components/SeatPanel';
 import { TableDrawer } from '../components/TableDrawer';
 import { HelpButton, SoundToggle } from '../components/TopBar';
 import { TrickArea } from '../components/TrickArea';
 import { TrickPile } from '../components/TrickPile';
-import { nameOf } from '../format';
+import { TrumpPicker } from '../components/TrumpPicker';
+import { TurnNotice } from '../components/TurnNotice';
 import { blockedReason, hasPassed, isMyTurn, seatChip } from '../hints';
 import { sound } from '../sound/player';
 import { spotOf } from '../spots';
 import { useGame } from '../store';
-import { TRICK_HOLD_MS, TRICK_SWEEP_MS } from '../theme/motion';
+import { RESULT_PAUSE_MS, TRICK_HOLD_MS, TRICK_SWEEP_MS } from '../theme/motion';
 import { useTurnTitle } from '../useTurnTitle';
 
 export function Table({ room, view }: { room: RoomView; view: TableView }) {
@@ -52,12 +52,24 @@ export function Table({ room, view }: { room: RoomView; view: TableView }) {
     return () => clearTimeout(timer);
   }, [completed, dispatch]);
 
+  // The hand review waits until the last trick has been gathered, then a moment more.
+  const handOver = view.phase === 'hand-complete';
+  const [reviewOpen, setReviewOpen] = useState(false);
+  useEffect(() => {
+    if (!handOver || completed) {
+      setReviewOpen(false);
+      return;
+    }
+    const timer = setTimeout(() => setReviewOpen(true), RESULT_PAUSE_MS);
+    return () => clearTimeout(timer);
+  }, [handOver, completed]);
+
   // Selection only matters while discarding.
   useEffect(() => {
     if (view.legal.kind !== 'discard') setSelected(new Set());
   }, [view.legal.kind]);
 
-  // Choosing trump: the color the pointer is on in the hand, shown in the bar.
+  // Choosing trump: the color the pointer is on in the hand, lit in the picker on the felt.
   const naming = view.legal.kind === 'trump';
   const nameable = new Set<Suit>(view.legal.kind === 'trump' ? view.legal.suits : []);
   const [trumpPreview, setTrumpPreview] = useState<Suit | null>(null);
@@ -74,14 +86,8 @@ export function Table({ room, view }: { room: RoomView; view: TableView }) {
     !forbidden.has(id) && (selected.has(id) || isNumber(id) || moneySelected < moneyAllowed);
   // The widow is in view only for the bidder; mark its cards while they choose discards.
   const widow = new Set(discarding ? (view.widow ?? []) : []);
-  // While discarding, the cards that must be kept (the Tiger, Bull and Bear, and Money while
-  // number cards remain) move to the end of the hand together, set apart, and the picked
-  // cards leave the hand for the discard tray on the felt.
-  const kept = new Set(
-    discarding
-      ? view.hand.filter((id) => forbidden.has(id) || (!isNumber(id) && moneyAllowed === 0))
-      : [],
-  );
+  // While discarding, the picked cards leave the hand for the discard tray on the felt; the
+  // cards that must be kept stay in their places, greyed out.
   const handIds = discarding ? view.hand.filter((id) => !selected.has(id)) : view.hand;
 
   // Tooltips need a hover, which touch screens don't have, so a click on a greyed-out card
@@ -116,18 +122,18 @@ export function Table({ room, view }: { room: RoomView; view: TableView }) {
   const myChip = seatChip(view, me);
   const dealKey = `${view.handNumber}-${view.redeals}`;
 
-  // Each player's taken tricks, in a pile on their left as they face the table. The view
-  // counts a trick as soon as it is won, but until it is gathered it lies on the felt; while
-  // it is gathered, it flies into its winner's pile.
-  const pile = (seat: Seat, className: string) => {
-    const theirs = completed !== null && completed.winner === seat;
+  // Each side's taken tricks, in one pile beside its score. The view counts a trick as soon
+  // as it is won, but until it is gathered it lies on the felt; while it is gathered, it flies
+  // into the winning side's pile.
+  const pile = (side: 'us' | 'them') => {
+    const team = side === 'us' ? view.team : otherTeam(view.team);
+    const theirs = completed !== null && teamOf(completed.winner) === team;
     return (
       <TrickPile
-        owner={seat === me ? 'Your' : `${nameOf(room, seat)}'s`}
-        side={teamOf(seat) === view.team ? 'us' : 'them'}
-        count={Math.max(0, view.tricksWon[seat] - (theirs ? 1 : 0))}
+        owner={side === 'us' ? 'Us' : 'Them'}
+        side={side}
+        count={Math.max(0, view.trickCounts[team] - (theirs ? 1 : 0))}
         incoming={theirs && completed?.stage === 'sweep' ? completed.plays : null}
-        className={className}
       />
     );
   };
@@ -139,25 +145,23 @@ export function Table({ room, view }: { room: RoomView; view: TableView }) {
     <main className="table-screen">
       <section className="felt">
         {/* The hand's status in words, for screen readers; on screen it is shown by the
-            bid on the felt, the bidder's badge, the trump mark and the piles. */}
+            bid on the felt, the bidder's badge (with trump) and each side's pile. */}
         <ContractBar view={view} room={room} />
-        <Scoreboard view={view} room={room} />
         {/* One group per deal: a card you play flies from your hand to the felt, and on to
             the winners' pile, and ids never carry over from an earlier deal. */}
         <LayoutGroup id={dealKey}>
-          {/* Each pile lies on its player's left as they face the middle: your partner's to
-              their right on screen, the left player's above them, the right player's below. */}
+          {/* Each side's score in its own top corner, its taken tricks beside it: ours on
+              the left, theirs on the right. */}
+          <ScoreTracker view={view} room={room} side="us" pile={pile('us')} />
+          <ScoreTracker view={view} room={room} side="them" pile={pile('them')} />
           <div className="top-side">
             <SeatPanel seat={top} room={room} view={view} position="top" />
-            {pile(top, 'pile-top')}
           </div>
           <div className="left-side">
-            {pile(left, 'pile-left')}
             <SeatPanel seat={left} room={room} view={view} position="left" />
           </div>
           <div className="right-side">
             <SeatPanel seat={right} room={room} view={view} position="right" />
-            {pile(right, 'pile-right')}
           </div>
           <TrickArea
             me={me}
@@ -166,25 +170,36 @@ export function Table({ room, view }: { room: RoomView; view: TableView }) {
             plays={state.trickPlays}
             completed={completed}
           />
-          {discarding && <DiscardTray ids={[...selected]} onReturn={onCard} />}
+          {view.legal.kind === 'trump' && (
+            <TrumpPicker legal={view.legal} hand={view.hand} preview={trumpPreview} />
+          )}
+          {view.legal.kind === 'discard' && (
+            <DiscardTray
+              ids={[...selected]}
+              legal={view.legal}
+              onReturn={onCard}
+              onDone={() => setSelected(new Set())}
+            />
+          )}
 
           <div
             className={['me', myTurn && 'me-turn', hasPassed(view, me) && 'seat-passed']
               .filter(Boolean)
               .join(' ')}
           >
-            <ActionBar
-              view={view}
-              room={room}
-              selected={selected}
-              onClearSelection={() => setSelected(new Set())}
-              trumpPreview={naming ? trumpPreview : null}
-            />
+            {/* Your name tag, as the other seats have theirs, with the contract badge if you
+                hold it. */}
+            <div className="seat-name me-name side-us">
+              <span className="side-dot" aria-hidden="true" />
+              You
+              {hasPassed(view, me) && <span className="visually-hidden">, passed</span>}
+              <SeatBadge chip={myChip} />
+            </div>
+            <TurnNotice view={view} room={room} />
             <Hand
               key={dealKey}
               ids={handIds}
               trump={view.trump}
-              kept={kept}
               dealer={spotOf(view.dealer, me)}
               onHoverColor={naming ? setTrumpPreview : undefined}
               cardProps={(id) => {
@@ -213,14 +228,7 @@ export function Table({ room, view }: { room: RoomView; view: TableView }) {
                 };
               }}
             />
-            <div className="me-line side-us">
-              <span className="you-tag">You</span>
-              {hasPassed(view, me) && <span className="visually-hidden">, passed</span>}
-              <SeatBadge chip={myChip} />
-            </div>
           </div>
-          {/* Your tricks lie to your left. */}
-          {pile(me, 'pile-me')}
         </LayoutGroup>
         <div className="table-corner">
           <TableDrawer view={view} room={room} log={state.log} />
@@ -229,14 +237,13 @@ export function Table({ room, view }: { room: RoomView; view: TableView }) {
         </div>
       </section>
 
-      {view.phase === 'hand-complete' && view.result && (
+      {handOver && reviewOpen && view.result && (
         <HandResult
           result={view.result}
           room={room}
           team={view.team}
           seat={me}
           pending={view.continuePending}
-          target={view.ruleset.targetScore}
         />
       )}
       {view.phase === 'game-over' && <GameOver view={view} room={room} />}

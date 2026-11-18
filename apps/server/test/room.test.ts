@@ -106,6 +106,38 @@ describe('lobby', () => {
     expect(h.closed).toHaveLength(1);
   });
 
+  it('ends the game when the last human at the table leaves', () => {
+    const h = harness();
+    readyRoom(h);
+    h.room.start('ann');
+    h.room.leave('ann');
+    expect(h.last('ann', 'left')).toMatchObject({ reason: 'left' });
+    expect(h.room.isClosed).toBe(true);
+    expect(h.closed).toHaveLength(1);
+  });
+
+  it('plays on with a bot in the seat while another human is still at the table', () => {
+    const h = harness();
+    h.room.join('ann', 'Ann');
+    h.room.join('bob', 'Bob');
+    h.room.sit('ann', 0);
+    h.room.sit('bob', 2);
+    h.room.addBot('ann', 1, 'easy');
+    h.room.addBot('ann', 3, 'easy');
+    h.room.start('ann');
+    // Bob has dropped but is inside his grace period: he may come back, so he counts.
+    h.room.disconnect('bob');
+    h.room.leave('ann');
+    expect(h.room.isClosed).toBe(false);
+    expect(h.room.seats[0]).toMatchObject({ kind: 'human', botControlled: true });
+    // Once Bob's grace runs out a bot plays his seat too; if he then returns and leaves, he
+    // was the last human at the table, and the game ends.
+    vi.advanceTimersByTime(61_000);
+    expect(h.room.seats[2]).toMatchObject({ botControlled: true });
+    h.room.leave('bob');
+    expect(h.room.isClosed).toBe(true);
+  });
+
   it('removes a member who stays disconnected through the grace period', () => {
     const h = harness();
     h.room.join('ann', 'Ann');

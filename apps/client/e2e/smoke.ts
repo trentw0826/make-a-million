@@ -7,6 +7,7 @@
  *   pnpm e2e                         # builds first
  *   CHROMIUM_PATH=/path/to/chrome pnpm e2e
  *   E2E_HAND_TIMEOUT_MS=5000 pnpm e2e   # stall on purpose, to see the stall report
+ *   E2E_TAKE_BID=1 pnpm e2e          # keep bidding, to reach the discard and trump on the felt
  *
  * Screenshots land in apps/client/e2e/out/. Exits non-zero if any check fails. If a hand
  * stalls, out/stall.png and out/stall.json show the table as it stood, and the actions that
@@ -25,6 +26,11 @@ const OUT = path.join(import.meta.dirname, 'out');
 const CHROMIUM = process.env.CHROMIUM_PATH ?? '/usr/bin/chromium';
 /** E2E_HAND_TIMEOUT_MS=5000 makes a hand stall fast, to see the stall report. */
 const HAND_TIMEOUT_MS = Number(process.env.E2E_HAND_TIMEOUT_MS) || 4 * 60_000;
+/**
+ * E2E_TAKE_BID=1 makes your seat keep bidding instead of passing, so it usually wins the
+ * auction and the discard tray and trump picker get checked and photographed.
+ */
+const TAKE_BID = process.env.E2E_TAKE_BID === '1';
 /** E2E_VIEWPORT=1366x768 tries another window size. */
 const VIEWPORT = (() => {
   const [w, h] = (process.env.E2E_VIEWPORT ?? '1280x860').split('x').map(Number);
@@ -258,17 +264,25 @@ type Shoot = (name: string) => Promise<void>;
 /** Takes this seat's action if the table is waiting on it; true if it acted. */
 async function act(page: Page, shoot: Shoot): Promise<boolean> {
   const quick = { timeout: 2_000 };
+  // In the fan each card covers the right part of the one before it, so its middle can lie
+  // under its neighbour; a person points at the edge left in view, and so does the test.
+  const onCard = { ...quick, position: { x: 10, y: 40 } };
   try {
     // The gold ring round your seat says the table is waiting on you.
     if (!(await page.locator('.me.me-turn').isVisible())) return false;
     const pass = page.getByRole('button', { name: 'Pass', exact: true });
     if (await pass.isVisible()) {
-      await shoot('3-bidding');
-      const felt = {
-        yours: await page.locator('.plaque-bottom .your-bid').isVisible(),
-        bars: await page.locator('.action-bar').count(),
-        chips: await page.locator('.seat-chip').count(),
-      };
+      // One look at the felt, before the screenshot gives the table time to move on: Pass
+      // and the Bid button sit in your plaque at the bottom spot, and nothing else is shown.
+      const felt = await page.evaluate(() => ({
+        yours:
+          document
+            .querySelector('.plaque-bottom .your-bid .plaque-pass')
+            ?.closest('.your-bid')
+            ?.querySelector('.plaque-yours') != null,
+        bars: document.querySelectorAll('.action-bar').length,
+        chips: document.querySelectorAll('.seat-chip').length,
+      }));
       const ok = felt.yours && felt.bars === 0 && felt.chips === 0;
       check(
         ok,
@@ -276,6 +290,7 @@ async function act(page: Page, shoot: Shoot): Promise<boolean> {
           ok ? '' : ` (your plaque shown: ${felt.yours}, bars: ${felt.bars}, badges: ${felt.chips})`
         }`,
       );
+      await shoot('3-bidding');
       const passed = page.locator('.seat-panel.seat-passed');
       if (!passedSeatChecked && (await passed.count()) > 0) {
         await sleep(400); // let the fade finish
@@ -286,17 +301,26 @@ async function act(page: Page, shoot: Shoot): Promise<boolean> {
         check(faded.name < 1 && faded.cards < 1, 'a seat that has passed fades back');
         passedSeatChecked = true;
       }
-      if (await pass.isEnabled()) await pass.click(quick);
+      if (!TAKE_BID && (await pass.isEnabled())) await pass.click(quick);
       else await page.getByRole('button', { name: /^Bid \$/ }).click(quick);
+      // Your controls stay up until the server answers; don't take them for a new turn.
+      await page
+        .locator('.your-bid')
+        .waitFor({ state: 'detached', timeout: 5_000 })
+        .catch(() => {});
       return true;
     }
-    // The button counts down, "Discard (3 left)", until three cards are chosen.
-    const discard = page.getByRole('button', { name: /^Discard( \(\d left\))?$/ });
+    // The tray on the felt counts the picks, "Discards (0/3)", above its Discard button.
+    const discard = page.getByRole('button', { name: 'Discard', exact: true });
     if (await discard.isVisible()) {
       if (!discardChecked) {
+        const tray = page.getByRole('region', { name: 'Your discards' });
+        const label = await tray.locator('.discard-tray-label').textContent();
         check(
-          (await discard.textContent()) === 'Discard (3 left)',
-          'the discard button counts the cards still to choose',
+          label === 'Discards (0/3)' &&
+            (await tray.getByRole('button', { name: 'Discard rules' }).isVisible()) &&
+            (await discard.isDisabled()),
+          `the discard tray counts the picks, with its button and rules on the felt (label: ${label})`,
         );
         discardChecked = true;
       }
@@ -323,40 +347,27 @@ async function act(page: Page, shoot: Shoot): Promise<boolean> {
       await page.getByRole('button', { name: 'Discard', exact: true }).click(quick);
       return true;
     }
-    // Trump is named from the hand: point at a color, read it in the bar, click.
-    if (await page.locator('.trump-bar').isVisible()) {
+    // Trump is named from the picker on the felt, or from the hand: pointing at a color in
+    // the hand raises its group and lights its token on the felt.
+    const picker = page.getByRole('region', { name: 'Choose trump' });
+    if (await picker.isVisible()) {
       const colored = page
         .locator('.hand .hand-present:not([inert]) button.card:not([aria-disabled])')
         .first();
-      if ((await colored.count()) > 0) {
-        await colored.hover(quick);
+      if (!trumpChecked && (await colored.count()) > 0) {
+        await colored.hover(onCard);
         await sleep(350);
-        if (!trumpChecked) {
-          const raised = await page.locator('.hand-fan-hovered').count();
-          const preview = (await page.locator('.trump-word').textContent()) ?? '';
-          const ofColor = await page
-            .locator(`.hand [data-card-id]`)
-            .evaluateAll(
-              (cards, color) =>
-                cards.filter((c) =>
-                  (c.getAttribute('aria-label') ?? '').toLowerCase().includes(color),
-                ).length,
-              preview,
-            );
-          check(
-            raised === ofColor && raised > 0 && /^(red|yellow|black|green)$/.test(preview),
-            `pointing at a color raises its group and names it in the bar (${raised} cards, ${preview})`,
-          );
-          trumpChecked = true;
-        }
+        const raised = await page.locator('.hand-fan-hovered').count();
+        const lit = (await picker.locator('.trump-pick-lit').getAttribute('aria-label')) ?? '';
+        const held = Number(/, (\d+) in your hand$/.exec(lit)?.[1]);
+        check(
+          raised > 0 && raised === held && (await page.locator('.action-bar').count()) === 0,
+          `pointing at a color raises its group and lights its token on the felt (${raised} raised, ${lit})`,
+        );
+        trumpChecked = true;
         await shoot('4b-trump');
-        await colored.click(quick);
-        return true;
       }
-    }
-    const suit = page.locator('.suit-btn').first();
-    if (await suit.isVisible()) {
-      await suit.click(quick);
+      await picker.getByRole('button').first().click(quick);
       return true;
     }
     const card = page
@@ -389,12 +400,12 @@ async function act(page: Page, shoot: Shoot): Promise<boolean> {
               const el = document.elementFromPoint(x, y);
               return el ? getComputedStyle(el).cursor : null;
             },
-            [box.x + box.width / 2, box.y + box.height / 2] as const,
+            [box.x + onCard.position.x, box.y + onCard.position.y] as const,
           ));
         check(cursor === 'pointer', 'the pointer turns to a hand over a card you can play');
         cursorChecked = true;
       }
-      await card.click(quick);
+      await card.click(onCard);
       return true;
     }
   } catch (e) {
@@ -465,6 +476,18 @@ async function fullHand(browser: Browser, base: string): Promise<void> {
     'bidding begins as soon as the cards are dealt',
   );
   await until(() => page.locator('.me.me-turn').isVisible(), 'your turn to bid');
+  {
+    // The gold ring goes round your name tag, not round your whole seat.
+    const ring = await page.evaluate(() => ({
+      seat: getComputedStyle(document.querySelector('.me') as Element).borderTopWidth,
+      name: getComputedStyle(document.querySelector('.me > .me-name') as Element).borderTopWidth,
+      color: getComputedStyle(document.querySelector('.me > .me-name') as Element).borderTopColor,
+    }));
+    check(
+      ring.seat === '0px' && ring.name !== '0px' && ring.color !== 'rgba(0, 0, 0, 0)',
+      `your turn rings your name tag only (seat border ${ring.seat}, name ${ring.name} ${ring.color})`,
+    );
+  }
   check(
     await page.getByRole('button', { name: /^Bid \$/ }).isVisible(),
     'the table marks your turn to bid',
@@ -472,7 +495,7 @@ async function fullHand(browser: Browser, base: string): Promise<void> {
   const seatText = (await page.locator('.seat-panel').allTextContents()).join(' ');
   check(
     !/\b(dealer|Partner|Opponent|You)\b/.test(seatText.replace(/your partner|opponent/g, '')) &&
-      (await page.locator('.me-line .you-tag').textContent()) === 'You',
+      (await page.locator('.me > .me-name').textContent()) === 'You',
     'only your own seat is tagged, with You',
   );
   const corner = page.locator('.table-corner');
@@ -492,15 +515,18 @@ async function fullHand(browser: Browser, base: string): Promise<void> {
     'no "Your turn" badge: the ring round your seat marks the turn',
   );
 
-  // Leaving mid-game asks first.
+  // Leaving mid-game asks first; you're the only human here, so it would end the game.
   await page.getByRole('button', { name: 'Leave', exact: true }).click();
-  const confirm = page.getByRole('dialog', { name: 'Leave the game?' });
-  check(await confirm.isVisible(), 'Leave mid-game asks for confirmation');
+  const confirm = page.getByRole('dialog', { name: 'End the game?' });
+  check(
+    await confirm.isVisible(),
+    'Leave mid-game asks first, and warns the last human that it ends the game',
+  );
   await page.getByRole('button', { name: 'Stay' }).click();
   check(await confirm.isHidden(), 'Stay keeps you at the table');
 
   let orderChecked = false;
-  const result = page.getByRole('dialog', { name: /^Hand \d+$/ });
+  const result = page.getByRole('dialog', { name: /^Hand \d+\b/ });
   await playUntil(
     page,
     () => result.isVisible(),
@@ -534,8 +560,8 @@ async function fullHand(browser: Browser, base: string): Promise<void> {
   await shoot('6-result');
   await checkNoScroll(page, 'the hand review');
   check(
-    await result.locator('.result-banner').isVisible(),
-    'the hand result shows a made/set banner',
+    await result.locator('h2 .result-status').isVisible(),
+    'the hand result names the outcome in its title',
   );
   check(orderChecked, 'trump was named during the hand');
   check(blockedCardChecked, 'a greyed-out card was checked during the hand');
@@ -555,6 +581,24 @@ async function fullHand(browser: Browser, base: string): Promise<void> {
     'the bots ready up',
   );
   await shoot('6b-result-ready');
+  // The cards of each trick wait behind a button.
+  check(
+    (await result.getByRole('region', { name: 'Cards played' }).count()) === 0,
+    "the hand review keeps the tricks' cards put away",
+  );
+  await result.getByRole('button', { name: 'Show the cards' }).click();
+  const played = result.getByRole('region', { name: 'Cards played' });
+  await until(
+    async () => (await played.getByRole('listitem').count()) === 13,
+    'the hand review shows every trick',
+  );
+  check(
+    (await played.locator('[data-card-id]').count()) === 52,
+    'the hand review shows the four cards of each trick',
+  );
+  await sleep(300); // let it open fully
+  await shoot('6c-result-cards');
+  await result.getByRole('button', { name: 'Hide the cards' }).click();
   // By now the last trick has been gathered too: every trick lies in a pile, face down.
   const piled = async () =>
     (await page
@@ -566,8 +610,10 @@ async function fullHand(browser: Browser, base: string): Promise<void> {
       )) as number[];
   const counts = await piled();
   check(
-    counts.length === 4 && counts.reduce((a, b) => a + b, 0) === 13,
-    `each player's taken tricks lie in their own pile (${counts.join(' + ')})`,
+    counts.length === 2 &&
+      counts.reduce((a, b) => a + b, 0) === 13 &&
+      (await page.locator('.tracker-us .trick-pile, .tracker-them .trick-pile').count()) === 2,
+    `each side's taken tricks lie in one pile beside its score (${counts.join(' + ')})`,
   );
   check(
     (await page.locator('.trick-pile .pile-card').count()) === 52 &&
@@ -597,11 +643,12 @@ async function fullHand(browser: Browser, base: string): Promise<void> {
   check(await drawer.isVisible(), 'the score sheet and log open from the felt');
   await shoot('8-score-sheet');
   check(
-    (await drawer.locator('.sheet tbody tr').count()) === 1,
-    'the score sheet has a line for the hand',
+    (await drawer.locator('.sheet-hand:not(.sheet-hand-live)').count()) === 1 &&
+      (await drawer.locator('.sheet-hand .score-bar-track').count()) === 1,
+    'the score sheet has a card for the hand, with its bar',
   );
-  const folded = drawer.locator('.event-log details');
-  check((await folded.count()) === 1, 'the finished hand folds up in the log');
+  const folded = drawer.locator('.sheet-log');
+  check((await folded.count()) === 1, "the finished hand's log folds up under it");
   const log = (await folded.textContent()) ?? '';
   check((log.match(/Auction:/g) ?? []).length === 1, 'the log sums up the auction in one line');
   check(!/takes trick|bids \$|passes\./.test(log), 'the log has no per-trick or per-bid lines');

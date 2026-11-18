@@ -4,7 +4,6 @@ import { AnimatePresence, motion } from 'motion/react';
 import { useEffect, useId, useRef, useState } from 'react';
 import type { LogEntry } from '../state';
 import { EASE_OUT } from '../theme/motion';
-import { EventLog } from './EventLog';
 import { Icon } from './Icon';
 import { isModalOpen } from './Modal';
 import { ScoreSheet } from './ScoreSheet';
@@ -18,7 +17,7 @@ interface Props {
 }
 
 /**
- * The score sheet and the table log, kept off the table until asked for: a sheet icon in the
+ * The score sheet, with each hand's table log in it, kept off the table until asked for: a sheet icon in the
  * corner by your seat slides them in over the felt's right edge, and the table dims behind
  * them. Play goes on while it is open. The button, its close button, Esc, or a click anywhere
  * else put it away; a click on the dimmed table only closes the sheet, so it can't play a
@@ -103,8 +102,7 @@ export function TableDrawer({ view, room, log }: Props) {
             >
               ✕
             </button>
-            <ScoreSheet view={view} room={room} />
-            <EventLog entries={log} />
+            <ScoreSheet view={view} room={room} log={log} />
           </motion.aside>
         )}
       </AnimatePresence>

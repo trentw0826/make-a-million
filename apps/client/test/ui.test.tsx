@@ -2,17 +2,19 @@ import { createGame, observe, type TableView, tableView } from '@mam/engine';
 import type { RoomView, ServerMessage } from '@mam/protocol';
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { useEffect } from 'react';
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Shell } from '../src/App';
-import { ActionBar } from '../src/components/ActionBar';
 import { ContractBar } from '../src/components/ContractBar';
-import { EventLog } from '../src/components/EventLog';
+import { DiscardTray } from '../src/components/DiscardTray';
 import { Hand, partOffset } from '../src/components/Hand';
-import { Scoreboard } from '../src/components/Scoreboard';
+import { ScoreSheet } from '../src/components/ScoreSheet';
+import { ScoreTracker } from '../src/components/ScoreTracker';
 import { SeatPanel } from '../src/components/SeatPanel';
 import { TableDrawer } from '../src/components/TableDrawer';
 import { TrickPile } from '../src/components/TrickPile';
+import { displayOrder } from '../src/handOrder';
 import { GameProvider, useGame } from '../src/store';
+import { RESULT_PAUSE_MS } from '../src/theme/motion';
 
 /** Nothing listens here, so every send fails and shows the "Not connected" toast. */
 const URL = 'ws://127.0.0.1:1/ws';
@@ -123,10 +125,37 @@ describe('top bar', () => {
     expect(screen.getByText(NOT_CONNECTED)).toBeInTheDocument();
   });
 
-  it('asks before leaving a game in progress', () => {
-    renderWith(atTable);
+  it('asks before leaving a game in progress, and says when it ends the game', () => {
+    // Ann is the only human: leaving ends the game.
+    const { unmount } = renderWith(atTable);
     fireEvent.click(screen.getByRole('button', { name: 'Leave' }));
-    expect(screen.getByRole('dialog', { name: 'Leave the game?' })).toBeInTheDocument();
+    const ending = screen.getByRole('dialog', { name: 'End the game?' });
+    expect(ending).toHaveTextContent("You're the last player at the table");
+    expect(within(ending).getByRole('button', { name: 'Leave and end the game' })).toBeVisible();
+    unmount();
+
+    // With Bob still at the table, a bot takes Ann's seat and the game goes on.
+    const withBob = room('playing');
+    renderWith([
+      welcome,
+      {
+        type: 'room',
+        room: {
+          ...withBob,
+          seats: [
+            withBob.seats[0],
+            withBob.seats[1],
+            { kind: 'human', playerId: 'p3', name: 'Bob', connected: true, botControlled: false },
+            withBob.seats[3],
+          ],
+        },
+      },
+      { type: 'view', view: dealt },
+    ]);
+    fireEvent.click(screen.getByRole('button', { name: 'Leave' }));
+    expect(screen.getByRole('dialog', { name: 'Leave the game?' })).toHaveTextContent(
+      'A bot will play your seat',
+    );
     expect(screen.queryByText(NOT_CONNECTED)).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Stay' }));
     expect(screen.queryByRole('dialog')).toBeNull();
@@ -150,33 +179,80 @@ describe('keyboard', () => {
   });
 });
 
-describe('table log', () => {
-  it('folds earlier hands under their result and keeps the current hand open', () => {
+describe('score sheet', () => {
+  it('lays out the race, then each hand newest first, its log folded under a finished one', () => {
+    const hand1 = {
+      handNumber: 1,
+      dealer: 0,
+      redeals: 0,
+      bidder: 1,
+      bid: 185_000,
+      trump: 'red',
+      biddingTeam: 1,
+      captured: [20_000, 210_000],
+      made: true,
+      delta: [20_000, 210_000],
+      scoresAfter: [20_000, 210_000],
+      tricks: [],
+    } as const;
+    const view: TableView = {
+      ...dealt,
+      handNumber: 2,
+      scores: [20_000, 210_000],
+      handHistory: [hand1],
+    };
     render(
-      <EventLog
-        entries={[
+      <ScoreSheet
+        view={view}
+        room={room('playing')}
+        log={[
           { id: 1, hand: 1, text: 'Ann deals.', tone: 'info' },
-          { id: 2, hand: 1, text: 'Ann & Cid made the $185k bid (+$210k).', tone: 'good' },
+          { id: 2, hand: 1, text: 'Bot 2 & Bot 4 made the $185k bid (+$210k).', tone: 'bad' },
           { id: 3, hand: 2, text: 'Bot 2 deals.', tone: 'info' },
         ]}
       />,
     );
-    const earlier = screen.getByText('Hand 1').closest('details');
-    expect(earlier).not.toHaveAttribute('open');
-    expect(earlier?.querySelector('summary')).toHaveTextContent('made the $185k bid');
-    expect(screen.getByRole('heading', { name: 'Hand 2' })).toBeInTheDocument();
-    expect(screen.getByText('Bot 2 deals.')).toBeVisible();
+    const race = screen.getByLabelText('The race');
+    expect(race).toHaveTextContent(/Us\$20,000.*Them\$210,000.*First to \$1,000,000/);
+    const hands = [...document.querySelectorAll('.sheet-hand')];
+    // The hand in play first, its lines open.
+    expect(hands[0]).toHaveTextContent(/^Hand 2In play/);
+    expect(within(hands[0] as HTMLElement).getByText('Bot 2 deals.')).toBeVisible();
+    // Then hand 1: who bid what, how it went for us (they made it: red), the bar, the totals.
+    const done = hands[1] as HTMLElement;
+    expect(done.querySelector('.sheet-chip')).toHaveTextContent('Made');
+    expect(done.querySelector('.sheet-chip')).toHaveClass('bad');
+    expect(done).toHaveTextContent('Bot 2 bid $185k in Red');
+    expect(within(done).getByRole('img', { name: /made by \$25k/ })).toBeInTheDocument();
+    expect(done.querySelector('.sheet-hand-sides')).toHaveTextContent(
+      /\+\$20k → \$20k.*\+\$210k → \$210k/,
+    );
+    const folded = done.querySelector('details');
+    expect(folded).not.toHaveAttribute('open');
+    expect(folded).toHaveTextContent('made the $185k bid');
   });
 });
 
-describe('scoreboard', () => {
-  it("shows each side's total on the felt, our side first", () => {
+describe('score trackers', () => {
+  it("shows each side's total in its own tracker, with its pile beside it", () => {
     const view: TableView = { ...dealt, team: 1, scores: [-40_000, 250_000] };
-    render(<Scoreboard view={view} room={room('playing')} />);
-    const totals = [...document.querySelectorAll('.scoreboard .total')].map((t) => t.textContent);
-    expect(totals[0]).toMatch(/^Us\$250,000/);
-    expect(totals[1]).toMatch(/^Them−\$40,000/);
-    expect(screen.getByText('to $1,000,000')).toBeInTheDocument();
+    render(
+      <>
+        <ScoreTracker view={view} room={room('playing')} side="us" pile={<i>our pile</i>} />
+        <ScoreTracker view={view} room={room('playing')} side="them" pile={<i>their pile</i>} />
+      </>,
+    );
+    const us = screen.getByRole('region', { name: 'Us' });
+    const them = screen.getByRole('region', { name: 'Them' });
+    expect(us).toHaveClass('tracker-us');
+    expect(us.querySelector('.total')).toHaveTextContent(/^Us\$250,000$/);
+    expect(us).toHaveTextContent('our pile');
+    expect(them).toHaveClass('tracker-them');
+    expect(them.querySelector('.total')).toHaveTextContent(/^Them−\$40,000/);
+    expect(them).toHaveTextContent('their pile');
+    // The other side's corner also says which hand it is, and the target.
+    expect(them).toHaveTextContent('to $1,000,000');
+    expect(us).not.toHaveTextContent('to $1,000,000');
   });
 });
 
@@ -294,7 +370,7 @@ describe('trick piles', () => {
 });
 
 describe('trick piles at the table', () => {
-  it("lays each player's pile on their left as they face the table", () => {
+  it("gathers each side's tricks into one pile beside its score", () => {
     renderWith([
       welcome,
       { type: 'room', room: room('playing') },
@@ -310,15 +386,16 @@ describe('trick piles at the table', () => {
         },
       },
     ]);
-    const pile = (name: string) => screen.getByRole('img', { name });
-    expect(pile('Your: 1 trick taken')).toHaveClass('pile-me', 'pile-us');
-    expect(pile("Bot 2's: 2 tricks taken")).toHaveClass('pile-left', 'pile-them');
-    expect(pile("Bot 3's: 2 tricks taken")).toHaveClass('pile-top', 'pile-us');
-    expect(pile("Bot 4's: 0 tricks taken")).toHaveClass('pile-right', 'pile-them');
-    // Your partner's pile is to their right on screen; the right player's is below them.
-    expect(document.querySelector('.top-side')?.lastElementChild).toHaveClass('pile-top');
-    expect(document.querySelector('.right-side')?.lastElementChild).toHaveClass('pile-right');
-    expect(document.querySelector('.left-side')?.firstElementChild).toHaveClass('pile-left');
+    const piles = document.querySelectorAll('.trick-pile');
+    expect(piles).toHaveLength(2);
+    const us = screen.getByRole('img', { name: 'Us: 3 tricks taken' });
+    expect(us.closest('.tracker-us')).not.toBeNull();
+    const them = screen.getByRole('img', { name: 'Them: 2 tricks taken' });
+    expect(them.closest('.tracker-them')).not.toBeNull();
+    // The seats hold only the players: name, badge and cards.
+    for (const side of ['.top-side', '.left-side', '.right-side']) {
+      expect(document.querySelector(side)?.children).toHaveLength(1);
+    }
   });
 });
 
@@ -369,7 +446,7 @@ describe('table status', () => {
     }
   });
 
-  it('shows the contract on the bidder, trump on the felt, and the hand on the scoreboard', () => {
+  it('shows the contract and trump on the bidder, and the hand on the scoreboard', () => {
     renderWith([
       welcome,
       { type: 'room', room: room('playing') },
@@ -389,10 +466,16 @@ describe('table status', () => {
     const badge = document.querySelector('.seat-left .chip-contract') as HTMLElement;
     expect(badge).toHaveTextContent('Contract $185kRed');
     expect(badge.querySelector('[data-trump-suit="red"]')).not.toBeNull();
-    expect(document.querySelector('.trump-mark')).toHaveClass('suit-red');
-    expect(screen.getByRole('region', { name: 'Scores' })).toHaveTextContent(/^Hand 2/);
+    // Trump is on the bidder's badge only, with no mark in the middle of the felt.
+    expect(document.querySelector('.trick-area .suit-red')).toBeNull();
+    expect(screen.getByRole('region', { name: 'Them' })).toHaveTextContent(/Hand 2 · to/);
     expect(screen.getByRole('region', { name: 'Hand status' })).toHaveClass('visually-hidden');
-    expect(document.querySelector('.me-line .you-tag')).toHaveTextContent('You');
+    // Your name tag is like the others', above your hand, with no bar between them in play.
+    const name = document.querySelector('.me > .seat-name.me-name') as HTMLElement;
+    expect(name).toHaveTextContent(/^You$/);
+    expect(name.querySelector('.side-dot')).not.toBeNull();
+    expect(name.nextElementSibling).toHaveClass('visually-hidden');
+    expect(name.nextElementSibling?.nextElementSibling).toHaveClass('hand');
   });
 
   it('points the turn marker at the seat the table waits on', () => {
@@ -426,11 +509,11 @@ describe('table status', () => {
     ]);
     expect(document.querySelector('.trick-area')).not.toHaveTextContent(/\d+\/13/);
     expect(document.querySelector('.seat-left')).not.toHaveTextContent('bidder');
-    expect(document.querySelector('.action-bar')).toHaveClass('action-hidden');
+    expect(document.querySelector('.action-bar')).toBeNull();
     expect(screen.getByText(/^Your turn\./)).toHaveClass('visually-hidden');
   });
 
-  it('names trump from the hand: a color rises under the pointer and shows in the bar', () => {
+  it('names trump from the felt or the hand: pointing at a color lights its token', () => {
     renderWith([
       welcome,
       { type: 'room', room: room('playing') },
@@ -447,11 +530,19 @@ describe('table status', () => {
         },
       },
     ]);
-    const bar = document.querySelector('.trump-bar') as HTMLElement;
-    expect(bar.querySelector('.trump-badge')).toHaveTextContent(/^Choose\s+a color\s+as trump$/);
-    // Yellow and Black aren't in the hand, so they can still be named from the bar.
-    expect(within(bar).getByRole('button', { name: 'Yellow' })).toBeInTheDocument();
-    expect(within(bar).queryByRole('button', { name: 'Red' })).toBeNull();
+    const picker = screen.getByRole('region', { name: 'Choose trump' });
+    expect(picker.closest('.me')).toBeNull();
+    expect(document.querySelector('.action-bar')).toBeNull();
+    // Every color has a token, with how many of it the hand holds, none lit yet.
+    const tokens = within(picker).getAllByRole('button');
+    expect(tokens.map((b) => b.getAttribute('aria-label'))).toEqual([
+      'Red, 2 in your hand',
+      'Yellow, 0 in your hand',
+      'Black, 0 in your hand',
+      'Green, 1 in your hand',
+    ]);
+    expect(picker.querySelector('.trump-pick-lit')).toBeNull();
+    expect(screen.getByText('Your turn to name trump.')).toHaveClass('visually-hidden');
 
     const slot = (id: number) =>
       document.querySelector(`[data-card-id="${id}"]`)?.closest('.hand-slot') as HTMLElement;
@@ -461,12 +552,11 @@ describe('table status', () => {
     expect(fan(1).style.getPropertyValue('--raise')).toBe('1');
     expect(fan(39).style.getPropertyValue('--raise')).toBe('0');
     expect(Number(fan(39).style.getPropertyValue('--part'))).toBeGreaterThan(0);
-    expect(bar.querySelector('.trump-badge')).toHaveTextContent(/^Choose\s+red\s+as trump$/);
-    expect(bar.querySelector('.trump-word')).toHaveClass('suit-red');
+    expect(picker.querySelector('.trump-pick-lit')).toHaveAccessibleName('Red, 2 in your hand');
 
     // The Tiger has no color: it fades back and can't be chosen.
     expect(document.querySelector('[data-card-id="52"]')).toHaveClass('card-disabled');
-    fireEvent.click(screen.getByRole('button', { name: /Green/ }));
+    fireEvent.click(within(picker).getByRole('button', { name: /^Yellow/ }));
     expect(screen.getByText(NOT_CONNECTED)).toBeInTheDocument();
   });
 
@@ -479,39 +569,32 @@ describe('table status', () => {
         view: { ...dealt, phase: 'playing', contract: { bidder: 0, amount: 175_000 } },
       },
     ]);
-    expect(document.querySelector('.me-line')).not.toHaveTextContent('bidder');
+    expect(document.querySelector('.me-name')).not.toHaveTextContent('bidder');
   });
 
-  it('asks for the discard on the button itself, counting down, with the rules behind a ?', () => {
-    const discarding: TableView = {
-      ...dealt,
-      phase: 'discarding',
-      legal: { kind: 'discard', requiredNumberCards: 0, forbiddenIds: [] },
-    };
-    const bar = (selected: ReadonlySet<number>) => (
+  it('counts the discards on the felt, with the button below and the rules behind a ?', () => {
+    const legal = { kind: 'discard', requiredNumberCards: 0, forbiddenIds: [] } as const;
+    const tray = (ids: readonly number[]) => (
       <GameProvider url={URL}>
-        <ActionBar
-          view={discarding}
-          room={room('playing')}
-          selected={selected}
-          onClearSelection={() => {}}
-        />
+        <DiscardTray ids={ids} legal={legal} onReturn={() => {}} onDone={() => {}} />
       </GameProvider>
     );
-    const { rerender } = render(bar(new Set()));
-    expect(document.querySelector('.action-bar')).toHaveTextContent(
-      /^Your turn\.Discard \(3 left\)\?/,
-    );
-    expect(screen.getByRole('button', { name: 'Discard (3 left)' })).toBeDisabled();
+    const { rerender } = render(tray([]));
+    const region = screen.getByRole('region', { name: 'Your discards' });
+    expect(region.querySelector('.discard-tray-label')).toHaveTextContent('Discards (0/3)');
+    expect(screen.getByRole('button', { name: 'Discard' })).toBeDisabled();
+    // The ? sits on the last slot.
     const tip = screen.getByRole('button', { name: 'Discard rules' });
+    expect(tip.closest('.discard-slot')).toBe(region.querySelectorAll('.discard-slot')[2]);
     expect(tip).toHaveAccessibleDescription(/Number cards must go before Money/);
-    rerender(bar(new Set([1, 2])));
-    expect(screen.getByRole('button', { name: 'Discard (1 left)' })).toBeDisabled();
-    rerender(bar(new Set([1, 2, 3])));
+    rerender(tray([1, 2]));
+    expect(region.querySelector('.discard-tray-label')).toHaveTextContent('Discards (2/3)');
+    expect(screen.getByRole('button', { name: 'Discard' })).toBeDisabled();
+    rerender(tray([1, 2, 3]));
     expect(screen.getByRole('button', { name: 'Discard' })).toBeEnabled();
   });
 
-  it('sets the kept cards apart and lays picked discards out on the felt', async () => {
+  it('leaves the kept cards in place and lays picked discards out on the felt', async () => {
     renderWith([
       welcome,
       { type: 'room', room: room('playing') },
@@ -532,22 +615,27 @@ describe('table status', () => {
       [...document.querySelectorAll('.hand [data-card-id]')].map((c) =>
         Number(c.getAttribute('data-card-id')),
       );
-    // The Red $40k and the Tiger must be kept: they close the hand, set apart.
-    expect(handIds().slice(-2)).toEqual([12, 52]);
-    expect(document.querySelector('[data-card-id="12"]')?.closest('.hand-slot')).toHaveClass(
-      'kept-start',
-    );
+    // The Red $40k and the Tiger must be kept: they stay in their places, greyed out, with
+    // nothing setting them apart.
+    expect(handIds()).toEqual(displayOrder([0, 1, 2, 12, 52, 39], null));
+    expect(document.querySelector('.kept-start')).toBeNull();
+    for (const id of [12, 52]) {
+      expect(document.querySelector(`.hand [data-card-id="${id}"]`)).toHaveClass('card-disabled');
+    }
 
     const tray = screen.getByRole('region', { name: 'Your discards' });
     fireEvent.click(document.querySelector('.hand [data-card-id="1"]') as Element);
     // It flies to the tray (in jsdom the hand's copy lingers, as its exit never runs).
     await waitFor(() => expect(tray.querySelector('[data-card-id="1"]')).not.toBeNull());
-    expect(screen.getByRole('button', { name: 'Discard (2 left)' })).toBeDisabled();
+    expect(tray).toHaveTextContent('Discards (1/3)');
 
     fireEvent.click(tray.querySelector('[data-card-id="1"]') as Element);
     expect(tray.querySelector('[data-card-id="1"]')).toBeNull();
     expect(handIds()).toContain(1);
-    expect(screen.getByRole('button', { name: 'Discard (3 left)' })).toBeDisabled();
+    expect(tray).toHaveTextContent('Discards (0/3)');
+    expect(within(tray).getByRole('button', { name: 'Discard' })).toBeDisabled();
+    // The bar below your hand has nothing to add.
+    expect(document.querySelector('.me .action-bar')).toBeNull();
   });
 
   it('makes your plaque the bid button, − and + beside it and Pass below, with no bar', () => {
@@ -566,7 +654,7 @@ describe('table status', () => {
     expect(document.querySelector('.action-bar')).toBeNull();
   });
 
-  it('says nothing while you wait, with no bar through the auction', () => {
+  it('says nothing while you wait, with no bar', () => {
     const waiting = (phase: TableView['phase']): readonly ServerMessage[] => [
       welcome,
       { type: 'room', room: room('playing') },
@@ -577,7 +665,7 @@ describe('table status', () => {
     expect(screen.getByText('Waiting for Bot 2 to bid…')).toHaveClass('visually-hidden');
     unmount();
     renderWith(waiting('playing'));
-    expect(document.querySelector('.action-bar')).toHaveClass('action-hidden');
+    expect(document.querySelector('.action-bar')).toBeNull();
   });
 
   it('gives each player in the auction a plaque, the high bid glowing, and none once passed', () => {
@@ -668,7 +756,7 @@ describe('hovering the hand', () => {
   });
 
   it('raises the hovered card without reordering, and settles when the pointer leaves', () => {
-    render(<Hand ids={[0, 1, 2, 3, 4]} trump={null} cardProps={() => ({})} />);
+    render(<Hand ids={[0, 1, 2, 3, 4]} trump={null} cardProps={() => ({ onClick: () => {} })} />);
     const slots = [...document.querySelectorAll('.hand-slot')];
     const before = slots.map((s) => s.textContent);
     fireEvent.pointerEnter(slots[2] as Element, { pointerType: 'mouse' });
@@ -684,21 +772,39 @@ describe('hovering the hand', () => {
     expect(fans().every((f) => f.part === 0 && f.raise === 0)).toBe(true);
   });
 
-  it('parts the hand for keyboard focus too, but does not raise a card that cannot be played', () => {
-    render(
-      <Hand
-        ids={[0, 1, 2]}
-        trump={null}
-        cardProps={() => ({ onClick: () => {}, disabled: true })}
-      />,
-    );
+  it('parts the hand for keyboard focus too', () => {
+    render(<Hand ids={[0, 1, 2]} trump={null} cardProps={() => ({ onClick: () => {} })} />);
     const buttons = document.querySelectorAll<HTMLElement>('.hand button.card');
     act(() => (buttons[1] as HTMLElement).focus());
     expect(fans()).toEqual([
       { part: -0.5, raise: 0 },
-      { part: 0, raise: 0 },
+      { part: 0, raise: 1 },
       { part: 1, raise: 0 },
     ]);
+  });
+
+  it("leaves the hand still under a card you can't click, greyed out or while you wait", () => {
+    const { unmount } = render(
+      <Hand
+        ids={[0, 1, 2]}
+        trump={null}
+        cardProps={(id) => ({ onClick: () => {}, disabled: id === 1 })}
+      />,
+    );
+    const slots = () => [...document.querySelectorAll('.hand-slot')];
+    // Hovering a playable card, then moving onto a greyed-out one, settles the hand.
+    fireEvent.pointerEnter(slots()[0] as Element, { pointerType: 'mouse' });
+    expect(fans()[0]?.raise).toBe(1);
+    fireEvent.pointerEnter(slots()[1] as Element, { pointerType: 'mouse' });
+    expect(fans().every((f) => f.part === 0 && f.raise === 0)).toBe(true);
+    act(() => document.querySelector<HTMLElement>('[data-card-id="1"]')?.focus());
+    expect(fans().every((f) => f.part === 0 && f.raise === 0)).toBe(true);
+    unmount();
+    // While you wait, the cards can't be clicked and aren't greyed out: still no movement.
+    render(<Hand ids={[0, 1, 2]} trump={null} cardProps={() => ({})} />);
+    fireEvent.pointerEnter(slots()[1] as Element, { pointerType: 'mouse' });
+    expect(fans().every((f) => f.part === 0 && f.raise === 0)).toBe(true);
+    expect(document.querySelector('.card-disabled')).toBeNull();
   });
 });
 
@@ -725,14 +831,34 @@ describe('Hand result', () => {
     },
   };
 
+  // The review opens a moment after the hand ends (the last trick is already gathered here).
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+  const openReview = () => act(() => vi.advanceTimersByTime(RESULT_PAUSE_MS));
+
+  it('lets the end of the hand sink in before the review opens', () => {
+    renderWith([welcome, { type: 'room', room: room('playing') }, { type: 'view', view: scored }]);
+    act(() => vi.advanceTimersByTime(RESULT_PAUSE_MS - 100));
+    expect(screen.queryByRole('dialog')).toBeNull();
+    act(() => vi.advanceTimersByTime(100));
+    expect(screen.getByRole('dialog', { name: /^Hand 1/ })).toBeInTheDocument();
+  });
+
   it('shows who is ready and how long is left, and readies this seat', () => {
     renderWith([
       welcome,
       { type: 'room', room: room('playing') },
       { type: 'view', view: scored, resultTimer: { remainingMs: 12_400, totalMs: 20_000 } },
     ]);
-    const dialog = screen.getByRole('dialog', { name: 'Hand 1' });
-    expect(screen.getByRole('timer')).toHaveAccessibleName('Next hand in 13 seconds');
+    openReview();
+    const dialog = screen.getByRole('dialog', { name: /^Hand 1\W+They made their bid$/ });
+    // The outcome is in the title, in green or red as it went for this seat's side.
+    expect(dialog.querySelector('.result-status')).toHaveClass('bad');
+    expect(screen.getByRole('timer')).toHaveAccessibleName('Next hand in 11 seconds');
     const list = screen.getByRole('list', { name: 'Ready for the next hand' });
     expect(list).toHaveTextContent('You: still reading');
     expect(list).toHaveTextContent('Bot 2: ready');
@@ -752,11 +878,12 @@ describe('Hand result', () => {
         resultTimer: { remainingMs: 5_000, totalMs: 20_000 },
       },
     ]);
+    openReview();
     expect(screen.queryByRole('button', { name: 'Ready' })).toBeNull();
     expect(screen.getByText('Waiting for the others…')).toBeInTheDocument();
   });
 
-  it("weighs the capture against the bid and lays out each side's tricks as tiles", () => {
+  it("puts the hand on one bar, each side's score and total at its end, the cards behind a button", () => {
     const result = scored.result;
     if (!result) throw new Error('fixture has a result');
     renderWith([
@@ -785,17 +912,33 @@ describe('Hand result', () => {
         },
       },
     ]);
+    openReview();
     expect(
       screen.getByRole('img', {
         name: /captured \$120,000 against a \$100,000 bid: made by \$20k/,
       }),
     ).toBeInTheDocument();
-    const them = screen.getByRole('region', { name: 'Them' });
-    const bull = within(them).getByRole('button', { name: 'Trick 1: $80,000 (Bull ×2)' });
-    expect(bull).toHaveAccessibleDescription(/Bull/);
-    expect(within(them).getByText('1 trick')).toBeInTheDocument();
-    const us = screen.getByRole('region', { name: 'Us' });
-    expect(within(us).getByRole('button', { name: 'Trick 2: $0' })).toBeInTheDocument();
-    expect(us).toHaveTextContent('Captured $60,000 · Total $60,000');
+    // Your side on the left, with what it scored and what it now holds.
+    const sides = screen.getAllByRole('region').filter((r) => r.closest('.score-bar'));
+    expect(sides.map((r) => r.getAttribute('aria-label'))).toEqual(['Us', 'Them']);
+    expect(sides[0]).toHaveTextContent('+$60,000');
+    expect(sides[0]).toHaveTextContent('Total $60,000');
+    expect(sides[1]).toHaveTextContent('Total $120,000');
+    // Them bid, so the bid is marked from the right: $100k of $180k.
+    const notch = document.querySelector('.score-bar-notch') as HTMLElement;
+    expect(Number.parseFloat(notch.style.left)).toBeCloseTo(100 - (100 / 180) * 100, 1);
+
+    // The cards wait behind a button.
+    expect(screen.queryByRole('region', { name: 'Cards played' })).toBeNull();
+    const toggle = screen.getByRole('button', { name: 'Show the cards' });
+    expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    fireEvent.click(toggle);
+    const cards = screen.getByRole('region', { name: 'Cards played' });
+    expect(toggle).toHaveAccessibleName('Hide the cards');
+    const tricks = within(cards).getAllByRole('listitem');
+    expect(tricks[0]).toHaveTextContent(/^1\. Bot 2\$80k ×2/);
+    expect(tricks[0]).toHaveClass('side-them');
+    expect(within(tricks[0] as HTMLElement).getAllByRole('img')).toHaveLength(4);
+    expect(tricks[1]).toHaveTextContent(/^2\. You\$0/);
   });
 });

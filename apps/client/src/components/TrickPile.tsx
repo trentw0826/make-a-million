@@ -7,7 +7,7 @@ import { CardFace } from './CardFace';
 import { cardLayoutId } from './TrickArea';
 
 interface Props {
-  /** Whose pile it is, for its accessible name: "Your", or a player's name. */
+  /** Whose pile it is, for its accessible name: "Us" or "Them". */
   readonly owner: string;
   readonly side: 'us' | 'them';
   /** Tricks already in the pile. */
@@ -29,7 +29,7 @@ function lie(t: number, k: number): { x: number; y: number; rotate: number } {
 const CARDS_PER_TRICK = 4;
 
 /**
- * A player's taken tricks, face down in a loose pile on their left. Only how many tricks
+ * A side's taken tricks, face down in a loose pile beside its score. Only how many tricks
  * there are shows, never what is in them (see "Table Visibility" in game-rules.md). A trick
  * being gathered is drawn here already: its cards share their layout ids with their places
  * on the felt, so Motion flies them in, turning them over on the way.
