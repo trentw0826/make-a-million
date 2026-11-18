@@ -77,7 +77,8 @@ function Present({ children }: { children: ReactNode }) {
  * (trump named, a card played) the cards slide to their new places. A card you play shares
  * its layout id with its place on the felt (TrickArea), so it flies there; it stays mounted
  * while it leaves, because the view that drops it arrives just before the event that puts it
- * on the felt. Hovering or focusing a card raises it and parts the cards around it.
+ * on the felt. Hovering or focusing a card you can click raises it and parts the cards around
+ * it; a card you can't click stays still.
  */
 export function Hand({ ids, trump, dealer, cardProps, onHoverColor }: Props) {
   const order = useMemo(() => displayOrder(ids, trump), [ids, trump]);
@@ -131,11 +132,14 @@ export function Hand({ ids, trump, dealer, cardProps, onHoverColor }: Props) {
           // A picked card stays up; any other rises under the pointer, unless it can't be played.
           // Choosing trump, the hovered card's whole color rises instead.
           const group = displayGroup(id, trump);
+          // Only a card you can click answers the pointer: one you can't (greyed out on your
+          // turn, or any card while you wait) stays still, and so does the hand around it.
+          const live = props.onClick !== undefined && !props.disabled;
           const raise = byColor
             ? group === hoveredColor
               ? 1
               : 0
-            : i === at && !props.selected && !props.disabled
+            : i === at && !props.selected
               ? 1
               : 0;
           const part = byColor ? partOffset(groups.indexOf(group), atGroup) : partOffset(i, at);
@@ -155,9 +159,9 @@ export function Hand({ ids, trump, dealer, cardProps, onHoverColor }: Props) {
               className={newGroup ? 'hand-slot group-start' : 'hand-slot'}
               onPointerEnter={(e) => {
                 // A tap is a play, not a look: don't part the hand under a finger.
-                if (e.pointerType !== 'touch') setHovered(id);
+                if (e.pointerType !== 'touch') setHovered(live ? id : null);
               }}
-              onFocus={() => setHovered(id)}
+              onFocus={() => setHovered(live ? id : null)}
             >
               <Present>
                 <div className={raise ? 'hand-fan hand-fan-hovered' : 'hand-fan'} style={fan}>

@@ -680,7 +680,7 @@ describe('hovering the hand', () => {
   });
 
   it('raises the hovered card without reordering, and settles when the pointer leaves', () => {
-    render(<Hand ids={[0, 1, 2, 3, 4]} trump={null} cardProps={() => ({})} />);
+    render(<Hand ids={[0, 1, 2, 3, 4]} trump={null} cardProps={() => ({ onClick: () => {} })} />);
     const slots = [...document.querySelectorAll('.hand-slot')];
     const before = slots.map((s) => s.textContent);
     fireEvent.pointerEnter(slots[2] as Element, { pointerType: 'mouse' });
@@ -696,21 +696,39 @@ describe('hovering the hand', () => {
     expect(fans().every((f) => f.part === 0 && f.raise === 0)).toBe(true);
   });
 
-  it('parts the hand for keyboard focus too, but does not raise a card that cannot be played', () => {
-    render(
-      <Hand
-        ids={[0, 1, 2]}
-        trump={null}
-        cardProps={() => ({ onClick: () => {}, disabled: true })}
-      />,
-    );
+  it('parts the hand for keyboard focus too', () => {
+    render(<Hand ids={[0, 1, 2]} trump={null} cardProps={() => ({ onClick: () => {} })} />);
     const buttons = document.querySelectorAll<HTMLElement>('.hand button.card');
     act(() => (buttons[1] as HTMLElement).focus());
     expect(fans()).toEqual([
       { part: -0.5, raise: 0 },
-      { part: 0, raise: 0 },
+      { part: 0, raise: 1 },
       { part: 1, raise: 0 },
     ]);
+  });
+
+  it("leaves the hand still under a card you can't click, greyed out or while you wait", () => {
+    const { unmount } = render(
+      <Hand
+        ids={[0, 1, 2]}
+        trump={null}
+        cardProps={(id) => ({ onClick: () => {}, disabled: id === 1 })}
+      />,
+    );
+    const slots = () => [...document.querySelectorAll('.hand-slot')];
+    // Hovering a playable card, then moving onto a greyed-out one, settles the hand.
+    fireEvent.pointerEnter(slots()[0] as Element, { pointerType: 'mouse' });
+    expect(fans()[0]?.raise).toBe(1);
+    fireEvent.pointerEnter(slots()[1] as Element, { pointerType: 'mouse' });
+    expect(fans().every((f) => f.part === 0 && f.raise === 0)).toBe(true);
+    act(() => document.querySelector<HTMLElement>('[data-card-id="1"]')?.focus());
+    expect(fans().every((f) => f.part === 0 && f.raise === 0)).toBe(true);
+    unmount();
+    // While you wait, the cards can't be clicked and aren't greyed out: still no movement.
+    render(<Hand ids={[0, 1, 2]} trump={null} cardProps={() => ({})} />);
+    fireEvent.pointerEnter(slots()[1] as Element, { pointerType: 'mouse' });
+    expect(fans().every((f) => f.part === 0 && f.raise === 0)).toBe(true);
+    expect(document.querySelector('.card-disabled')).toBeNull();
   });
 });
 
