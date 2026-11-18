@@ -139,7 +139,7 @@ export function Table({ room, view }: { room: RoomView; view: TableView }) {
     <main className="table-screen">
       <section className="felt">
         {/* The hand's status in words, for screen readers; on screen it is shown by the
-            bid on the felt, the bidder's badge, the trump mark and the piles. */}
+            bid on the felt, the bidder's badge (with trump) and the piles. */}
         <ContractBar view={view} room={room} />
         <Scoreboard view={view} room={room} />
         {/* One group per deal: a card you play flies from your hand to the felt, and on to

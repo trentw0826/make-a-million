@@ -369,7 +369,7 @@ describe('table status', () => {
     }
   });
 
-  it('shows the contract on the bidder, trump on the felt, and the hand on the scoreboard', () => {
+  it('shows the contract and trump on the bidder, and the hand on the scoreboard', () => {
     renderWith([
       welcome,
       { type: 'room', room: room('playing') },
@@ -389,7 +389,8 @@ describe('table status', () => {
     const badge = document.querySelector('.seat-left .chip-contract') as HTMLElement;
     expect(badge).toHaveTextContent('Contract $185kRed');
     expect(badge.querySelector('[data-trump-suit="red"]')).not.toBeNull();
-    expect(document.querySelector('.trump-mark')).toHaveClass('suit-red');
+    // Trump is on the bidder's badge only, with no mark in the middle of the felt.
+    expect(document.querySelector('.trick-area .suit-red')).toBeNull();
     expect(screen.getByRole('region', { name: 'Scores' })).toHaveTextContent(/^Hand 2/);
     expect(screen.getByRole('region', { name: 'Hand status' })).toHaveClass('visually-hidden');
     expect(document.querySelector('.me-line .you-tag')).toHaveTextContent('You');
