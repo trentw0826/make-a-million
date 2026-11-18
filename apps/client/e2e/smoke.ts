@@ -472,6 +472,18 @@ async function fullHand(browser: Browser, base: string): Promise<void> {
     'bidding begins as soon as the cards are dealt',
   );
   await until(() => page.locator('.me.me-turn').isVisible(), 'your turn to bid');
+  {
+    // The gold ring goes round your name tag, not round your whole seat.
+    const ring = await page.evaluate(() => ({
+      seat: getComputedStyle(document.querySelector('.me') as Element).borderTopWidth,
+      name: getComputedStyle(document.querySelector('.me > .me-name') as Element).borderTopWidth,
+      color: getComputedStyle(document.querySelector('.me > .me-name') as Element).borderTopColor,
+    }));
+    check(
+      ring.seat === '0px' && ring.name !== '0px' && ring.color !== 'rgba(0, 0, 0, 0)',
+      `your turn rings your name tag only (seat border ${ring.seat}, name ${ring.name} ${ring.color})`,
+    );
+  }
   check(
     await page.getByRole('button', { name: /^Bid \$/ }).isVisible(),
     'the table marks your turn to bid',
