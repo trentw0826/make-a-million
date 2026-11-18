@@ -534,8 +534,7 @@ button.icon-btn {
   flex-direction: column;
   flex: 1;
 }
-.score-sheet h2,
-.event-log h2 {
+.score-sheet h2 {
   font-size: 1em;
   margin: 0 0 6px;
   border-bottom: 1px solid var(--line);
@@ -624,58 +623,122 @@ button.icon-btn {
 .side-us .progress span {
   background: var(--team-us);
 }
-.sheet {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.8em;
+/* The score sheet: the race to the target, then a card for each hand, newest first. */
+.sheet-race {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  border-radius: var(--radius-m);
+  background: var(--paper-raised);
+  box-shadow: var(--shadow-1);
 }
-.sheet th,
-.sheet td {
-  text-align: left;
-  padding: 2px 4px;
-  border-bottom: 1px solid var(--line);
+.sheet-race-side {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 2px 8px;
+  align-items: baseline;
+  font-size: 0.9em;
 }
-.sheet .num {
-  text-align: right;
-  white-space: nowrap;
+.sheet-race-side strong {
+  font-variant-numeric: tabular-nums;
 }
-.sheet .nowrap {
-  white-space: nowrap;
-}
-.sheet tr.set td {
+.sheet-race-side strong.neg {
   color: var(--danger);
 }
-.event-log {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
+.sheet-race-side .progress {
+  grid-column: 1 / -1;
+  height: 5px;
+  background: var(--line);
+}
+.sheet-race-target {
+  margin: 0;
+  font-size: 0.75em;
+  text-align: right;
+  color: var(--muted);
+}
+.sheet-hands {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.sheet-hand {
+  display: grid;
+  gap: 6px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-m);
   font-size: 0.85em;
 }
-.event-log ul {
+.sheet-hand-live {
+  border-color: var(--accent);
+}
+.sheet-hand-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   margin: 0;
+  font-size: 1em;
+}
+.sheet-chip {
+  padding: 0 8px;
+  border-radius: 999px;
+  font-size: 0.8em;
+  font-weight: bold;
+}
+.sheet-chip.good {
+  background: var(--good-bg);
+  color: var(--good-ink);
+}
+.sheet-chip.bad {
+  background: var(--bad-bg);
+  color: var(--danger);
+}
+.sheet-chip-live {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+.sheet-hand-bid {
+  margin: 0;
+}
+.sheet-trump {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-weight: bold;
+}
+.sheet-trump-glyph {
+  width: 0.9em;
+  height: 0.9em;
+}
+.sheet-hand-sides {
+  display: flex;
+  justify-content: space-between;
+  font-weight: bold;
+  font-variant-numeric: tabular-nums;
+}
+.sheet-hand-sides .pos {
+  color: var(--good-ink);
+}
+.sheet-hand-sides .neg {
+  color: var(--danger);
+}
+.sheet-dim {
+  font-weight: normal;
+  color: var(--muted);
+}
+.sheet-log summary {
+  cursor: pointer;
+  color: var(--muted);
+}
+.sheet-lines {
+  margin: 4px 0 0;
   padding-left: 16px;
 }
-.event-log li {
+.sheet-lines li {
   margin: 2px 0;
-}
-.event-log h3 {
-  margin: 8px 0 2px;
-  font-size: 0.8em;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--muted);
-}
-.log-hand summary {
-  cursor: pointer;
-  padding: 2px 0;
-  color: var(--muted);
-}
-.log-hand-title {
-  font-weight: bold;
-  color: var(--ink);
-}
-.log-hand[open] summary {
-  margin-bottom: 2px;
 }
 .tone-good {
   color: var(--green);
@@ -737,7 +800,8 @@ button.icon-btn {
   padding: 2px 8px;
 }
 .score-sheet {
-  max-height: 45%;
+  flex: 1;
+  min-height: 0;
   overflow-y: auto;
 }
 .seat-panel {
@@ -1672,6 +1736,12 @@ button.modal-close {
   margin: 30px 0 0;
   border-radius: 7px;
   background: var(--line);
+}
+/* The same bar, small, on each hand of the score sheet. */
+.score-bar-compact {
+  height: 8px;
+  margin: 0;
+  border-radius: 4px;
 }
 .score-bar-fill {
   position: absolute;

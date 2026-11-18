@@ -640,11 +640,12 @@ async function fullHand(browser: Browser, base: string): Promise<void> {
   check(await drawer.isVisible(), 'the score sheet and log open from the felt');
   await shoot('8-score-sheet');
   check(
-    (await drawer.locator('.sheet tbody tr').count()) === 1,
-    'the score sheet has a line for the hand',
+    (await drawer.locator('.sheet-hand:not(.sheet-hand-live)').count()) === 1 &&
+      (await drawer.locator('.sheet-hand .score-bar-track').count()) === 1,
+    'the score sheet has a card for the hand, with its bar',
   );
-  const folded = drawer.locator('.event-log details');
-  check((await folded.count()) === 1, 'the finished hand folds up in the log');
+  const folded = drawer.locator('.sheet-log');
+  check((await folded.count()) === 1, "the finished hand's log folds up under it");
   const log = (await folded.textContent()) ?? '';
   check((log.match(/Auction:/g) ?? []).length === 1, 'the log sums up the auction in one line');
   check(!/takes trick|bids \$|passes\./.test(log), 'the log has no per-trick or per-bid lines');

@@ -6,8 +6,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Shell } from '../src/App';
 import { ContractBar } from '../src/components/ContractBar';
 import { DiscardTray } from '../src/components/DiscardTray';
-import { EventLog } from '../src/components/EventLog';
 import { Hand, partOffset } from '../src/components/Hand';
+import { ScoreSheet } from '../src/components/ScoreSheet';
 import { ScoreTracker } from '../src/components/ScoreTracker';
 import { SeatPanel } from '../src/components/SeatPanel';
 import { TableDrawer } from '../src/components/TableDrawer';
@@ -152,22 +152,57 @@ describe('keyboard', () => {
   });
 });
 
-describe('table log', () => {
-  it('folds earlier hands under their result and keeps the current hand open', () => {
+describe('score sheet', () => {
+  it('lays out the race, then each hand newest first, its log folded under a finished one', () => {
+    const hand1 = {
+      handNumber: 1,
+      dealer: 0,
+      redeals: 0,
+      bidder: 1,
+      bid: 185_000,
+      trump: 'red',
+      biddingTeam: 1,
+      captured: [20_000, 210_000],
+      made: true,
+      delta: [20_000, 210_000],
+      scoresAfter: [20_000, 210_000],
+      tricks: [],
+    } as const;
+    const view: TableView = {
+      ...dealt,
+      handNumber: 2,
+      scores: [20_000, 210_000],
+      handHistory: [hand1],
+    };
     render(
-      <EventLog
-        entries={[
+      <ScoreSheet
+        view={view}
+        room={room('playing')}
+        log={[
           { id: 1, hand: 1, text: 'Ann deals.', tone: 'info' },
-          { id: 2, hand: 1, text: 'Ann & Cid made the $185k bid (+$210k).', tone: 'good' },
+          { id: 2, hand: 1, text: 'Bot 2 & Bot 4 made the $185k bid (+$210k).', tone: 'bad' },
           { id: 3, hand: 2, text: 'Bot 2 deals.', tone: 'info' },
         ]}
       />,
     );
-    const earlier = screen.getByText('Hand 1').closest('details');
-    expect(earlier).not.toHaveAttribute('open');
-    expect(earlier?.querySelector('summary')).toHaveTextContent('made the $185k bid');
-    expect(screen.getByRole('heading', { name: 'Hand 2' })).toBeInTheDocument();
-    expect(screen.getByText('Bot 2 deals.')).toBeVisible();
+    const race = screen.getByLabelText('The race');
+    expect(race).toHaveTextContent(/Us\$20,000.*Them\$210,000.*First to \$1,000,000/);
+    const hands = [...document.querySelectorAll('.sheet-hand')];
+    // The hand in play first, its lines open.
+    expect(hands[0]).toHaveTextContent(/^Hand 2In play/);
+    expect(within(hands[0] as HTMLElement).getByText('Bot 2 deals.')).toBeVisible();
+    // Then hand 1: who bid what, how it went for us (they made it: red), the bar, the totals.
+    const done = hands[1] as HTMLElement;
+    expect(done.querySelector('.sheet-chip')).toHaveTextContent('Made');
+    expect(done.querySelector('.sheet-chip')).toHaveClass('bad');
+    expect(done).toHaveTextContent('Bot 2 bid $185k in Red');
+    expect(within(done).getByRole('img', { name: /made by \$25k/ })).toBeInTheDocument();
+    expect(done.querySelector('.sheet-hand-sides')).toHaveTextContent(
+      /\+\$20k → \$20k.*\+\$210k → \$210k/,
+    );
+    const folded = done.querySelector('details');
+    expect(folded).not.toHaveAttribute('open');
+    expect(folded).toHaveTextContent('made the $185k bid');
   });
 });
 

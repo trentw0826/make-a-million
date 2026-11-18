@@ -14,6 +14,7 @@ import { money, nameOf, SUIT_NAMES, shortMoney } from '../format';
 import type { ResultDeadline } from '../state';
 import { useGame } from '../store';
 import { EASE_OUT } from '../theme/motion';
+import { BidTrack, bidCaption } from './BidTrack';
 import { CardFace } from './CardFace';
 import { CountUp } from './CountUp';
 import { Modal } from './Modal';
@@ -163,26 +164,9 @@ function signedMoney(amount: number): string {
  * what that side scored this hand and the total it now holds.
  */
 function ScoreBar({ result, team, still }: { result: Result; team: Team; still: boolean }) {
-  const bt = result.biddingTeam;
-  const them = otherTeam(team);
-  const caught = result.captured[bt];
-  const scale = Math.max(result.captured[team] + result.captured[them], result.bid, 1);
-  const pct = (n: number) => Math.min(100, (n / scale) * 100);
-  const bidAt = bt === team ? pct(result.bid) : 100 - pct(result.bid);
-  const margin = Math.abs(caught - result.bid);
-  const caption = result.made
-    ? margin === 0
-      ? 'made exactly'
-      : `made by ${shortMoney(margin)}`
-    : `short by ${shortMoney(margin)}`;
-  const grow = (n: number) => ({
-    initial: still ? false : { width: '0%' },
-    animate: { width: `${pct(n)}%` },
-    transition: { duration: 0.8, ease: EASE_OUT, delay: 0.2 },
-  });
   const sides = [
     { side: team, name: 'Us', key: 'us' },
-    { side: them, name: 'Them', key: 'them' },
+    { side: otherTeam(team), name: 'Them', key: 'them' },
   ] as const;
   return (
     <figure className="score-bar">
@@ -200,22 +184,9 @@ function ScoreBar({ result, team, still }: { result: Result; team: Team; still: 
           </section>
         ))}
       </div>
-      <div
-        className="score-bar-track"
-        role="img"
-        aria-label={`The bidders captured ${money(caught)} against a ${money(result.bid)} bid: ${caption}.`}
-      >
-        <motion.span className="score-bar-fill side-us" {...grow(result.captured[team])} />
-        <motion.span
-          className="score-bar-fill score-bar-right side-them"
-          {...grow(result.captured[them])}
-        />
-        <span className="score-bar-notch" style={{ left: `${bidAt}%` }}>
-          <span className="score-bar-bid">Bid {shortMoney(result.bid)}</span>
-        </span>
-      </div>
+      <BidTrack result={result} team={team} still={still} />
       <figcaption className={`score-bar-caption ${result.made ? 'made' : 'set'}`}>
-        Bidders captured {shortMoney(caught)}, {caption}
+        Bidders captured {shortMoney(result.captured[result.biddingTeam])}, {bidCaption(result)}
       </figcaption>
     </figure>
   );
