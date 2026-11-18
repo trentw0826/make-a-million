@@ -17,7 +17,7 @@ export interface CardFaceProps {
   readonly onBlockedClick?: (() => void) | undefined;
   /** A trump card (the trump color or the Tiger), marked once trump is named. */
   readonly trump?: boolean | undefined;
-  /** Just picked up from the widow. */
+  /** Just picked up from the widow: outlined in gold (and said in its name). */
   readonly fresh?: boolean | undefined;
   /** The card winning the trick. */
   readonly winning?: boolean | undefined;
@@ -66,11 +66,6 @@ export function CardFace({
       {trump && (
         <span className="card-star" aria-hidden="true">
           ★
-        </span>
-      )}
-      {fresh && (
-        <span className="card-tag" aria-hidden="true">
-          new
         </span>
       )}
       <CardArt card={card} />

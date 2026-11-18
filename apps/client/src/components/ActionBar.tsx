@@ -117,7 +117,7 @@ function DiscardControls({
         {left > 0 ? `Discard (${left} left)` : 'Discard'}
       </button>
       <RulesTip label="Discard rules">
-        The three widow cards are now in your hand, marked new. Choose three to put out of play for
+        The three widow cards are now in your hand, outlined in gold. Choose three to put out of play for
         this hand. Number cards must go before Money; the Tiger, Bull and Bear can never be
         discarded.
       </RulesTip>

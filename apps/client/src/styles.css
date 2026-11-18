@@ -1496,20 +1496,6 @@ button.card-selected:hover:not([aria-disabled="true"]) {
   top: 1px;
   right: 3px;
 }
-.card-tag {
-  position: absolute;
-  top: -8px;
-  left: 50%;
-  transform: translateX(-50%);
-  padding: 0 6px;
-  border-radius: 8px;
-  font-size: 0.6em;
-  font-weight: bold;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  background: var(--accent);
-  color: var(--on-accent);
-}
 .card-fresh {
   border-color: var(--accent);
 }

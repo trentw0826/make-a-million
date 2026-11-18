@@ -53,7 +53,9 @@ describe('CardFace', () => {
     const card = screen.getByLabelText('Tiger top trump, trump, from the widow');
     expect(card).toHaveAttribute('data-trump');
     expect(card).toHaveTextContent('★');
-    expect(card).toHaveTextContent('new');
+    // Outlined in gold, with no tag over it.
+    expect(card).toHaveClass('card-fresh');
+    expect(card).not.toHaveTextContent(/new/i);
   });
 
   it('carries a tooltip explaining why it is greyed out', () => {
