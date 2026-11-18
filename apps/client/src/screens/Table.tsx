@@ -75,14 +75,8 @@ export function Table({ room, view }: { room: RoomView; view: TableView }) {
     !forbidden.has(id) && (selected.has(id) || isNumber(id) || moneySelected < moneyAllowed);
   // The widow is in view only for the bidder; mark its cards while they choose discards.
   const widow = new Set(discarding ? (view.widow ?? []) : []);
-  // While discarding, the cards that must be kept (the Tiger, Bull and Bear, and Money while
-  // number cards remain) move to the end of the hand together, set apart, and the picked
-  // cards leave the hand for the discard tray on the felt.
-  const kept = new Set(
-    discarding
-      ? view.hand.filter((id) => forbidden.has(id) || (!isNumber(id) && moneyAllowed === 0))
-      : [],
-  );
+  // While discarding, the picked cards leave the hand for the discard tray on the felt; the
+  // cards that must be kept stay in their places, greyed out.
   const handIds = discarding ? view.hand.filter((id) => !selected.has(id)) : view.hand;
 
   // Tooltips need a hover, which touch screens don't have, so a click on a greyed-out card
@@ -197,7 +191,6 @@ export function Table({ room, view }: { room: RoomView; view: TableView }) {
               key={dealKey}
               ids={handIds}
               trump={view.trump}
-              kept={kept}
               dealer={spotOf(view.dealer, me)}
               onHoverColor={naming ? setTrumpPreview : undefined}
               cardProps={(id) => {

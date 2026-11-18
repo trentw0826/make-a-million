@@ -12,6 +12,7 @@ import { Scoreboard } from '../src/components/Scoreboard';
 import { SeatPanel } from '../src/components/SeatPanel';
 import { TableDrawer } from '../src/components/TableDrawer';
 import { TrickPile } from '../src/components/TrickPile';
+import { displayOrder } from '../src/handOrder';
 import { GameProvider, useGame } from '../src/store';
 
 /** Nothing listens here, so every send fails and shows the "Not connected" toast. */
@@ -517,7 +518,7 @@ describe('table status', () => {
     expect(screen.getByRole('button', { name: 'Discard' })).toBeEnabled();
   });
 
-  it('sets the kept cards apart and lays picked discards out on the felt', async () => {
+  it('leaves the kept cards in place and lays picked discards out on the felt', async () => {
     renderWith([
       welcome,
       { type: 'room', room: room('playing') },
@@ -538,11 +539,13 @@ describe('table status', () => {
       [...document.querySelectorAll('.hand [data-card-id]')].map((c) =>
         Number(c.getAttribute('data-card-id')),
       );
-    // The Red $40k and the Tiger must be kept: they close the hand, set apart.
-    expect(handIds().slice(-2)).toEqual([12, 52]);
-    expect(document.querySelector('[data-card-id="12"]')?.closest('.hand-slot')).toHaveClass(
-      'kept-start',
-    );
+    // The Red $40k and the Tiger must be kept: they stay in their places, greyed out, with
+    // nothing setting them apart.
+    expect(handIds()).toEqual(displayOrder([0, 1, 2, 12, 52, 39], null));
+    expect(document.querySelector('.kept-start')).toBeNull();
+    for (const id of [12, 52]) {
+      expect(document.querySelector(`.hand [data-card-id="${id}"]`)).toHaveClass('card-disabled');
+    }
 
     const tray = screen.getByRole('region', { name: 'Your discards' });
     fireEvent.click(document.querySelector('.hand [data-card-id="1"]') as Element);

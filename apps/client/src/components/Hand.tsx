@@ -29,8 +29,6 @@ interface Props {
    * focus, or null.
    */
   readonly onHoverColor?: ((suit: Suit | null) => void) | undefined;
-  /** Cards to set apart at the end of the hand (the ones that must be kept when discarding). */
-  readonly kept?: ReadonlySet<CardId> | undefined;
 }
 
 /** Offsets from the hand to each dealer's seat, roughly, for the deal to start from. */
@@ -81,20 +79,8 @@ function Present({ children }: { children: ReactNode }) {
  * while it leaves, because the view that drops it arrives just before the event that puts it
  * on the felt. Hovering or focusing a card raises it and parts the cards around it.
  */
-export function Hand({ ids, trump, dealer, cardProps, onHoverColor, kept }: Props) {
-  const order = useMemo(() => {
-    if (!kept || kept.size === 0) return displayOrder(ids, trump);
-    return [
-      ...displayOrder(
-        ids.filter((id) => !kept.has(id)),
-        trump,
-      ),
-      ...displayOrder(
-        ids.filter((id) => kept.has(id)),
-        trump,
-      ),
-    ];
-  }, [ids, trump, kept]);
+export function Hand({ ids, trump, dealer, cardProps, onHoverColor }: Props) {
+  const order = useMemo(() => displayOrder(ids, trump), [ids, trump]);
   // The first render is the deal; cards that mount after it are the widow. A card that left
   // and comes back (a discard put back) flies home on its own, so it isn't dealt in again.
   const dealt = useRef(false);
@@ -137,10 +123,8 @@ export function Hand({ ids, trump, dealer, cardProps, onHoverColor, kept }: Prop
       <AnimatePresence mode="popLayout">
         {order.map((id, i) => {
           const prev = order[i - 1];
-          const keptStart = kept?.has(id) === true && prev !== undefined && !kept.has(prev);
           const newGroup =
-            prev !== undefined &&
-            (keptStart || displayGroup(prev, trump) !== displayGroup(id, trump));
+            prev !== undefined && displayGroup(prev, trump) !== displayGroup(id, trump);
           const from = dealt.current ? WIDOW_FROM : DEAL_FROM[dealer ?? 'top'];
           const delay = dealt.current ? 0 : (i * DEAL_STAGGER_MS) / 1000;
           const props = cardProps(id);
@@ -168,9 +152,7 @@ export function Hand({ ids, trump, dealer, cardProps, onHoverColor, kept }: Prop
               layoutId={cardLayoutId(id)}
               exit={{ opacity: 0, transition: { duration: DUR_FAST_MS / 1000 } }}
               transition={{ layout: CARD_SPRING }}
-              className={['hand-slot', newGroup && 'group-start', keptStart && 'kept-start']
-                .filter(Boolean)
-                .join(' ')}
+              className={newGroup ? 'hand-slot group-start' : 'hand-slot'}
               onPointerEnter={(e) => {
                 // A tap is a play, not a look: don't part the hand under a finger.
                 if (e.pointerType !== 'touch') setHovered(id);

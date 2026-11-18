@@ -1246,10 +1246,6 @@ button.icon-btn {
 .hand-slot.group-start {
   margin-left: calc(var(--step) - var(--card-w) + var(--group-gap));
 }
-/* While discarding, the cards that must be kept sit apart at the end of the hand. */
-.hand-slot.kept-start {
-  margin-left: calc(var(--step) - var(--card-w) + var(--group-gap) * 2.5);
-}
 /* The fan: each card leans by its distance from the middle (--d) and drops a little. Around
    a hovered card the others part (--part, set by Hand) and the card itself rises (--raise);
    a card picked for the discard stays up (--picked). The stacking order never changes. */
