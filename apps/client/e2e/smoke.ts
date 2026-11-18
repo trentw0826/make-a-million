@@ -258,6 +258,9 @@ type Shoot = (name: string) => Promise<void>;
 /** Takes this seat's action if the table is waiting on it; true if it acted. */
 async function act(page: Page, shoot: Shoot): Promise<boolean> {
   const quick = { timeout: 2_000 };
+  // In the fan each card covers the right part of the one before it, so its middle can lie
+  // under its neighbour; a person points at the edge left in view, and so does the test.
+  const onCard = { ...quick, position: { x: 10, y: 40 } };
   try {
     // The gold ring round your seat says the table is waiting on you.
     if (!(await page.locator('.me.me-turn').isVisible())) return false;
@@ -333,7 +336,7 @@ async function act(page: Page, shoot: Shoot): Promise<boolean> {
         .locator('.hand .hand-present:not([inert]) button.card:not([aria-disabled])')
         .first();
       if ((await colored.count()) > 0) {
-        await colored.hover(quick);
+        await colored.hover(onCard);
         await sleep(350);
         if (!trumpChecked) {
           const raised = await page.locator('.hand-fan-hovered').count();
@@ -354,7 +357,7 @@ async function act(page: Page, shoot: Shoot): Promise<boolean> {
           trumpChecked = true;
         }
         await shoot('4b-trump');
-        await colored.click(quick);
+        await colored.click(onCard);
         return true;
       }
     }
@@ -393,12 +396,12 @@ async function act(page: Page, shoot: Shoot): Promise<boolean> {
               const el = document.elementFromPoint(x, y);
               return el ? getComputedStyle(el).cursor : null;
             },
-            [box.x + box.width / 2, box.y + box.height / 2] as const,
+            [box.x + onCard.position.x, box.y + onCard.position.y] as const,
           ));
         check(cursor === 'pointer', 'the pointer turns to a hand over a card you can play');
         cursorChecked = true;
       }
-      await card.click(quick);
+      await card.click(onCard);
       return true;
     }
   } catch (e) {
