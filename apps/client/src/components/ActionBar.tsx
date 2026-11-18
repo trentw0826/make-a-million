@@ -7,8 +7,8 @@ import {
   type TableView,
 } from '@mam/engine';
 import type { RoomView } from '@mam/protocol';
-import { type ReactNode, useEffect, useId, useState } from 'react';
-import { SUIT_NAMES, shortMoney } from '../format';
+import { type ReactNode, useId } from 'react';
+import { SUIT_NAMES } from '../format';
 import { playHint, waitingText } from '../hints';
 import { useGame } from '../store';
 import { useGameKeys } from '../useHotkeys';
@@ -28,21 +28,20 @@ export function ActionBar({ view, room, selected, onClearSelection, trumpPreview
   switch (legal.kind) {
     case 'none':
       // Whose turn it is shows on the table (the ring round the seat), so the bar says
-      // nothing while you wait; screen readers still hear it. Through the auction the empty
-      // bar keeps its place; otherwise it holds the space unseen, so your hand doesn't jump.
+      // nothing while you wait; screen readers still hear it. Through the auction there is
+      // no bar at all, since the bidding happens on the felt (BidPlaques); later it holds its
+      // space unseen, so your hand doesn't jump.
       return (
         <>
-          <div
-            className={
-              view.phase === 'bidding' ? 'action-bar action-idle' : 'action-bar action-hidden'
-            }
-            aria-hidden="true"
-          />
+          {view.phase !== 'bidding' && (
+            <div className="action-bar action-hidden" aria-hidden="true" />
+          )}
           <output className="visually-hidden">{waitingText(view, room)}</output>
         </>
       );
     case 'bid':
-      return <BidControls legal={legal} view={view} />;
+      // Your plaque on the felt is the bid button, with − and + and Pass round it.
+      return <output className="visually-hidden">Your turn to bid.</output>;
     case 'discard':
       return <DiscardControls legal={legal} selected={selected} onDone={onClearSelection} />;
     case 'trump':
@@ -72,84 +71,6 @@ function TurnBar({ children, className }: { children: ReactNode; className?: str
       <span className="visually-hidden">Your turn.</span>
       {children}
     </div>
-  );
-}
-
-/**
- * Bid or pass; on a first turn with a weak enough hand, call a misdeal instead. The bid sits
- * in the middle, its amount on the button itself with − and + either side; Pass is off to the
- * right. The high bid is on the contract bar, so it isn't repeated here.
- */
-function BidControls({
-  legal,
-  view,
-}: {
-  legal: Extract<LegalMoves, { kind: 'bid' }>;
-  view: TableView;
-}) {
-  const { act } = useGame();
-  const [amount, setAmount] = useState(legal.minBid);
-  useEffect(() => setAmount(legal.minBid), [legal.minBid]);
-  const step = legal.step;
-  const lower = () => setAmount((a) => Math.max(legal.minBid, a - step));
-  const raise = () => setAmount((a) => a + step);
-  const bid = () => act({ type: 'bid', amount });
-  useGameKeys({
-    ArrowLeft: lower,
-    ArrowDown: lower,
-    ArrowRight: raise,
-    ArrowUp: raise,
-    Enter: bid,
-  });
-  const threshold = view.ruleset.misdeal.threshold;
-  return (
-    <TurnBar className="bid-bar">
-      <div className="bid-bar-start">
-        {!legal.canPass && <span>You open the bidding.</span>}
-        {legal.canCallMisdeal && (
-          <button
-            type="button"
-            className="warn-btn"
-            title={`Your Money totals ${shortMoney(threshold)} or less: you may have the hand re-dealt instead of bidding.`}
-            onClick={() => act({ type: 'callMisdeal' })}
-          >
-            Call misdeal
-          </button>
-        )}
-      </div>
-      <div className="bid-stepper">
-        <button
-          type="button"
-          className="bid-step"
-          onClick={lower}
-          disabled={amount <= legal.minBid}
-          aria-label="lower bid"
-        >
-          −
-        </button>
-        <button
-          type="button"
-          className="primary bid-button"
-          onClick={bid}
-          aria-keyshortcuts="Enter"
-        >
-          Bid {shortMoney(amount)}
-        </button>
-        <button type="button" className="bid-step" onClick={raise} aria-label="raise bid">
-          +
-        </button>
-      </div>
-      <div className="bid-bar-end">
-        <button
-          type="button"
-          className="bid-pass"
-          disabled={!legal.canPass}
-          onClick={() => act({ type: 'pass' })}
-        >
-          Pass
-        </button>
-      </div>
-    </TurnBar>
   );
 }
 

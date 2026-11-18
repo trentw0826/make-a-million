@@ -200,9 +200,10 @@ async function act(page: Page, shoot: Shoot): Promise<boolean> {
     if (await pass.isVisible()) {
       await shoot('3-bidding');
       check(
-        (await page.locator('.bid-stake').isVisible()) &&
+        (await page.locator('.plaque-bottom .your-bid').isVisible()) &&
+          (await page.locator('.action-bar').count()) === 0 &&
           (await page.locator('.seat-chip').count()) === 0,
-        'the auction shows only the bid on the felt, with no badges on the seats',
+        'the auction is bid on the felt, with no badges on the seats and no action bar',
       );
       const passed = page.locator('.seat-panel.seat-passed');
       if (!passedSeatChecked && (await passed.count()) > 0) {
@@ -411,7 +412,10 @@ async function fullHand(browser: Browser, base: string): Promise<void> {
   );
   check(
     (await page.locator('.action-bar .turn-pill').count()) === 0 &&
-      (await page.locator('.action-bar .visually-hidden').getByText('Your turn.').count()) === 1,
+      (await page
+        .locator('.me .visually-hidden')
+        .getByText(/^Your turn/)
+        .count()) === 1,
     'no "Your turn" badge: the ring round your seat marks the turn',
   );
 

@@ -22,7 +22,7 @@ import {
   TRICK_SKID_MS,
   TRICK_SKID_PX,
 } from '../theme/motion';
-import { BidStake } from './BidStake';
+import { BidPlaques } from './BidPlaques';
 import { CardFace } from './CardFace';
 
 /** The id shared by a card in the hand and on the felt, so Motion flies it from one to the other. */
@@ -121,7 +121,7 @@ export function TrickArea({ me, room, view, plays, completed }: Props) {
   return (
     <section className="trick-area" aria-label="Trick">
       <TurnMarker turn={turnSpot} />
-      <BidStake view={view} me={me} />
+      <BidPlaques view={view} me={me} />
       {cards.map((play) => {
         const from = spotOf(play.seat, me);
         const mine = play.seat === me;
