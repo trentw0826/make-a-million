@@ -1706,12 +1706,6 @@ button.card-selected:hover:not([aria-disabled="true"]) {
 .result-modal {
   max-width: 640px;
 }
-.result-contract {
-  margin: 0 0 var(--space-4);
-}
-.suit-word {
-  font-weight: var(--weight-bold);
-}
 
 /* The hand on one bar (ScoreBar): your side's capture from the left, theirs from the right,
    the bid notched from the bidders' end; above each end, the hand's score and the total. */

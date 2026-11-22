@@ -925,6 +925,8 @@ describe('Hand result', () => {
     const dialog = screen.getByRole('dialog', { name: /^Hand 1\W+They made their bid$/ });
     // The outcome is in the title, in green or red as it went for this seat's side.
     expect(dialog.querySelector('.result-status')).toHaveClass('bad');
+    // The bar says how the bid went; there is no separate line restating the bid.
+    expect(dialog).not.toHaveTextContent('Bot 2 bid');
     expect(screen.getByRole('timer')).toHaveAccessibleName('Next hand in 11 seconds');
     const list = screen.getByRole('list', { name: 'Ready for the next hand' });
     expect(list).toHaveTextContent('You: still reading');

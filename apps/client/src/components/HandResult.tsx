@@ -10,7 +10,7 @@ import {
 import type { RoomView } from '@mam/protocol';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { type CSSProperties, useEffect, useId, useState } from 'react';
-import { money, nameOf, SUIT_NAMES, shortMoney } from '../format';
+import { money, nameOf, shortMoney } from '../format';
 import type { ResultDeadline } from '../state';
 import { useGame } from '../store';
 import {
@@ -86,10 +86,6 @@ export function HandResult({
       }
       className="result-modal"
     >
-      <p className="result-contract">
-        {nameOf(room, result.bidder)} bid <strong>{money(result.bid)}</strong> in{' '}
-        <span className={`suit-word suit-${result.trump}`}>{SUIT_NAMES[result.trump]}</span>
-      </p>
       <ScoreBar result={result} team={team} still={still} />
       <Button
         size="sm"
