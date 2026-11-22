@@ -45,6 +45,10 @@ the spec.
   duration, easing or spring in the client. Use a token from `theme/tokens.css` or a preset
   from `theme/motion.ts`; if none fits, add one there first (on its scale, if it has one).
   `pnpm lint` (Stylelint) and `designTokens.test.ts` enforce this.
+- Build from the shared components in `apps/client/src/components/ui`: `Button` for every
+  ordinary button (a plain `<button>` is only for game pieces such as cards), `Panel` for a
+  surface, `Text` for a size or tone. Their styles are CSS Modules in the `ui` cascade layer;
+  `styles.css` is unlayered, so a class passed in through `className` can adjust layout.
 
 ## Docs are the spec
 

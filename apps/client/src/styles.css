@@ -3,112 +3,111 @@
  * from a token in theme/tokens.css; Stylelint rejects raw values. Widths, heights and
  * positions are each component's own geometry and stay as plain values.
  */
-:root {
-  font-family: var(--font-body);
-  line-height: var(--leading-normal);
-  font-feature-settings: "tnum" 1;
-  color: var(--ink);
-  -webkit-font-smoothing: antialiased;
+/* Elements, before any class: the page, type, and bare controls. Layers (declared in
+   tokens.css) keep the order fixed: base, then the shared components (ui), then everything
+   below, which is unlayered and so always wins. */
+@layer base {
+  :root {
+    font-family: var(--font-body);
+    line-height: var(--leading-normal);
+    font-feature-settings: "tnum" 1;
+    color: var(--ink);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Headings in the display face; Inter carries the rest. */
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    font-weight: var(--weight-semibold);
+    letter-spacing: var(--tracking-display);
+  }
+
+  h1 {
+    font-size: var(--text-3xl);
+  }
+
+  h2 {
+    font-size: var(--text-2xl);
+  }
+
+  h3 {
+    font-size: var(--text-lg);
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    margin: 0;
+    background: var(--felt-dark);
+    min-height: 100vh;
+  }
+
+  /* A bare button has no look of its own: an ordinary one is a Button (components/ui), and
+     a game piece (a card, a trump token, your bid plaque) styles itself. */
+  button {
+    font: inherit;
+    color: inherit;
+    cursor: pointer;
+  }
+
+  button:disabled {
+    cursor: default;
+  }
+
+  /* One focus ring for every control, shown only to the keyboard. */
+  :focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 2px;
+  }
+
+  kbd {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    padding: var(--space-1) var(--space-3);
+    border: 1px solid var(--line);
+    border-bottom-width: 2px;
+    border-radius: var(--radius-s);
+    background: var(--paper-raised);
+  }
+
+  input {
+    font: inherit;
+    padding: var(--space-4) var(--space-5);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-m);
+    width: 100%;
+  }
 }
 
-/* Headings in the display face; Inter carries the rest. */
-h1,
-h2,
-h3 {
-  font-family: var(--font-display);
-  font-weight: var(--weight-semibold);
-  letter-spacing: var(--tracking-display);
+/* The felt and the bars over it set the text colours that read on them (see tokens.css);
+   paper surfaces set them back. Panel does the same for its own tones. */
+.felt,
+.lobby,
+.home,
+.topbar,
+.chair-bot {
+  --text-muted: var(--on-felt-muted);
+  --text-good: var(--good-on-felt);
+  --text-bad: var(--bad-on-felt);
 }
-h1 {
-  font-size: var(--text-3xl);
-}
-h2 {
-  font-size: var(--text-2xl);
-}
-h3 {
-  font-size: var(--text-lg);
-}
-
-* {
-  box-sizing: border-box;
-}
-
-body {
-  margin: 0;
-  background: var(--felt-dark);
-  min-height: 100vh;
+.modal,
+.drawer,
+.chair:not(.chair-bot),
+.rules-tip-text,
+.toast {
+  --text-muted: var(--muted);
+  --text-good: var(--good-ink);
+  --text-bad: var(--danger);
 }
 
-button {
-  font: inherit;
-  padding: var(--space-3) var(--space-5);
-  border-radius: var(--radius-m);
-  border: 1px solid var(--line);
-  background: var(--paper);
-  color: var(--ink);
-  cursor: pointer;
-}
-button:hover:not(:disabled, [aria-disabled="true"]) {
-  filter: brightness(0.96);
-}
-/* Not a card: a greyed-out card stays opaque under its felt-coloured veil (.card::before). */
-button:disabled,
-button[aria-disabled="true"]:not(.card) {
-  opacity: var(--opacity-disabled);
-  cursor: default;
-}
-button.primary {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: var(--on-accent);
-  font-weight: var(--weight-bold);
-}
-button.ghost {
-  background: transparent;
-  border-color: var(--line-on-felt-strong);
-  color: inherit;
-}
-button.warn-btn {
-  border-color: var(--danger);
-  color: var(--danger);
-}
-button.small {
-  padding: var(--space-1) var(--space-4);
-  font-size: var(--text-sm);
-}
-button.link {
-  background: none;
-  border: none;
-  padding: 0;
-  color: inherit;
-  text-decoration: underline;
-}
-kbd {
-  font-family: var(--font-mono);
-  font-size: var(--text-xs);
-  padding: var(--space-1) var(--space-3);
-  border: 1px solid var(--line);
-  border-bottom-width: 2px;
-  border-radius: var(--radius-s);
-  background: var(--paper-raised);
-}
-input {
-  font: inherit;
-  padding: var(--space-4) var(--space-5);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-m);
-  width: 100%;
-}
 .code-input {
   letter-spacing: var(--tracking-code);
   text-transform: uppercase;
   font-family: var(--font-mono);
-}
-.muted {
-  color: var(--muted);
-}
-.small {
-  font-size: var(--text-sm);
 }
 .row {
   display: flex;
@@ -126,14 +125,6 @@ input {
 .tag.warn {
   background: var(--warn-bg);
   color: var(--warn-ink);
-}
-.panel {
-  background: var(--paper);
-  border-radius: var(--radius-l);
-  padding: var(--space-6);
-}
-.neg {
-  color: var(--danger);
 }
 .side-dot {
   display: inline-block;
@@ -212,16 +203,6 @@ input {
   gap: var(--space-4);
   margin-left: auto;
 }
-/* button.small's padding would otherwise win and nudge the icon off-centre. */
-button.icon-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: var(--icon-btn-size);
-  height: var(--icon-btn-size);
-  padding: 0;
-  line-height: 0;
-}
 .conn-banner {
   position: sticky;
   top: var(--topbar-h);
@@ -296,11 +277,6 @@ button.icon-btn {
   width: min(560px, 100%);
   display: grid;
   gap: var(--space-5);
-  padding: var(--space-6) var(--space-7) var(--space-5);
-  border-radius: var(--radius-l);
-  background: var(--paper);
-  color: var(--ink);
-  box-shadow: var(--shadow-2);
 }
 .home-card label {
   display: grid;
@@ -334,7 +310,6 @@ button.icon-btn {
 }
 .home-help {
   margin: 0;
-  color: var(--muted);
 }
 @media (max-width: 600px) {
   .home-ways {
@@ -358,9 +333,6 @@ button.icon-btn {
   flex-direction: column;
   justify-content: center;
   color: var(--paper);
-}
-.lobby .muted {
-  color: var(--on-felt-muted);
 }
 /* The table seen from above: a chair at each side of the felt, yours at the bottom. */
 .lobby-table {
@@ -498,34 +470,17 @@ button.icon-btn {
   align-items: center;
   gap: var(--space-2);
 }
-.chair .muted {
-  color: var(--muted);
-}
-.chair-bot .muted {
-  color: var(--on-felt-muted);
-}
 .chair-actions {
   display: grid;
   justify-items: center;
   gap: var(--space-3);
-}
-.chair-actions .ghost {
-  border-color: var(--line);
-  color: var(--ink);
-}
-.chair-bot .ghost {
-  border-color: var(--line-on-felt-strong);
-  color: var(--paper);
 }
 /* Which seat this is, and its partner's, in quiet type above the chair. */
 .chair-seat {
   font-size: var(--text-xs);
   letter-spacing: var(--tracking-caps);
   text-transform: uppercase;
-  color: var(--muted);
-}
-.chair-bot .chair-seat {
-  color: var(--on-felt-muted);
+  color: var(--text-muted);
 }
 .chair-partner {
   opacity: var(--opacity-soft);
@@ -558,6 +513,7 @@ button.icon-btn {
   position: relative;
   padding: var(--space-1) var(--space-5);
   border: 0;
+  border-radius: var(--radius-pill);
   background: transparent;
   color: var(--paper);
   font-size: var(--text-sm);
@@ -616,9 +572,6 @@ button.icon-btn {
   display: grid;
   gap: var(--space-3);
   min-width: 170px;
-  padding: var(--space-4) var(--space-5);
-  border-radius: var(--radius-l);
-  background: var(--shade-2);
 }
 .total-head {
   position: relative;
@@ -630,30 +583,14 @@ button.icon-btn {
 .total-name {
   flex: 1;
 }
-.total-score {
-  font-variant-numeric: tabular-nums;
-}
-.total-score.neg {
-  color: var(--bad-on-felt);
-}
 .total-caption {
-  font-size: var(--text-xs);
   text-align: right;
-  color: var(--on-felt-muted);
 }
 /* The change from the last hand, floating up just below each side's score. */
 .delta-float {
   position: absolute;
   left: 10px;
-  font-size: var(--text-sm);
-  font-weight: var(--weight-bold);
   white-space: nowrap;
-}
-.delta-float.pos {
-  color: var(--good-on-felt);
-}
-.delta-float.neg {
-  color: var(--bad-on-felt);
 }
 .delta-float-us,
 .delta-float-them {
@@ -680,10 +617,6 @@ button.icon-btn {
   display: grid;
   gap: var(--space-3);
   margin-bottom: var(--space-5);
-  padding: var(--space-4) var(--space-5);
-  border-radius: var(--radius-m);
-  background: var(--paper-raised);
-  box-shadow: var(--shadow-1);
 }
 .sheet-race-side {
   display: grid;
@@ -692,12 +625,6 @@ button.icon-btn {
   align-items: baseline;
   font-size: var(--text-sm);
 }
-.sheet-race-side strong {
-  font-variant-numeric: tabular-nums;
-}
-.sheet-race-side strong.neg {
-  color: var(--danger);
-}
 .sheet-race-side .progress {
   grid-column: 1 / -1;
   height: 5px;
@@ -705,9 +632,7 @@ button.icon-btn {
 }
 .sheet-race-target {
   margin: 0;
-  font-size: var(--text-xs);
   text-align: right;
-  color: var(--muted);
 }
 .sheet-hands {
   display: grid;
@@ -719,9 +644,6 @@ button.icon-btn {
 .sheet-hand {
   display: grid;
   gap: var(--space-3);
-  padding: var(--space-4) var(--space-5);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-m);
   font-size: var(--text-sm);
 }
 .sheet-hand-live {
@@ -771,16 +693,6 @@ button.icon-btn {
   font-weight: var(--weight-bold);
   font-variant-numeric: tabular-nums;
 }
-.sheet-hand-sides .pos {
-  color: var(--good-ink);
-}
-.sheet-hand-sides .neg {
-  color: var(--danger);
-}
-.sheet-dim {
-  font-weight: var(--weight-regular);
-  color: var(--muted);
-}
 .sheet-log summary {
   cursor: pointer;
   color: var(--muted);
@@ -799,9 +711,6 @@ button.icon-btn {
   color: var(--danger);
 }
 
-.felt .muted {
-  color: var(--on-felt-muted);
-}
 .felt {
   position: relative;
   background:
@@ -851,7 +760,6 @@ button.icon-btn {
   position: absolute;
   top: 8px;
   right: 8px;
-  padding: var(--space-1) var(--space-4);
 }
 .score-sheet {
   flex: 1;
@@ -1230,11 +1138,7 @@ button.icon-btn {
 .plaque-step {
   position: absolute;
   top: 50%;
-  width: var(--icon-btn-size);
-  height: var(--icon-btn-size);
-  padding: 0;
   translate: 0 -50%;
-  border-radius: 50%;
   font-size: var(--text-lg);
   line-height: var(--leading-none);
 }
@@ -1252,13 +1156,10 @@ button.icon-btn {
   display: flex;
   gap: var(--space-4);
 }
-/* Pass is always there but rarely the point: a quiet outline. */
+/* Pass is always there but rarely the point: a quiet outline, a little wider than usual. */
 .plaque-pass {
   padding: var(--space-1) var(--space-6);
-  border-color: var(--line-on-felt);
-  background: transparent;
   color: var(--on-felt-muted);
-  font-size: var(--text-sm);
 }
 /* The marker on the felt's rim pointing at whoever the table waits on. */
 .turn-marker {
@@ -1283,11 +1184,6 @@ button.icon-btn {
 .rules-tip-btn {
   width: 20px;
   height: 20px;
-  padding: 0;
-  border-radius: 50%;
-  border-color: var(--line-on-felt);
-  background: transparent;
-  color: var(--paper);
   font-size: var(--text-xs);
   line-height: var(--leading-none);
   opacity: var(--opacity-muted);
@@ -1399,12 +1295,11 @@ button.icon-btn {
   display: flex;
   gap: var(--space-3);
 }
-.table-corner > .icon-btn {
+.table-corner > button {
   z-index: var(--z-sticky);
 }
-.table-corner .ghost {
-  color: var(--paper);
-  border-color: var(--line-on-felt);
+/* Solid, so they read over the open score sheet as well as over the felt. */
+.table-corner > button:not(:hover, [aria-expanded="true"]) {
   background: var(--felt-dark);
 }
 .table-corner .drawer-toggle[aria-expanded="true"] {
@@ -1673,13 +1568,6 @@ button.card-selected:hover:not([aria-disabled="true"]) {
 .modal-head h2 {
   margin: 0;
 }
-button.modal-close {
-  border: none;
-  background: transparent;
-  font-size: var(--text-2xl);
-  line-height: var(--leading-none);
-  padding: 0 var(--space-3);
-}
 /* How to play: the topics down the side, one at a time beside them, and Previous and Next
    below to read straight through. */
 .help {
@@ -1707,8 +1595,10 @@ button.modal-close {
   gap: var(--space-4);
   padding: var(--space-3) var(--space-4);
   border: 0;
+  border-radius: var(--radius-m);
   background: transparent;
   color: var(--muted);
+
   text-align: left;
   white-space: nowrap;
   transition:
@@ -1772,7 +1662,7 @@ button.modal-close {
   display: flex;
   margin: 0 0 var(--space-4);
 }
-.guide-cards-rank .card + .card {
+.guide-cards-rank > .card-small:not(:first-child) {
   margin-left: min(calc((100% - 13 * var(--card-small-w)) / 12), calc(var(--card-small-w) * -0.3));
 }
 .rank-order {
@@ -1874,20 +1764,7 @@ button.modal-close {
   font-weight: var(--weight-bold);
 }
 .score-bar-delta {
-  font-size: var(--text-2xl);
-  font-weight: var(--weight-bold);
   line-height: var(--leading-tight);
-}
-.score-bar-delta.pos {
-  color: var(--good-ink);
-}
-.score-bar-delta.neg {
-  color: var(--danger);
-}
-.score-bar-total {
-  font-size: var(--text-sm);
-  color: var(--muted);
-  font-variant-numeric: tabular-nums;
 }
 .score-bar-track {
   position: relative;
@@ -1952,18 +1829,7 @@ button.modal-close {
 /* A quiet button, but plainly a button: a tinted pill with a chevron that turns over. */
 .result-cards-toggle {
   display: flex;
-  align-items: center;
-  gap: var(--space-3);
   margin: 0 auto var(--space-5);
-  padding: var(--space-2) var(--space-5);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-pill);
-  background: var(--paper-raised);
-  color: var(--ink);
-  box-shadow: var(--shadow-1);
-}
-.result-cards-toggle:hover {
-  border-color: var(--accent);
 }
 .result-cards-chevron {
   font-size: var(--text-xs);
@@ -1986,10 +1852,6 @@ button.modal-close {
 .result-trick {
   display: grid;
   gap: var(--space-2);
-  padding: var(--space-3) var(--space-4);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-m);
-  background: var(--paper-raised);
   font-size: var(--text-sm);
 }
 .result-trick.mod-bull {
@@ -2043,7 +1905,7 @@ button.modal-close {
   border-top: 1px solid var(--line);
   background: var(--paper);
 }
-.result-foot button.primary {
+.result-foot > button {
   margin-left: auto;
   min-width: 110px;
 }

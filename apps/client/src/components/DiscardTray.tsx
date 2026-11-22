@@ -6,6 +6,7 @@ import { CARD_SPRING } from '../theme/motion';
 import { useGameKeys } from '../useHotkeys';
 import { CardFace } from './CardFace';
 import { cardLayoutId } from './TrickArea';
+import { Button } from './ui/Button';
 
 const SLOTS = 3;
 
@@ -66,9 +67,9 @@ export function DiscardTray({
           );
         })}
       </div>
-      <button type="button" className="primary discard-go" disabled={!ok} onClick={discard}>
+      <Button variant="primary" className="discard-go" disabled={!ok} onClick={discard}>
         Discard
-      </button>
+      </Button>
     </section>
   );
 }
@@ -81,9 +82,15 @@ function RulesTip({ label, children }: { label: string; children: ReactNode }) {
   const id = useId();
   return (
     <span className="rules-tip">
-      <button type="button" className="rules-tip-btn" aria-label={label} aria-describedby={id}>
+      <Button
+        variant="ghost"
+        shape="round"
+        className="rules-tip-btn"
+        aria-label={label}
+        aria-describedby={id}
+      >
         ?
-      </button>
+      </Button>
       <span id={id} role="tooltip" className="rules-tip-text">
         {children}
       </span>

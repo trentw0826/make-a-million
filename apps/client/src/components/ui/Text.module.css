@@ -1,0 +1,49 @@
+@layer ui {
+  .size-xs {
+    font-size: var(--text-xs);
+  }
+  .size-sm {
+    font-size: var(--text-sm);
+  }
+  .size-md {
+    font-size: var(--text-md);
+  }
+  .size-lg {
+    font-size: var(--text-lg);
+  }
+  .size-xl {
+    font-size: var(--text-xl);
+  }
+  .size-2xl {
+    font-size: var(--text-2xl);
+  }
+
+  /* Tones read the surface's text colours (--text-*), set on paper and on the felt. */
+  .muted {
+    color: var(--text-muted);
+  }
+  .good {
+    color: var(--text-good);
+  }
+  .bad {
+    color: var(--text-bad);
+  }
+
+  .regular {
+    font-weight: var(--weight-regular);
+  }
+  .semibold {
+    font-weight: var(--weight-semibold);
+  }
+  .bold {
+    font-weight: var(--weight-bold);
+  }
+
+  .caps {
+    letter-spacing: var(--tracking-caps);
+    text-transform: uppercase;
+  }
+  .numeric {
+    font-variant-numeric: tabular-nums;
+  }
+}

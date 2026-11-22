@@ -7,6 +7,7 @@ import { type Spot, spotOf } from '../spots';
 import { useGame } from '../store';
 import { POP_IN, POP_SPRING, SETTLE_SPRING } from '../theme/motion';
 import { useGameKeys } from '../useHotkeys';
+import { Button } from './ui/Button';
 
 const SEATS: readonly Seat[] = [0, 1, 2, 3];
 
@@ -109,47 +110,48 @@ function YourBid({
   const threshold = view.ruleset.misdeal.threshold;
   return (
     <fieldset className="your-bid" aria-label="Your bid">
-      <button
-        type="button"
+      <Button
+        shape="round"
         className="plaque-step plaque-lower"
         onClick={lower}
         disabled={amount <= legal.minBid}
         aria-label="lower bid"
       >
         −
-      </button>
+      </Button>
       <button type="button" className="plaque plaque-yours" onClick={bid} aria-keyshortcuts="Enter">
         <span className="plaque-verb">Bid</span>{' '}
         <span className="plaque-amount">{shortMoney(amount)}</span>
       </button>
-      <button
-        type="button"
+      <Button
+        shape="round"
         className="plaque-step plaque-raise"
         onClick={raise}
         aria-label="raise bid"
       >
         +
-      </button>
+      </Button>
       <div className="plaque-below">
         {legal.canCallMisdeal && (
-          <button
-            type="button"
-            className="warn-btn small"
+          <Button
+            variant="danger"
+            size="sm"
             title={`Your Money totals ${shortMoney(threshold)} or less: you may have the hand re-dealt instead of bidding.`}
             onClick={() => act({ type: 'callMisdeal' })}
           >
             Call misdeal
-          </button>
+          </Button>
         )}
-        <button
-          type="button"
+        <Button
+          variant="ghost"
+          size="sm"
           className="plaque-pass"
           disabled={!legal.canPass}
           title={legal.canPass ? undefined : 'You open the bidding, so you must bid.'}
           onClick={() => act({ type: 'pass' })}
         >
           Pass
-        </button>
+        </Button>
       </div>
     </fieldset>
   );
