@@ -16,6 +16,7 @@ import { type Spot, spotOf, TOWARD } from '../spots';
 import type { CompletedTrick } from '../state';
 import {
   FLIGHT_EASE,
+  GLIDE_SPRING,
   SKID_EASE,
   TRICK_ENTER_MS,
   TRICK_SKID_MS,
@@ -197,7 +198,7 @@ function TurnMarker({ turn }: { turn: Spot | null }) {
         rotate: angle.current,
         opacity: turn === null ? 0 : 1,
       }}
-      transition={{ type: 'spring', stiffness: 170, damping: 24 }}
+      transition={GLIDE_SPRING}
     >
       <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
         <path d="M5 8l7 8 7-8z" fill="currentColor" />

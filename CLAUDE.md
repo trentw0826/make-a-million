@@ -39,6 +39,13 @@ the spec.
   updates `packages/protocol`, the server, the client and `docs/multiplayer.md` in the same
   commit.
 
+## Styling
+
+- Never write a raw colour, font size, weight, line height, spacing, radius, z-index, opacity,
+  duration, easing or spring in the client. Use a token from `theme/tokens.css` or a preset
+  from `theme/motion.ts`; if none fits, add one there first (on its scale, if it has one).
+  `pnpm lint` (Stylelint) and `designTokens.test.ts` enforce this.
+
 ## Docs are the spec
 
 - A rule change updates `docs/game-rules.md` first, then the code.

@@ -1,7 +1,13 @@
 /*
  * Design tokens: the one place the look is defined. Components read these, never raw
- * values, so a rebrand (palette, type, card size, motion feel) is an edit here. The motion
- * durations are mirrored for script in theme/motion.ts; keep the two in step.
+ * values, so a rebrand (palette, type, card size, motion feel) is an edit here. Stylelint
+ * (.stylelintrc.json) rejects raw colours, font sizes, weights, spacing, radii, z-indexes,
+ * opacities and durations anywhere else.
+ *
+ * Every scale is short on purpose: pick the nearest step. If no step fits, add one here
+ * deliberately rather than writing a one-off value in a component.
+ *
+ * The motion durations are mirrored for script in theme/motion.ts; keep the two in step.
  */
 :root {
   /* Colour: table ------------------------------------------------------- */
@@ -10,7 +16,7 @@
   --felt-dark: #184a2e;
   --bar: #123822;
   --paper: #fbf7ee;
-  --paper-raised: #ffffff;
+  --paper-raised: #fff;
   --card-paper: #fffdf8;
   --card-paper-shade: #f3ecdc;
   --card-edge: #c9c2b2;
@@ -19,11 +25,29 @@
   --line: #d9d2c3;
   --accent: #b8860b;
   --accent-light: #e9c46a;
-  --on-accent: #ffffff;
-  --on-felt-muted: rgba(255, 255, 255, 0.75);
+  /* The bright centre of a spark. */
+  --accent-glint: #fff6d5;
+  --on-accent: #fff;
+  --on-felt-muted: rgb(255 255 255 / 75%);
   /* Gains and losses written on the felt rather than on paper. */
   --good-on-felt: #a5e0a8;
   --bad-on-felt: #f4a39a;
+
+  /* Colour: on the felt --------------------------------------------------- */
+  /* Lines drawn on the felt (outlines, dashed slots, ghost buttons), in three strengths. */
+  --line-on-felt-faint: rgb(255 255 255 / 10%);
+  --line-on-felt: rgb(255 255 255 / 30%);
+  --line-on-felt-strong: rgb(255 255 255 / 40%);
+  /* Darker patches on the felt: a quiet tint, and a firmer one for something solid. */
+  --shade-1: rgb(0 0 0 / 15%);
+  --shade-2: rgb(0 0 0 / 25%);
+  /* Gold light: a hairline ring, a soft ring, a glow, and the glow at its peak. */
+  --glow-faint: color-mix(in srgb, var(--accent-light) 20%, transparent);
+  --glow-soft: color-mix(in srgb, var(--accent-light) 30%, transparent);
+  --glow: color-mix(in srgb, var(--accent-light) 60%, transparent);
+  --glow-strong: color-mix(in srgb, var(--accent-light) 70%, transparent);
+  /* The pulse round whoever the table waits on, at its brightest. */
+  --pulse: color-mix(in srgb, var(--accent) 60%, transparent);
 
   /* Colour: suits and specials ----------------------------------------- */
   --red: #c62828;
@@ -49,6 +73,16 @@
   --bad-bg: #fdecea;
   --warn-bg: #ffe0b2;
   --warn-ink: #7a3e00;
+
+  /* Opacity -------------------------------------------------------------- */
+  /* A control that can't be used right now. */
+  --opacity-disabled: 0.5;
+  /* Secondary: there if you look, quiet if you don't. */
+  --opacity-muted: 0.6;
+  /* Slightly held back. */
+  --opacity-soft: 0.8;
+  /* A picture printed faintly behind something. */
+  --opacity-watermark: 0.12;
   /* A seat out of the auction fades back to this. */
   --passed-opacity: 0.4;
   /* How far a card that can't be chosen fades into the felt. */
@@ -62,17 +96,76 @@
   --font-body: "Inter Variable", system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-mono: ui-monospace, monospace;
 
+  /* Sizes, in rem: multiples of the root size below. rem never compounds, so a size reads
+     the same however deeply it is nested. --text-2xs is for the indices of the smallest
+     cards only. */
+  font-size: 15px;
+  --text-2xs: 0.6rem; /*  9px */
+  --text-xs: 0.75rem; /* 11.25px */
+  --text-sm: 0.85rem; /* 12.75px */
+  --text-md: 1rem; /* 15px: body */
+  --text-lg: 1.15rem; /* 17.25px */
+  --text-xl: 1.3rem; /* 19.5px */
+  --text-2xl: 1.5rem; /* 22.5px */
+  --text-3xl: 2rem; /* 30px: the page title (the wordmark on the home table) */
+
+  --weight-regular: 400;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+
+  --leading-none: 1;
+  --leading-tight: 1.15;
+  --leading-normal: 1.45;
+
+  /* Headings and the wordmark; uppercase labels; codes spelled out character by character. */
+  --tracking-display: 0.005em;
+  --tracking-caps: 0.06em;
+  --tracking-code: 0.15em;
+
+  /* Spacing ------------------------------------------------------------- */
+  /* Margins, padding and gaps. The step number is not the pixel count: read the comment. */
+  --space-1: 2px;
+  --space-2: 4px;
+  --space-3: 6px;
+  --space-4: 8px;
+  --space-5: 12px;
+  --space-6: 16px;
+  --space-7: 20px;
+  --space-8: 24px;
+  --space-9: 32px;
+  --space-10: 40px;
+  --space-11: 48px;
+
   /* Shape and depth ----------------------------------------------------- */
   --radius-s: 4px;
   --radius-m: 6px;
   --radius-l: 10px;
   --radius-card: 7px;
-  --shadow-1: 0 1px 3px rgba(0, 0, 0, 0.3);
-  --shadow-2: 0 2px 10px rgba(0, 0, 0, 0.4);
-  --shadow-lift: 0 10px 18px rgba(0, 0, 0, 0.35);
-  --shadow-drawer: -8px 0 24px rgba(0, 0, 0, 0.35);
+  /* Fully rounded ends, whatever the height. */
+  --radius-pill: 999px;
+  --shadow-1: 0 1px 3px rgb(0 0 0 / 30%);
+  --shadow-2: 0 2px 10px rgb(0 0 0 / 40%);
+  --shadow-lift: 0 10px 18px rgb(0 0 0 / 35%);
+  --shadow-drawer: -8px 0 24px rgb(0 0 0 / 35%);
+  /* A card's shadow on the felt, for a filter: drop-shadow() (it follows the card's shape). */
+  --shadow-drop: 0 8px 10px rgb(0 0 0 / 30%);
   /* Dims what lies behind a panel that sits over the table without blocking it. */
-  --scrim-light: rgba(0, 0, 0, 0.35);
+  --scrim-light: rgb(0 0 0 / 35%);
+  /* Dims everything behind a modal. */
+  --scrim: rgb(0 0 0 / 55%);
+
+  /* Stacking ------------------------------------------------------------ */
+  /* Above its siblings, within its own component. */
+  --z-raised: 1;
+  /* A panel over the middle of the felt (the discard tray, naming trump). */
+  --z-float: 2;
+  /* A tooltip, and the scrim behind the score sheet. */
+  --z-popover: 4;
+  --z-drawer: 5;
+  /* The top bar, the connection banner, and the buttons that stay over the open drawer. */
+  --z-sticky: 6;
+  --z-modal: 10;
+  --z-toast: 20;
 
   /* Cards --------------------------------------------------------------- */
   /* One size for every card at the table: in the hand, face down before the other players,
@@ -91,7 +184,7 @@
   /* How much of each card the next one covers, at most (a narrow hand closes up further). */
   --hand-overlap: 0.3;
   /* The extra space before a new color in the hand. */
-  --group-gap: 24px;
+  --group-gap: var(--space-8);
   /* Hovering a card in the hand: it rises and grows a little, and the next card moves aside
      by --part-gap, enough to uncover it. A card picked for the discard rises further. */
   --hover-lift: 12px;
@@ -106,13 +199,27 @@
 
   /* Layout -------------------------------------------------------------- */
   --topbar-h: 48px;
+  /* A square icon button (the top bar's and the table corner's, and the bid steppers). */
+  --icon-btn-size: 36px;
+  /* A modal's padding; its sticky footer reaches back out to the modal's edges. */
+  --modal-pad-y: var(--space-7);
+  --modal-pad-x: var(--space-8);
 
   /* Motion (mirrored in theme/motion.ts) -------------------------------- */
   --dur-fast: 120ms;
   --dur-base: 200ms;
-  --dur-slow: 360ms;
-  --ease-out: cubic-bezier(0.2, 0.7, 0.3, 1);
   --dur-hover: 280ms;
+  --dur-slow: 360ms;
+  /* A bar filling, a sum counting up, sparks flying: motion meant to be watched. */
+  --dur-slower: 800ms;
+  /* One step of a ticking countdown; it moves linearly to the next tick. */
+  --dur-tick: 100ms;
+  /* One breath of a looping pulse or glow. */
+  --dur-pulse: 2s;
+  /* Something that appears, stays to be read, and goes (a score change). */
+  --dur-linger: 2.6s;
+  --ease-out: cubic-bezier(0.2, 0.7, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.42, 0, 0.58, 1);
 }
 
 /* A short window (a small laptop): smaller cards, so the table still fits without scrolling. */
@@ -134,6 +241,6 @@
     --fan-angle: 1.2deg;
     --fan-drop: 0.4px;
     --hand-overlap: 0.5;
-    --group-gap: 12px;
+    --group-gap: var(--space-5);
   }
 }

@@ -92,9 +92,47 @@ describe('How to play', () => {
   it('quotes the numbers of the ruleset in play', () => {
     renderWith(atTable);
     fireEvent.click(screen.getByRole('button', { name: 'How to play' }));
-    const dialog = screen.getByRole('dialog', { name: 'How to play' });
-    expect(dialog).toHaveTextContent('$175,000 or more');
-    expect(dialog).toHaveTextContent('$40k · $30k · $15k · 11 · $10k · 9 · 8 · 7 · $5k');
+    fireEvent.click(screen.getByRole('tab', { name: /Deal and bidding/ }));
+    expect(screen.getByRole('tabpanel')).toHaveTextContent('$175,000 or more');
+    fireEvent.click(screen.getByRole('tab', { name: /The cards/ }));
+    expect(screen.getByRole('tabpanel')).toHaveTextContent(
+      '$40k · $30k · $15k · 11 · $10k · 9 · 8 · 7 · $5k',
+    );
+  });
+
+  it('shows one topic at a time, starting from the goal away from a table', () => {
+    renderWith();
+    fireEvent.click(screen.getByRole('button', { name: 'Read how to play' }));
+    expect(screen.getAllByRole('tabpanel')).toHaveLength(1);
+    const goal = screen.getByRole('tab', { name: /The goal/ });
+    expect(goal).toHaveAttribute('aria-selected', 'true');
+    expect(goal).toHaveFocus();
+    expect(screen.getByRole('tabpanel', { name: /The goal/ })).toBeInTheDocument();
+  });
+
+  it('opens on the topic for what the table is doing', () => {
+    renderWith(atTable);
+    fireEvent.click(screen.getByRole('button', { name: 'How to play' }));
+    expect(screen.getByRole('tab', { name: /Deal and bidding/ })).toHaveAttribute(
+      'aria-selected',
+      'true',
+    );
+  });
+
+  it('steps through the topics with the arrow keys and Previous and Next', () => {
+    renderWith();
+    fireEvent.click(screen.getByRole('button', { name: 'Read how to play' }));
+    fireEvent.keyDown(screen.getByRole('tab', { name: /The goal/ }), { key: 'ArrowDown' });
+    const cards = screen.getByRole('tab', { name: /The cards/ });
+    expect(cards).toHaveAttribute('aria-selected', 'true');
+    expect(cards).toHaveFocus();
+    fireEvent.keyDown(cards, { key: 'End' });
+    expect(screen.getByRole('tabpanel', { name: /Keyboard/ })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /← Scoring/ }));
+    expect(screen.getByRole('tabpanel', { name: /Scoring/ })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /Keyboard →/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Done' }));
+    expect(screen.queryByRole('dialog')).toBeNull();
   });
 });
 

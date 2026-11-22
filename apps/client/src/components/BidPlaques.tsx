@@ -5,6 +5,7 @@ import { shortMoney } from '../format';
 import { hasPassed, highBid } from '../hints';
 import { type Spot, spotOf } from '../spots';
 import { useGame } from '../store';
+import { POP_IN, POP_SPRING, SETTLE_SPRING } from '../theme/motion';
 import { useGameKeys } from '../useHotkeys';
 
 const SEATS: readonly Seat[] = [0, 1, 2, 3];
@@ -34,10 +35,10 @@ export function BidPlaques({ view, me }: { view: TableView; me: Seat }) {
             <motion.div
               key={seat}
               className={`plaque-spot plaque-${spot}`}
-              initial={still ? false : { opacity: 0, scale: 0.85 }}
-              animate={{ opacity: 1, scale: 1 }}
+              initial={still ? false : POP_IN.initial}
+              animate={POP_IN.animate}
               exit={still ? { opacity: 0 } : { opacity: 0, scale: 0.6 }}
-              transition={{ type: 'spring', stiffness: 260, damping: 24 }}
+              transition={SETTLE_SPRING}
             >
               {yours ? (
                 <YourBid legal={legal} view={view} />
@@ -71,7 +72,7 @@ function Plaque({
         className="plaque-amount"
         initial={still || amount === null ? false : { scale: 1.3 }}
         animate={{ scale: 1 }}
-        transition={{ type: 'spring', stiffness: 320, damping: 18 }}
+        transition={POP_SPRING}
       >
         {amount === null ? 'No bid' : shortMoney(amount)}
       </motion.span>

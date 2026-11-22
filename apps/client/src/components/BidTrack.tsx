@@ -5,7 +5,7 @@ type Bid = Pick<HandResult, 'biddingTeam' | 'captured' | 'bid' | 'made'>;
 
 import { motion } from 'motion/react';
 import { money, shortMoney } from '../format';
-import { EASE_OUT } from '../theme/motion';
+import { AFTER_MODAL_MS, DUR_SLOWER_MS, EASE_OUT } from '../theme/motion';
 
 /** How the bid went, in a few words: "made by $20k", "made exactly", "short by $35k". */
 export function bidCaption(result: Bid): string {
@@ -38,7 +38,11 @@ export function BidTrack({
   const grow = (n: number) => ({
     initial: still ? false : { width: '0%' },
     animate: { width: `${pct(n)}%` },
-    transition: { duration: 0.8, ease: EASE_OUT, delay: compact ? 0 : 0.2 },
+    transition: {
+      duration: DUR_SLOWER_MS / 1000,
+      ease: EASE_OUT,
+      delay: compact ? 0 : AFTER_MODAL_MS / 1000,
+    },
   });
   return (
     <div

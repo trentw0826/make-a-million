@@ -2,7 +2,7 @@ import type { TrickPlay } from '@mam/engine';
 import { motion } from 'motion/react';
 import type { CSSProperties } from 'react';
 import { CardBackArt } from '../art/CardBackArt';
-import { TRICK_SWEEP_MS } from '../theme/motion';
+import { EASE_IN_OUT, TRICK_SWEEP_MS } from '../theme/motion';
 import { CardFace } from './CardFace';
 import { cardLayoutId } from './TrickArea';
 
@@ -65,13 +65,13 @@ export function TrickPile({ owner, side, count, incoming, className }: Props) {
           layoutId={cardLayoutId(play.cardId)}
           className="pile-card trick-sweep"
           style={lie(count, k)}
-          transition={{ layout: { duration: TRICK_SWEEP_MS / 1000, ease: 'easeInOut' } }}
+          transition={{ layout: { duration: TRICK_SWEEP_MS / 1000, ease: EASE_IN_OUT } }}
         >
           <motion.div
             className="card-3d"
             initial={{ rotateY: 0 }}
             animate={{ rotateY: 180 }}
-            transition={{ duration: TRICK_SWEEP_MS / 1000, ease: 'easeInOut' }}
+            transition={{ duration: TRICK_SWEEP_MS / 1000, ease: EASE_IN_OUT }}
           >
             <CardFace id={play.cardId} />
             <div className="card-3d-back" aria-hidden="true">
