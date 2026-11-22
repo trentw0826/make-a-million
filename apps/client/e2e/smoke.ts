@@ -18,7 +18,7 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import { createServer } from 'node:net';
 import path from 'node:path';
 import type { CardId, Suit } from '@mam/engine';
-import { type Browser, chromium, type Page } from 'playwright-core';
+import { type Browser, chromium, type Locator, type Page } from 'playwright-core';
 import { displayOrder } from '../src/handOrder';
 
 const ROOT = path.resolve(import.meta.dirname, '../../..');
@@ -61,6 +61,7 @@ async function checkNoScroll(page: Page, where: string): Promise<void> {
 const failures: string[] = [];
 /** Checked once, on the first turn that has an unplayable card. */
 let passedSeatChecked = false;
+let pressChecked = false;
 let discardChecked = false;
 let cursorChecked = false;
 let trumpChecked = false;
@@ -262,6 +263,29 @@ async function openTable(page: Page, base: string): Promise<void> {
 type Shoot = (name: string) => Promise<void>;
 
 /** Takes this seat's action if the table is waiting on it; true if it acted. */
+/**
+ * Holds the mouse down on `target` (at `at`, within it) and reads its computed `scale` once
+ * the press has eased in, calling `whileHeld` before letting go. The pointer moves off before
+ * the button comes up, so nothing is clicked.
+ */
+async function pressScale(
+  page: Page,
+  target: Locator,
+  at?: { x: number; y: number },
+  whileHeld?: () => Promise<void>,
+): Promise<string | null> {
+  const box = await target.boundingBox();
+  if (!box) return null;
+  await page.mouse.move(box.x + (at?.x ?? box.width / 2), box.y + (at?.y ?? box.height / 2));
+  await page.mouse.down();
+  await sleep(250);
+  const scale = await target.evaluate((el) => getComputedStyle(el).scale);
+  await whileHeld?.();
+  await page.mouse.move(1, 1);
+  await page.mouse.up();
+  return scale;
+}
+
 async function act(page: Page, shoot: Shoot): Promise<boolean> {
   const quick = { timeout: 2_000 };
   // In the fan each card covers the right part of the one before it, so its middle can lie
@@ -291,6 +315,22 @@ async function act(page: Page, shoot: Shoot): Promise<boolean> {
         }`,
       );
       await shoot('3-bidding');
+      if (!pressChecked) {
+        // Everything clickable gives a little under a press: an ordinary button and a game
+        // piece alike.
+        const plaque = await pressScale(page, page.locator('.plaque-yours'), undefined, () =>
+          shoot('3b-bid-pressed'),
+        );
+        const help = await pressScale(
+          page,
+          page.getByRole('button', { name: 'How to play', exact: true }),
+        );
+        check(
+          plaque === '0.97' && help === '0.97',
+          `pressing your bid plaque or a button makes it give (plaque: ${plaque}, button: ${help})`,
+        );
+        pressChecked = true;
+      }
       const passed = page.locator('.seat-panel.seat-passed');
       if (!passedSeatChecked && (await passed.count()) > 0) {
         await sleep(400); // let the fade finish
@@ -380,6 +420,14 @@ async function act(page: Page, shoot: Shoot): Promise<boolean> {
       if (!blockedCardChecked && (await blocked.count()) > 0) {
         const reason = await blocked.getAttribute('title', quick);
         check(Boolean(reason), 'a greyed-out card carries a tooltip saying why');
+        const pressed = {
+          blocked: await pressScale(page, blocked, onCard.position),
+          playable: await pressScale(page, card, onCard.position),
+        };
+        check(
+          pressed.blocked === 'none' && pressed.playable === '0.97',
+          `a card you can play gives under a press; a greyed-out one doesn't (${JSON.stringify(pressed)})`,
+        );
         // Playwright won't click an aria-disabled element unless forced; a person can.
         await blocked.click({ ...quick, force: true });
         check(
@@ -685,7 +733,10 @@ async function reducedMotion(browser: Browser, base: string): Promise<void> {
     moves.trick.length > 0 && ![...moves.trick, ...moves.mine, ...moves.skid].some(Boolean),
     'reduced motion: trick cards do not slide',
   );
-  await page.getByRole('button', { name: 'How to play', exact: true }).click();
+  const help = page.getByRole('button', { name: 'How to play', exact: true });
+  const scale = await pressScale(page, help);
+  check(scale === 'none', `reduced motion: a pressed button stays still (scale: ${scale})`);
+  await help.click();
   check((await animation('.modal')) === 'none', 'reduced motion: dialogs do not animate');
   await context.close();
 }

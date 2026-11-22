@@ -46,7 +46,8 @@ the spec.
   from `theme/motion.ts`; if none fits, add one there first (on its scale, if it has one).
   `pnpm lint` (Stylelint) and `designTokens.test.ts` enforce this.
 - Build from the shared components in `apps/client/src/components/ui`: `Button` for every
-  ordinary button (a plain `<button>` is only for game pieces such as cards), `Panel` for a
+  ordinary button (a plain `<button>` is only for game pieces such as cards, and takes the
+  `PRESSABLE` class so it presses like everything else), `Panel` for a
   surface, `Text` for a size or tone. Their styles are CSS Modules in the `ui` cascade layer;
   `styles.css` is unlayered, so a class passed in through `className` can adjust layout.
 

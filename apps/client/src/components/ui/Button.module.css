@@ -1,7 +1,7 @@
 /*
  * Every ordinary button: its variants, sizes and shapes, and the same response everywhere —
- * a change under the pointer, a small press when clicked, the focus ring from the keyboard,
- * and a fade when it can't be used.
+ * a change under the pointer, the press every clickable thing shares (pressable), the focus
+ * ring from the keyboard, and a fade when it can't be used.
  */
 @layer ui {
   .button {
@@ -19,10 +19,7 @@
       border-color var(--dur-fast) var(--ease-out),
       color var(--dur-fast) var(--ease-out),
       filter var(--dur-fast) var(--ease-out),
-      transform var(--dur-fast) var(--ease-out);
-  }
-  .button:active:not(:disabled, [aria-disabled="true"]) {
-    transform: translateY(1px);
+      var(--press-transition);
   }
   .button:disabled,
   .button[aria-disabled="true"] {
@@ -100,10 +97,6 @@
   @media (prefers-reduced-motion: reduce) {
     .button {
       transition: none;
-    }
-
-    .button:active:not(:disabled, [aria-disabled="true"]) {
-      transform: none;
     }
   }
 }

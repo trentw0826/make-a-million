@@ -3,6 +3,7 @@ import type { Difficulty, RoomView, SeatView } from '@mam/protocol';
 import type { CSSProperties } from 'react';
 import { SeatName } from '../components/SeatName';
 import { Button } from '../components/ui/Button';
+import { PRESSABLE } from '../components/ui/pressable';
 import { Text } from '../components/ui/Text';
 import { DIFFICULTY_LABELS, DIFFICULTY_ORDER } from '../format';
 import { type Spot, spotOf } from '../spots';
@@ -126,6 +127,7 @@ function Chair(p: ChairProps) {
             <button
               key={d}
               type="button"
+              className={PRESSABLE}
               aria-pressed={bot.difficulty === d}
               onClick={() => bot.difficulty !== d && p.onSetBot(d)}
             >

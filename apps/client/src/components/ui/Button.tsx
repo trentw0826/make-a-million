@@ -1,5 +1,6 @@
 import type { ButtonHTMLAttributes, Ref } from 'react';
 import styles from './Button.module.css';
+import { PRESSABLE } from './pressable';
 
 export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'link';
 
@@ -34,6 +35,7 @@ export function Button({
 }: ButtonProps) {
   const classes = [
     styles.button,
+    PRESSABLE,
     styles[variant],
     size === 'sm' && styles.sm,
     shape !== 'rect' && styles[shape],

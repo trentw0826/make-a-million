@@ -240,6 +240,11 @@
   --dur-linger: 2.6s;
   --ease-out: cubic-bezier(0.2, 0.7, 0.3, 1);
   --ease-in-out: cubic-bezier(0.42, 0, 0.58, 1);
+  /* Pressing anything clickable: it gives a little under the pointer. It runs on the `scale`
+     property, not `transform`, so it adds to a piece's own lift or lean instead of replacing
+     it. A piece that sets its own transition lists --press-transition in it (see pressable). */
+  --press-scale: 0.97;
+  --press-transition: scale var(--dur-fast) var(--ease-out);
 }
 
 /* A short window (a small laptop): smaller cards, so the table still fits without scrolling. */
