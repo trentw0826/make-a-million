@@ -24,7 +24,7 @@ const room: RoomView = {
   ],
   yourSeat: 0,
   solo: false,
-  analysis: false,
+  analysis: 'off',
   canUndo: false,
   canRedo: false,
 };
@@ -270,9 +270,12 @@ describe('client reducer', () => {
       server({ type: 'moveReview', ply: 4, label: 'mistake', lossK: 22, best: { type: 'pass' } }),
     );
     expect(s.review).toMatchObject({ label: 'mistake', lossK: 22 });
-    // An undo drops the review; turning the analysis off drops everything.
+    // An undo drops the review; feedback only drops the hints; off drops everything.
     expect(reduce(s, server({ type: 'rewound', by: 'undo' })).review).toBeNull();
-    s = reduce(s, server({ type: 'room', room: { ...room, analysis: false } }));
+    const feedback = reduce(s, server({ type: 'room', room: { ...room, analysis: 'feedback' } }));
+    expect(feedback.analysis).toEqual({ winChance: null, decision: null });
+    expect(feedback.review).toMatchObject({ label: 'mistake' });
+    s = reduce(s, server({ type: 'room', room: { ...room, analysis: 'off' } }));
     expect(s.analysis).toEqual({ winChance: null, decision: null });
     expect(s.review).toBeNull();
   });

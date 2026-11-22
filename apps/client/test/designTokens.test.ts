@@ -54,7 +54,7 @@ describe('design tokens', () => {
       'components/TrumpPicker.tsx', // the trump tokens
       'components/BidPlaques.tsx', // your bid plaque
       'components/HowToPlay.tsx', // the guide's topic tabs
-      'screens/Lobby.tsx', // the bot level switch
+      'components/Segmented.tsx', // the felt's choice of a few, such as a bot's level
     ];
     const plain = sources(SRC)
       .filter((f) => readFileSync(f, 'utf8').includes('<button'))

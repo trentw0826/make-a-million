@@ -141,8 +141,12 @@ function onServer(state: ClientState, message: ServerMessage): ClientState {
       // rebuilt from the next view rather than from stale cards.
       return { ...state, ...CLEAR_TABLE, me: { playerId: message.playerId, name: message.name } };
     case 'room': {
-      // With the analysis off, nothing of it is kept.
-      const off = message.room.analysis ? {} : { analysis: NO_ANALYSIS, review: null };
+      // Only what the chosen mode shows is kept: hints need the analysis, a review either mode.
+      const mode = message.room.analysis;
+      const off = {
+        ...(mode === 'hints' ? {} : { analysis: NO_ANALYSIS }),
+        ...(mode === 'off' ? { review: null } : {}),
+      };
       return message.room.phase === 'lobby'
         ? { ...state, ...CLEAR_TABLE, ...off, room: message.room, view: null, log: [] }
         : { ...state, ...off, room: message.room };

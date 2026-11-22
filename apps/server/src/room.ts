@@ -15,6 +15,7 @@ import {
   tableView,
 } from '@mam/engine';
 import type {
+  AnalysisMode,
   Difficulty,
   ErrorCode,
   RoomPhase,
@@ -92,8 +93,8 @@ export class Room {
   private result: { timer: NodeJS.Timeout; endsAt: number } | null = null;
   private closed = false;
 
-  /** Solo only: the analysis is on. */
-  analysis = false;
+  /** Solo only: how much of the analysis is shown. */
+  analysis: AnalysisMode = 'off';
   /**
    * The current game as a record (seed, dealer and every action applied), so that a solo
    * game can be rebuilt by the engine at any earlier point.
@@ -312,13 +313,13 @@ export class Room {
     return null;
   }
 
-  /** Solo only: turns the analysis on or off, at any point. */
-  setAnalysis(playerId: string, on: boolean): RoomError | null {
+  /** Solo only: chooses how much of the analysis to show, at any point. */
+  setAnalysis(playerId: string, mode: AnalysisMode): RoomError | null {
     if (!this.members.has(playerId)) return err('NOT_IN_ROOM', 'you are not in this room');
     if (!this.solo) return err('NOT_SOLO', 'analysis is only offered in solo games');
-    this.analysis = on;
+    this.analysis = mode;
     this.broadcastRoom();
-    if (on) this.sendAnalysis();
+    this.sendAnalysis();
     return null;
   }
 
@@ -369,7 +370,7 @@ export class Room {
     const ply = this.record?.actions.length ?? 0;
     const recorded = { seat, action };
     this.record?.actions.push(recorded);
-    if (this.solo && this.analysis && action.type !== 'continue') {
+    if (this.solo && this.analysis !== 'off' && action.type !== 'continue') {
       this.review(playerId, ply, before, recorded);
     }
     // A new decision of yours starts a new line: the one taken back is gone.
@@ -492,12 +493,20 @@ export class Room {
     ).nextUint32();
   }
 
-  /** Sends the analysis of the position just sent to the player, once it is ready. */
+  /**
+   * Analyses the position just sent to the player. With hints on, sends it once it is ready;
+   * with feedback only, keeps it for the review of the player's coming decision.
+   */
   private sendAnalysis(): void {
     const game = this.game;
     const member = [...this.members.values()][0];
     const seat = member ? this.seatOf(member.id) : null;
-    if (!this.solo || !this.analysis || !game || !member?.connected || seat === null) return;
+    if (!this.solo || this.analysis === 'off' || !game || !member?.connected || seat === null) {
+      return;
+    }
+    // Feedback alone needs only the positions where the player has a decision to grade.
+    const deciding = (kind: string) => kind !== 'none' && kind !== 'continue';
+    if (this.analysis === 'feedback' && !deciding(legalMoves(game, seat).kind)) return;
     const ply = this.record?.actions.length ?? 0;
     // Positions gone by are dropped, except those whose review is still to come.
     for (const key of this.analyses.keys()) {
@@ -505,7 +514,7 @@ export class Room {
     }
     void this.analysisAt(ply, game, seat).then((a) => {
       // Sent only while the table still shows that position: a later view makes it stale.
-      if (!a || this.game !== game || this.closed || !this.analysis) return;
+      if (!a || this.game !== game || this.closed || this.analysis !== 'hints') return;
       this.deps.send(member.id, {
         type: 'analysis',
         ply,
@@ -525,7 +534,7 @@ export class Room {
     const hand = before.hand?.handNumber ?? 0;
     this.reviewing.add(ply);
     const stillPlayed = () =>
-      !this.closed && this.analysis && this.record?.actions[ply] === recorded;
+      !this.closed && this.analysis !== 'off' && this.record?.actions[ply] === recorded;
     void this.analysisAt(ply, before, seat)
       .then(async (a) => {
         if (!a?.decision || !stillPlayed()) return null;

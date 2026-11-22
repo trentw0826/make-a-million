@@ -6,7 +6,7 @@ import {
   HARD_DEFAULTS,
 } from '@mam/bots';
 import { type Action, legalMoves, Rng } from '@mam/engine';
-import type { ServerMessage } from '@mam/protocol';
+import type { AnalysisMode, ServerMessage } from '@mam/protocol';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { type AnalyzeSeat, decideInline } from '../src/botPool';
 import { testConfig } from '../src/config';
@@ -417,17 +417,17 @@ describe('solo', () => {
     h.room.disconnect('ann');
     expect(h.room.join('ann', 'Ann')).toBeNull();
     expect(h.last('ann', 'room')).toMatchObject({
-      room: { solo: true, analysis: false, canUndo: false, canRedo: false, yourSeat: 0 },
+      room: { solo: true, analysis: 'off', canUndo: false, canRedo: false, yourSeat: 0 },
     });
   });
 
-  it('lets its player set every bot and turn the analysis on', () => {
+  it('lets its player set every bot and choose the analysis', () => {
     const h = soloRoom();
     for (const seat of [1, 2, 3] as const) expect(h.room.setBot('ann', seat, 'hard')).toBeNull();
-    expect(h.room.setAnalysis('ann', true)).toBeNull();
+    expect(h.room.setAnalysis('ann', 'hints')).toBeNull();
     expect(h.last('ann', 'room')).toMatchObject({
       room: {
-        analysis: true,
+        analysis: 'hints',
         seats: [
           expect.objectContaining({ kind: 'human' }),
           expect.objectContaining({ difficulty: 'hard' }),
@@ -441,7 +441,9 @@ describe('solo', () => {
   it('offers the analysis only in solo rooms', () => {
     const h = harness();
     readyRoom(h);
-    expect(h.room.setAnalysis('ann', true)).toEqual(expect.objectContaining({ code: 'NOT_SOLO' }));
+    expect(h.room.setAnalysis('ann', 'hints')).toEqual(
+      expect.objectContaining({ code: 'NOT_SOLO' }),
+    );
   });
 
   it('keeps the hand result up until its player is ready, with no countdown', async () => {
@@ -610,12 +612,13 @@ describe('solo', () => {
       throw new Error('Ann never had a decision');
     }
 
-    /** A solo room with Ann seated, the analysis on or off, started. */
-    function begun(on: boolean, analyzer?: AnalyzeSeat): Harness {
+    /** A solo room with Ann seated, showing hints (`true`), feedback or nothing, started. */
+    function begun(on: boolean | AnalysisMode, analyzer?: AnalyzeSeat): Harness {
       const h = harness({}, true, analyzer);
       h.room.join('ann', 'Ann');
       h.room.sit('ann', 0);
-      if (on) h.room.setAnalysis('ann', true);
+      const mode = on === true ? 'hints' : on === false ? 'off' : on;
+      if (mode !== 'off') h.room.setAnalysis('ann', mode);
       h.room.start('ann');
       return h;
     }
@@ -627,6 +630,21 @@ describe('solo', () => {
       await vi.advanceTimersByTimeAsync(50);
       expect(sentOf(h, 'analysis')).toHaveLength(0);
       expect(sentOf(h, 'moveReview')).toHaveLength(0);
+    });
+
+    it('with feedback only, reviews each move but sends no hints', async () => {
+      const h = begun('feedback');
+      await untilAnnDecides(h);
+      await vi.advanceTimersByTimeAsync(0);
+      humanActs(h, 'ann');
+      await vi.advanceTimersByTimeAsync(50);
+      expect(sentOf(h, 'analysis')).toHaveLength(0);
+      expect(sentOf(h, 'moveReview')).toHaveLength(1);
+      // Switching to hints mid-game shows the position on the table at once.
+      await untilAnnDecides(h);
+      expect(h.room.setAnalysis('ann', 'hints')).toBeNull();
+      await vi.advanceTimersByTimeAsync(0);
+      expect(sentOf(h, 'analysis').at(-1)).toMatchObject({ decision: expect.any(Object) });
     });
 
     it('values each position after its view, with the options on her turn', async () => {

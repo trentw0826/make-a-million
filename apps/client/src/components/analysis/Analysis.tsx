@@ -1,10 +1,11 @@
 import type { Action } from '@mam/engine';
-import type { AnalysisDecision } from '@mam/protocol';
+import type { AnalysisDecision, AnalysisMode } from '@mam/protocol';
 import { AnimatePresence, motion } from 'motion/react';
 import { useEffect, useState } from 'react';
 import { shortMoney } from '../../format';
 import { useGame } from '../../store';
 import { DUR_BASE_MS, GLIDE_SPRING, REVIEW_LINGER_MS } from '../../theme/motion';
+import { Segmented } from '../Segmented';
 import { Button } from '../ui/Button';
 import styles from './Analysis.module.css';
 import { describeAction, LABEL_TEXT, optionFor, valueText } from './describe';
@@ -14,16 +15,16 @@ import { describeAction, LABEL_TEXT, optionFor, valueText } from './describe';
  * your own seat (see "Solo rooms" in docs/multiplayer.md); nothing here works anything out.
  */
 
-/** The analysis is on, in a solo room. */
-export function useAnalysisOn(): boolean {
+/** How much of the analysis is shown: always `'off'` outside a solo room. */
+export function useAnalysisMode(): AnalysisMode {
   const { state } = useGame();
-  return state.room?.solo === true && state.room.analysis;
+  return state.room?.solo === true ? state.room.analysis : 'off';
 }
 
 /** The values of your decision in the position on the table, once they have arrived. */
 export function useDecision(): AnalysisDecision | null {
   const { state } = useGame();
-  return useAnalysisOn() ? state.analysis.decision : null;
+  return useAnalysisMode() === 'hints' ? state.analysis.decision : null;
 }
 
 /**
@@ -32,8 +33,8 @@ export function useDecision(): AnalysisDecision | null {
  */
 export function EvalBar({ thinking }: { thinking: boolean }) {
   const { state } = useGame();
-  const on = useAnalysisOn();
-  if (!on) return null;
+  const mode = useAnalysisMode();
+  if (mode !== 'hints') return null;
   const chance = state.analysis.winChance;
   const pct = chance === null ? 50 : Math.round(chance * 100);
   return (
@@ -102,8 +103,7 @@ export function MoveValue({ action, onCard = false }: { action: Action; onCard?:
  */
 export function MoveReview() {
   const { state } = useGame();
-  const on = useAnalysisOn();
-  const review = on ? state.review : null;
+  const review = useAnalysisMode() === 'off' ? null : state.review;
   const [shown, setShown] = useState<number | null>(null);
   useEffect(() => {
     if (!review) return;
@@ -140,19 +140,45 @@ export function MoveReview() {
   );
 }
 
-/** The analysis switch, for the table's corner and the solo lobby. */
-export function AnalysisToggle({ compact = false }: { compact?: boolean }) {
-  const { state, send } = useGame();
-  const on = state.room?.analysis === true;
+export const ANALYSIS_MODES: readonly AnalysisMode[] = ['off', 'hints', 'feedback'];
+
+export const MODE_TEXT: Readonly<Record<AnalysisMode, { label: string; about: string }>> = {
+  off: { label: 'Off', about: 'No analysis: just play.' },
+  hints: {
+    label: 'Hints',
+    about: 'Your odds and each choice’s value, then a grade for each move.',
+  },
+  feedback: { label: 'Feedback', about: 'A grade for each move once made, with no hints before.' },
+};
+
+/** The choice of analysis, for the solo lobby: Off, Hints or Feedback. */
+export function AnalysisPicker() {
+  const { send } = useGame();
+  const mode = useAnalysisMode();
+  return (
+    <Segmented
+      label="Analysis"
+      options={ANALYSIS_MODES}
+      value={mode}
+      text={(m) => MODE_TEXT[m].label}
+      onChange={(m) => send({ type: 'setAnalysis', mode: m })}
+    />
+  );
+}
+
+/** The analysis in the table's corner: one small button that steps through the modes. */
+export function AnalysisSwitch() {
+  const { send } = useGame();
+  const mode = useAnalysisMode();
+  const next = ANALYSIS_MODES[(ANALYSIS_MODES.indexOf(mode) + 1) % ANALYSIS_MODES.length] ?? 'off';
   return (
     <Button
-      variant={compact ? 'ghost' : 'secondary'}
-      size={compact ? 'sm' : undefined}
-      aria-pressed={on}
-      title="Your chance of winning, what each choice is worth, and how each move compares"
-      onClick={() => send({ type: 'setAnalysis', on: !on })}
+      variant="ghost"
+      size="sm"
+      title={`${MODE_TEXT[mode].about} Press for ${MODE_TEXT[next].label}.`}
+      onClick={() => send({ type: 'setAnalysis', mode: next })}
     >
-      Analysis: {on ? 'on' : 'off'}
+      Analysis: {MODE_TEXT[mode].label}
     </Button>
   );
 }

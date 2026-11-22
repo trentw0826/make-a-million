@@ -24,7 +24,7 @@ const room: RoomView = {
   ],
   yourSeat: 0,
   solo: false,
-  analysis: false,
+  analysis: 'off',
   canUndo: false,
   canRedo: false,
 };

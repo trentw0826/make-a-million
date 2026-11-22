@@ -68,7 +68,7 @@ The application reproduces the **physical tabletop experience**. A player sees e
 
 There is **no** record of cards played in earlier tricks and **no** running money total during a hand. Players who want that information must remember it, just as at the table. (Bots are held to the same information limits; see `bot-standards.md`.)
 
-**Solo analysis.** A solo game (one player and three bots; see `multiplayer.md`) can turn on a training aid: a bar showing your side's chance of winning, the value of each of your choices, and a grade for each move you make. It knows exactly what a bot in your seat would know, which is everything your seat could legitimately know, including the earlier tricks you would otherwise have to remember (see *Analysis* in `bot-standards.md`). It never reveals another player's cards. It is offered only in solo games, where there is nobody else at the table to gain an edge over.
+**Solo analysis.** A solo game (one player and three bots; see `multiplayer.md`) can turn on a training aid. With hints, it shows a bar with your side's chance of winning and the value of each of your choices before you choose, and grades each move after it; with feedback only, it just grades each move after you make it. It knows exactly what a bot in your seat would know, which is everything your seat could legitimately know, including the earlier tricks you would otherwise have to remember (see *Analysis* in `bot-standards.md`). It never reveals another player's cards. It is offered only in solo games, where there is nobody else at the table to gain an edge over.
 
 ## Other Notes
 

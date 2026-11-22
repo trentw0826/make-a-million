@@ -2,7 +2,7 @@
  * Browser smoke test. Starts the built server, then in headless Chromium plays one hand
  * against three bots (one Hard, two Normal), checking the table's signals, the hand order
  * and the motion along the way; a second pass checks that reduced motion switches the
- * animations off; a third plays solo with the analysis on, then undoes and redoes a card.
+ * animations off; a third plays solo with hints on, then undoes and redoes a card.
  *
  *   pnpm e2e                         # builds first
  *   CHROMIUM_PATH=/path/to/chrome pnpm e2e
@@ -237,7 +237,9 @@ async function openTable(page: Page, base: string): Promise<void> {
   const levels = page.getByRole('group', { name: 'Bot level' });
   await until(async () => (await levels.count()) === 3, 'three bots left to set');
   check(
-    (await page.locator('.bot-level [aria-pressed="true"]', { hasText: 'Normal' }).count()) === 3,
+    (await page
+      .locator('.chair .segmented [aria-pressed="true"]', { hasText: 'Normal' })
+      .count()) === 3,
     'every bot starts at Normal',
   );
   check(
@@ -251,7 +253,9 @@ async function openTable(page: Page, base: string): Promise<void> {
   await levels.first().getByRole('button', { name: 'Hard' }).click();
   await until(
     async () =>
-      (await page.locator('.bot-level [aria-pressed="true"]', { hasText: 'Hard' }).count()) === 1,
+      (await page
+        .locator('.chair .segmented [aria-pressed="true"]', { hasText: 'Hard' })
+        .count()) === 1,
     'a Hard bot seated',
   );
   await page.screenshot({ path: path.join(OUT, '0-lobby.png') });
@@ -791,8 +795,8 @@ async function soloStep(page: Page): Promise<boolean> {
 }
 
 /**
- * A solo game with the analysis on: the private lobby, the win-chance bar, the values on the
- * bid and on each playable card, the review of a card played, then undo and redo.
+ * A solo game with hints on: the private lobby, the win-chance bar, the values on the bid and
+ * on each playable card, the review of a card played, undo and redo, then feedback only.
  */
 async function soloGame(browser: Browser, base: string): Promise<void> {
   const page = await browser.newPage({ viewport: VIEWPORT });
@@ -813,10 +817,12 @@ async function soloGame(browser: Browser, base: string): Promise<void> {
   );
   check(!(await page.locator('.topbar-room').isVisible()), 'solo: no room code is shown');
   await levels.first().getByRole('button', { name: 'Hard' }).click();
-  await page.getByRole('button', { name: 'Analysis: off' }).click();
+  const modes = page.getByRole('group', { name: 'Analysis' });
+  await modes.getByRole('button', { name: 'Hints' }).click();
   await until(
-    () => page.getByRole('button', { name: 'Analysis: on' }).isVisible(),
-    'solo: the analysis switched on',
+    async () =>
+      (await modes.getByRole('button', { name: 'Hints' }).getAttribute('aria-pressed')) === 'true',
+    'solo: the analysis set to hints',
   );
   await shoot('9-solo-lobby');
   await checkNoScroll(page, 'the solo lobby');
@@ -884,6 +890,15 @@ async function soloGame(browser: Browser, base: string): Promise<void> {
     async () => (await handIds(page)).length === before - 1,
     'solo: redo plays the card again',
   );
+
+  // From the corner, on to feedback only: the bar and the values go, the reviews stay.
+  await page.getByRole('button', { name: 'Analysis: Hints' }).click();
+  await until(
+    () => page.getByRole('button', { name: 'Analysis: Feedback' }).isVisible(),
+    'solo: the corner switches to feedback only',
+  );
+  await until(async () => (await meter.count()) === 0, 'solo: feedback only hides the bar');
+  await shoot('9f-solo-feedback');
   check(
     pageErrors.length === 0,
     `solo: no page errors${pageErrors.length ? ` (${pageErrors.join('; ')})` : ''}`,

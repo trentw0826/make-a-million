@@ -1,10 +1,9 @@
 import type { Seat } from '@mam/engine';
 import type { Difficulty, RoomView, SeatView } from '@mam/protocol';
-import type { CSSProperties } from 'react';
-import { AnalysisToggle } from '../components/analysis/Analysis';
+import { AnalysisPicker, MODE_TEXT, useAnalysisMode } from '../components/analysis/Analysis';
 import { SeatName } from '../components/SeatName';
+import { Segmented } from '../components/Segmented';
 import { Button } from '../components/ui/Button';
-import { PRESSABLE } from '../components/ui/pressable';
 import { Text } from '../components/ui/Text';
 import { DIFFICULTY_LABELS, DIFFICULTY_ORDER } from '../format';
 import { type Spot, spotOf } from '../spots';
@@ -122,25 +121,13 @@ function Chair(p: ChairProps) {
         </strong>
       )}
       {bot && p.isHost && (
-        <fieldset
-          className="bot-level"
-          aria-label="Bot level"
-          style={{ '--at': DIFFICULTY_ORDER.indexOf(bot.difficulty) } as CSSProperties}
-        >
-          {/* The highlight slides under the chosen level. */}
-          <span className="bot-level-thumb" aria-hidden="true" />
-          {DIFFICULTY_ORDER.map((d) => (
-            <button
-              key={d}
-              type="button"
-              className={PRESSABLE}
-              aria-pressed={bot.difficulty === d}
-              onClick={() => bot.difficulty !== d && p.onSetBot(d)}
-            >
-              {DIFFICULTY_LABELS[d]}
-            </button>
-          ))}
-        </fieldset>
+        <Segmented
+          label="Bot level"
+          options={DIFFICULTY_ORDER}
+          value={bot.difficulty}
+          text={(d) => DIFFICULTY_LABELS[d]}
+          onChange={p.onSetBot}
+        />
       )}
       {(p.isMine || bot) && !p.solo && (
         <div className="chair-actions">
@@ -160,16 +147,17 @@ function Chair(p: ChairProps) {
 }
 
 /**
- * The middle of a solo table: the analysis switch, what it gives, and Start. The bots' levels
- * are chosen on their chairs, with the same pickers as any table.
+ * The middle of a solo table: the choice of analysis, what it gives, and Start. The bots'
+ * levels are chosen on their chairs, with the same pickers as any table.
  */
 function SoloOptions(p: { onStart: () => void }) {
+  const mode = useAnalysisMode();
   return (
     <>
-      <AnalysisToggle />
+      <p className="felt-label">Analysis</p>
+      <AnalysisPicker />
       <Text as="p" tone="muted" size="sm">
-        Shows your side's chance of winning, what each of your choices is worth, and how each move
-        you make compares with the best.
+        {MODE_TEXT[mode].about}
       </Text>
       <Button variant="primary" onClick={p.onStart}>
         Start game

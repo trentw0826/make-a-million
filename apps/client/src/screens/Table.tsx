@@ -13,7 +13,7 @@ import type { RoomView } from '@mam/protocol';
 import { LayoutGroup } from 'motion/react';
 import { useEffect, useState } from 'react';
 import {
-  AnalysisToggle,
+  AnalysisSwitch,
   EvalBar,
   MoveReview,
   MoveValue,
@@ -130,7 +130,7 @@ export function Table({ room, view }: { room: RoomView; view: TableView }) {
   const myChip = seatChip(view, me);
   // The analysis is still working on your decision.
   const decision = useDecision();
-  const thinking = room.solo && room.analysis && myTurn && decision === null;
+  const thinking = room.solo && room.analysis === 'hints' && myTurn && decision === null;
   const dealKey = `${view.handNumber}-${view.redeals}`;
 
   // Each side's taken tricks, in one pile beneath its score. The view counts a trick as soon
@@ -253,7 +253,7 @@ export function Table({ room, view }: { room: RoomView; view: TableView }) {
         </LayoutGroup>
         <div className="table-corner">
           <TableDrawer view={view} room={room} log={state.log} />
-          {room.solo && <AnalysisToggle compact />}
+          {room.solo && <AnalysisSwitch />}
           {room.solo && <UndoControls room={room} />}
           <SoundToggle />
           <HelpButton icon />

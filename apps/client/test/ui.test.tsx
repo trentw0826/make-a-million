@@ -52,7 +52,7 @@ function room(phase: RoomView['phase']): RoomView {
     ],
     yourSeat: 0,
     solo: false,
-    analysis: false,
+    analysis: 'off',
     canUndo: false,
     canRedo: false,
   };
@@ -377,10 +377,11 @@ describe('solo', () => {
     expect(screen.queryByRole('button', { name: 'Stand up' })).toBeNull();
     expect(screen.queryByText('host')).toBeNull();
     expect(screen.queryByText('ABC123')).toBeNull();
-    const analysis = screen.getByRole('button', { name: 'Analysis: off' });
-    expect(analysis).toHaveAttribute('aria-pressed', 'false');
-    fireEvent.click(analysis);
-    expect(send).toHaveBeenCalledWith({ type: 'setAnalysis', on: true });
+    const analysis = within(screen.getByRole('group', { name: 'Analysis' }));
+    expect(analysis.getByRole('button', { name: 'Off' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByText('No analysis: just play.')).toBeInTheDocument();
+    fireEvent.click(analysis.getByRole('button', { name: 'Feedback' }));
+    expect(send).toHaveBeenCalledWith({ type: 'setAnalysis', mode: 'feedback' });
     fireEvent.click(screen.getByRole('button', { name: 'Start game' }));
     expect(send).toHaveBeenCalledWith({ type: 'startGame' });
     send.mockRestore();
@@ -412,7 +413,7 @@ describe('solo', () => {
   });
 
   describe('analysis', () => {
-    const analysed = (r: RoomView): RoomView => ({ ...r, solo: true, analysis: true });
+    const analysed = (r: RoomView): RoomView => ({ ...r, solo: true, analysis: 'hints' });
     const hand = dealt.hand;
     const [c1, c2, c3] = hand as [number, number, number];
     /** Ann to play, with two of her cards legal. */
@@ -512,6 +513,25 @@ describe('solo', () => {
       expect(screen.getByText('−$22k · best was the Bull')).toBeInTheDocument();
     });
 
+    it('with feedback only, reviews your move but shows nothing before it', () => {
+      renderWith([
+        welcome,
+        { type: 'room', room: { ...room('playing'), solo: true, analysis: 'feedback' } },
+        { type: 'view', view: playing },
+        values,
+        {
+          type: 'moveReview',
+          ply: 9,
+          label: 'good',
+          lossK: 3,
+          best: { type: 'playCard', cardId: 53 },
+        },
+      ]);
+      expect(screen.queryByRole('meter')).toBeNull();
+      expect(screen.queryByText('Best')).toBeNull();
+      expect(screen.getByText('Good')).toBeInTheDocument();
+    });
+
     it('is switched from the table corner, and shows nothing while off', () => {
       const send = vi.spyOn(GameSocket.prototype, 'send').mockReturnValue(true);
       renderWith([
@@ -522,8 +542,9 @@ describe('solo', () => {
       ]);
       expect(screen.queryByRole('meter')).toBeNull();
       expect(screen.queryByText('Best')).toBeNull();
-      fireEvent.click(screen.getByRole('button', { name: 'Analysis: off' }));
-      expect(send).toHaveBeenCalledWith({ type: 'setAnalysis', on: true });
+      // The corner's switch steps through the modes: Off, Hints, Feedback.
+      fireEvent.click(screen.getByRole('button', { name: 'Analysis: Off' }));
+      expect(send).toHaveBeenCalledWith({ type: 'setAnalysis', mode: 'hints' });
       send.mockRestore();
     });
   });

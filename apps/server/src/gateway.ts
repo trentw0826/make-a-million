@@ -149,7 +149,7 @@ export class Gateway {
         case 'redo':
           return room.redo(playerId);
         case 'setAnalysis':
-          return room.setAnalysis(playerId, message.on);
+          return room.setAnalysis(playerId, message.mode);
         case 'action':
           return room.action(playerId, message.action);
       }

@@ -46,6 +46,14 @@ export const ActionSchema = z.discriminatedUnion('type', [
 // ---------------------------------------------------------------------------
 // Client → server
 
+/**
+ * How much of the solo analysis the player sees: nothing; hints before each decision (the
+ * win-chance bar and the value of each choice) as well as a review after it; or only the
+ * review after each decision.
+ */
+export const AnalysisModeSchema = z.enum(['off', 'hints', 'feedback']);
+export type AnalysisMode = z.infer<typeof AnalysisModeSchema>;
+
 export const ClientMessageSchema = z.discriminatedUnion('type', [
   /** First message on every connection. A token reclaims an existing identity. */
   z.object({ type: z.literal('hello'), name: PlayerNameSchema, token: z.string().optional() }),
@@ -62,8 +70,8 @@ export const ClientMessageSchema = z.discriminatedUnion('type', [
   /** Solo only: take back your last decision, or replay the one last taken back. */
   z.object({ type: z.literal('undo') }),
   z.object({ type: z.literal('redo') }),
-  /** Solo only: turn the analysis (win-chance bar, move values, move labels) on or off. */
-  z.object({ type: z.literal('setAnalysis'), on: z.boolean() }),
+  /** Solo only: choose how much of the analysis to show (see `AnalysisMode`). */
+  z.object({ type: z.literal('setAnalysis'), mode: AnalysisModeSchema }),
   z.object({ type: z.literal('action'), action: ActionSchema }),
   z.object({ type: z.literal('ping') }),
 ]);
@@ -111,8 +119,8 @@ export interface RoomView {
   readonly yourSeat: Seat | null;
   /** A solo room: one player and three bots, private, with no clocks on the player. */
   readonly solo: boolean;
-  /** Solo only: the analysis is on. */
-  readonly analysis: boolean;
+  /** Solo only: how much of the analysis is shown; `'off'` elsewhere. */
+  readonly analysis: AnalysisMode;
   /** Solo only: there is a decision of yours to take back, or one taken back to replay. */
   readonly canUndo: boolean;
   readonly canRedo: boolean;
