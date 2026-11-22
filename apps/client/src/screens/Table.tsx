@@ -122,7 +122,7 @@ export function Table({ room, view }: { room: RoomView; view: TableView }) {
   const myChip = seatChip(view, me);
   const dealKey = `${view.handNumber}-${view.redeals}`;
 
-  // Each side's taken tricks, in one pile beside its score. The view counts a trick as soon
+  // Each side's taken tricks, in one pile beneath its score. The view counts a trick as soon
   // as it is won, but until it is gathered it lies on the felt; while it is gathered, it flies
   // into the winning side's pile.
   const pile = (side: 'us' | 'them') => {
@@ -150,7 +150,7 @@ export function Table({ room, view }: { room: RoomView; view: TableView }) {
         {/* One group per deal: a card you play flies from your hand to the felt, and on to
             the winners' pile, and ids never carry over from an earlier deal. */}
         <LayoutGroup id={dealKey}>
-          {/* Each side's score in its own top corner, its taken tricks beside it: ours on
+          {/* Each side's score in its own top corner, its taken tricks beneath it: ours on
               the left, theirs on the right. */}
           <ScoreTracker view={view} room={room} side="us" pile={pile('us')} />
           <ScoreTracker view={view} room={room} side="them" pile={pile('them')} />

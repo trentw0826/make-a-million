@@ -3,8 +3,6 @@
 A scratchpad for future fixes, features, and updates
 
 ## Immediate + Simple
-- [ ] Put the pile of won cards for each time centered underneath their score trackers in their respective corners
-
 
 ## Later
 - [ ] Create a design system so that styles and animations are standardized across the entire project (avoid manually copying/individually deciding on fonts, animations, text size, colors, etc for each element)

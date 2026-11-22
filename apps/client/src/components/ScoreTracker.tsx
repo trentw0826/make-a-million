@@ -8,7 +8,7 @@ import { Text } from './ui/Text';
 /**
  * One side's total and how far it is toward the target, in its own top corner of the felt:
  * ours on the left and theirs on the right. The side's taken tricks (`pile`) lie
- * beside it, toward the middle. The change from the last hand floats up once the result
+ * centred beneath it. The change from the last hand floats up once the result
  * dialog closes; the other side's corner also says which hand this is and the target.
  */
 export function ScoreTracker({
