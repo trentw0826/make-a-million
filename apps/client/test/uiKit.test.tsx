@@ -24,7 +24,7 @@ describe('Button', () => {
       <Button
         variant="ghost"
         size="sm"
-        className="plaque-pass"
+        className="bid-pass"
         aria-keyshortcuts="P"
         onClick={onClick}
       >
@@ -32,7 +32,7 @@ describe('Button', () => {
       </Button>,
     );
     const pass = screen.getByRole('button', { name: 'Pass' });
-    expect(pass).toHaveClass('plaque-pass');
+    expect(pass).toHaveClass('bid-pass');
     expect(pass).toHaveAttribute('aria-keyshortcuts', 'P');
     fireEvent.click(pass);
     expect(onClick).toHaveBeenCalledOnce();

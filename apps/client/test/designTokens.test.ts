@@ -52,7 +52,6 @@ describe('design tokens', () => {
       'components/ui/Button.tsx',
       'components/CardFace.tsx', // a card
       'components/TrumpPicker.tsx', // the trump tokens
-      'components/BidPlaques.tsx', // your bid plaque
       'components/HowToPlay.tsx', // the guide's topic tabs
       'screens/Lobby.tsx', // the bot level switch
     ];
