@@ -91,6 +91,24 @@ export const EXPERT_DEFAULTS: HardOptions = {
 };
 
 /**
+ * Soft-inference weight of a sampled world under these options (undefined: all worlds
+ * equally likely). Shared by Hard's card play and the solo analysis.
+ */
+export function worldWeight(
+  obs: Observation,
+  o: HardOptions,
+): ((world: World) => number) | undefined {
+  if (o.inferencePool <= 0) return undefined;
+  const parts: ((world: World) => number)[] = [];
+  if (o.auctionInference) parts.push(makeWorldWeight(obs, { throwOffs: o.throwOffs }));
+  const specials = o.specialsInference ? makeSpecialsWeight(obs) : undefined;
+  if (specials) parts.push(specials);
+  if (parts.length === 0) return undefined;
+  if (parts.length === 1) return parts[0];
+  return (world) => parts.reduce((w, f) => w * f(world), 1);
+}
+
+/**
  * The "hard" bot: card play by PIMC search over sampled deals (pimc.ts); contract decisions
  * by simulation over sampled deals (contract/). Every input is the Observation.
  */
@@ -142,7 +160,7 @@ export class HardBot implements BotStrategy {
     const legal = obs.legal;
     if (legal.kind !== 'play') throw new Error('play outside playing');
     if (legal.cardIds.length === 1) return { type: 'playCard', cardId: legal.cardIds[0] as number };
-    const weight = this.worldWeight(obs);
+    const weight = worldWeight(obs, this.options);
     const utility = this.playLeafUtility(obs);
     const result = pimcValues(obs, rng, this.options, {
       ...(utility ? { utility } : {}),
@@ -163,19 +181,6 @@ export class HardBot implements BotStrategy {
       return { type: 'playCard', cardId: preferredCard };
     }
     return { type: 'playCard', cardId: result.moves[best] as number };
-  }
-
-  /** Soft-inference weight of a sampled world (undefined: all worlds equally likely). */
-  private worldWeight(obs: Observation): ((world: World) => number) | undefined {
-    const o = this.options;
-    if (o.inferencePool <= 0) return undefined;
-    const parts: ((world: World) => number)[] = [];
-    if (o.auctionInference) parts.push(makeWorldWeight(obs, { throwOffs: o.throwOffs }));
-    const specials = o.specialsInference ? makeSpecialsWeight(obs) : undefined;
-    if (specials) parts.push(specials);
-    if (parts.length === 0) return undefined;
-    if (parts.length === 1) return parts[0];
-    return (world) => parts.reduce((w, f) => w * f(world), 1);
   }
 
   /** Team 0's utility of final captures ($1000s); undefined = linear money difference. */
