@@ -3,6 +3,8 @@ import type { RoomView } from '@mam/protocol';
 import { money, teamLabel } from '../format';
 import { useGame } from '../store';
 import { Modal } from './Modal';
+import { Button } from './ui/Button';
+import { Text } from './ui/Text';
 
 export function GameOver({ view, room }: { view: TableView; room: RoomView }) {
   const { state, send } = useGame();
@@ -13,11 +15,17 @@ export function GameOver({ view, room }: { view: TableView; room: RoomView }) {
   return (
     <Modal title="Game over">
       {winner !== null && (
-        <p className={`result-banner ${winner === us ? 'good' : 'bad'}`}>
+        <Text
+          as="p"
+          size="lg"
+          weight="bold"
+          tone={winner === us ? 'good' : 'bad'}
+          className={`result-banner ${winner === us ? 'good' : 'bad'}`}
+        >
           {winner === us
             ? 'Your side makes a million!'
             : `${teamLabel(room, winner)} make a million.`}
-        </p>
+        </Text>
       )}
       <p>
         Us ({teamLabel(room, us)}): <strong>{money(view.scores[us])}</strong> · Them (
@@ -25,15 +33,15 @@ export function GameOver({ view, room }: { view: TableView; room: RoomView }) {
       </p>
       <div className="row">
         {isHost ? (
-          <button type="button" className="primary" onClick={() => send({ type: 'playAgain' })}>
+          <Button variant="primary" onClick={() => send({ type: 'playAgain' })}>
             Play again
-          </button>
+          </Button>
         ) : (
-          <span className="muted">The host can start a new game.</span>
+          <Text tone="muted">The host can start a new game.</Text>
         )}
-        <button type="button" className="ghost" onClick={() => send({ type: 'leaveRoom' })}>
+        <Button variant="ghost" onClick={() => send({ type: 'leaveRoom' })}>
           Leave room
-        </button>
+        </Button>
       </div>
     </Modal>
   );

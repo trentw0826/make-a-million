@@ -1,4 +1,6 @@
 import { type ReactNode, useEffect, useId, useRef } from 'react';
+import { Icon } from './Icon';
+import { Button } from './ui/Button';
 
 /** Open dialogs, innermost last. Only the top one answers Esc. */
 const stack: object[] = [];
@@ -65,9 +67,9 @@ export function Modal({ title, children, onClose, className }: ModalProps) {
         <div className="modal-head">
           <h2 id={titleId}>{title}</h2>
           {onClose && (
-            <button type="button" className="modal-close" onClick={onClose} aria-label="Close">
-              ×
-            </button>
+            <Button variant="ghost" shape="square" onClick={onClose} aria-label="Close">
+              <Icon name="close" />
+            </Button>
           )}
         </div>
         {children}

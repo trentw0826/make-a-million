@@ -1,0 +1,45 @@
+/* Surfaces. Each paper tone resets the text colours to their paper versions, and the felt
+   tone to its on-felt versions, so Text tones read right on whatever they sit on. */
+@layer ui {
+  .panel {
+    --text-muted: var(--muted);
+    --text-good: var(--good-ink);
+    --text-bad: var(--danger);
+
+    color: var(--ink);
+  }
+  .paper {
+    border-radius: var(--radius-l);
+    background: var(--paper);
+    box-shadow: var(--shadow-2);
+  }
+  .raised {
+    border-radius: var(--radius-m);
+    background: var(--paper-raised);
+    box-shadow: var(--shadow-1);
+  }
+  .outlined {
+    border: 1px solid var(--line);
+    border-radius: var(--radius-m);
+    background: var(--paper-raised);
+  }
+  .felt {
+    --text-muted: var(--on-felt-muted);
+    --text-good: var(--good-on-felt);
+    --text-bad: var(--bad-on-felt);
+
+    border-radius: var(--radius-l);
+    background: var(--shade-2);
+    color: var(--paper);
+  }
+
+  .pad-sm {
+    padding: var(--space-4) var(--space-5);
+  }
+  .pad-md {
+    padding: var(--space-6);
+  }
+  .pad-lg {
+    padding: var(--space-6) var(--space-7);
+  }
+}

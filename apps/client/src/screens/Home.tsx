@@ -1,6 +1,9 @@
 import { motion } from 'motion/react';
 import { type CSSProperties, type FormEvent, useState } from 'react';
 import { CardFace } from '../components/CardFace';
+import { Button } from '../components/ui/Button';
+import { Panel } from '../components/ui/Panel';
+import { Text } from '../components/ui/Text';
 import { Wordmark } from '../components/Wordmark';
 import { storage } from '../storage';
 import { codeFromHash, useGame } from '../store';
@@ -64,7 +67,7 @@ export function Home() {
       </section>
 
       {/* A place card on the felt: your name, then start a table or join one. */}
-      <div className="home-card">
+      <Panel tone="paper" pad="lg" className="home-card">
         <form className="home-name" onSubmit={submit('create')}>
           <label>
             Your name
@@ -79,10 +82,12 @@ export function Home() {
         <div className="home-ways">
           <form className="home-way" onSubmit={submit('create')}>
             <h2>Start a table</h2>
-            <p className="small">Get a room code to share, and fill empty seats with bots.</p>
-            <button type="submit" className="primary" disabled={busy || !name.trim()}>
+            <Text as="p" size="sm">
+              Get a room code to share, and fill empty seats with bots.
+            </Text>
+            <Button type="submit" variant="primary" disabled={busy || !name.trim()}>
               Create a room
-            </button>
+            </Button>
           </form>
           <form className="home-way" onSubmit={submit('join')}>
             <h2>Join a table</h2>
@@ -96,28 +101,19 @@ export function Home() {
                 className="code-input"
               />
             </label>
-            <button type="submit" disabled={busy || !name.trim() || code.trim().length !== 6}>
+            <Button type="submit" disabled={busy || !name.trim() || code.trim().length !== 6}>
               Join room
-            </button>
+            </Button>
           </form>
         </div>
-        <p className="home-help small">
+        <Text as="p" size="sm" tone="muted" className="home-help">
           New to the game?{' '}
-          <button
-            type="button"
-            className="link"
-            onClick={() => dispatch({ kind: 'help', open: true })}
-          >
+          <Button variant="link" onClick={() => dispatch({ kind: 'help', open: true })}>
             Read how to play
-          </button>
-          {busy && (
-            <span className="muted" role="status">
-              {' '}
-              Connecting…
-            </span>
-          )}
-        </p>
-      </div>
+          </Button>
+          {busy && <span role="status"> Connecting…</span>}
+        </Text>
+      </Panel>
     </main>
   );
 }

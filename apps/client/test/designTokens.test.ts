@@ -29,6 +29,8 @@ const RAW_MOTION = [
 ];
 
 describe('design tokens', () => {
+  const tokensCss = readFileSync(join(THEME, 'tokens.css'), 'utf8');
+
   it('keeps raw springs, durations and easings out of the components', () => {
     const found: string[] = [];
     for (const file of sources(SRC)) {
@@ -44,9 +46,34 @@ describe('design tokens', () => {
     expect(found).toEqual([]);
   });
 
-  const tokens = readFileSync(join(THEME, 'tokens.css'), 'utf8');
+  it('uses the shared Button for every ordinary button', () => {
+    // Game pieces that are buttons draw themselves; anything else is a <Button>.
+    const PIECES = [
+      'components/ui/Button.tsx',
+      'components/CardFace.tsx', // a card
+      'components/TrumpPicker.tsx', // the trump tokens
+      'components/BidPlaques.tsx', // your bid plaque
+      'components/HowToPlay.tsx', // the guide's topic tabs
+      'screens/Lobby.tsx', // the bot level switch
+    ];
+    const plain = sources(SRC)
+      .filter((f) => readFileSync(f, 'utf8').includes('<button'))
+      .map((f) => relative(SRC, f))
+      .filter((f) => !PIECES.includes(f));
+    expect(plain).toEqual([]);
+  });
+
+  it('loads the tokens before any component, so the cascade layers keep their order', () => {
+    // A layer ranks by where it is first seen: if a component's styles (in the ui layer)
+    // loaded before tokens.css declares "base, ui", base would win over every Button.
+    const main = readFileSync(join(SRC, 'main.tsx'), 'utf8');
+    const firstImport = main.match(/^import .*$/m)?.[0];
+    expect(firstImport).toBe("import './theme/tokens.css';");
+    expect(tokensCss).toMatch(/^@layer base, ui;$/m);
+  });
+
   const token = (name: string) => {
-    const m = tokens.match(new RegExp(`--${name}:\\s*([^;]+);`));
+    const m = tokensCss.match(new RegExp(`--${name}:\\s*([^;]+);`));
     if (!m?.[1]) throw new Error(`no --${name} in tokens.css`);
     return m[1].trim();
   };

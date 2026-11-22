@@ -500,7 +500,7 @@ async function fullHand(browser: Browser, base: string): Promise<void> {
   );
   const corner = page.locator('.table-corner');
   check(
-    (await corner.locator('.icon-btn svg').count()) === 3 &&
+    (await corner.locator('button svg').count()) === 3 &&
       (await corner.getByRole('button', { name: 'Score sheet', exact: true }).count()) === 1 &&
       (await corner.getByRole('button', { name: 'How to play' }).count()) === 1 &&
       (await page.locator('.topbar').getByRole('button', { name: 'How to play' }).count()) === 0,

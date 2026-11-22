@@ -5,6 +5,8 @@ import { SuitGlyph } from '../art/CardArt';
 import { money, nameOf, SUIT_NAMES, shortMoney, signedShortMoney } from '../format';
 import type { LogEntry } from '../state';
 import { BidTrack } from './BidTrack';
+import { Panel } from './ui/Panel';
+import { Text } from './ui/Text';
 
 /**
  * The game so far, on one sheet: the race to the target at the top, then a card for each
@@ -33,7 +35,7 @@ export function ScoreSheet({
   return (
     <section className="score-sheet" aria-label="Score sheet">
       <h2>Score sheet</h2>
-      <section className="sheet-race" aria-label="The race">
+      <Panel as="section" tone="raised" pad="sm" className="sheet-race" aria-label="The race">
         {(['us', 'them'] as const).map((side) => {
           const team = side === 'us' ? us : otherTeam(us);
           const score = view.scores[team];
@@ -43,25 +45,35 @@ export function ScoreSheet({
                 <span className="side-dot" aria-hidden="true" />
                 {side === 'us' ? 'Us' : 'Them'}
               </span>
-              <strong className={score < 0 ? 'neg' : undefined}>{money(score)}</strong>
+              <Text as="strong" numeric tone={score < 0 ? 'bad' : undefined}>
+                {money(score)}
+              </Text>
               <div className="progress" aria-hidden="true">
                 <span style={{ width: `${Math.max(0, Math.min(100, (score / target) * 100))}%` }} />
               </div>
             </div>
           );
         })}
-        <p className="sheet-race-target">First to {money(target)}</p>
-      </section>
+        <Text as="p" size="xs" tone="muted" className="sheet-race-target">
+          First to {money(target)}
+        </Text>
+      </Panel>
 
       <ol className="sheet-hands">
         {live.reverse().map((hand) => (
-          <li key={`live-${hand}`} className="sheet-hand sheet-hand-live">
+          <Panel
+            as="li"
+            tone="outlined"
+            pad="sm"
+            key={`live-${hand}`}
+            className="sheet-hand sheet-hand-live"
+          >
             <h3 className="sheet-hand-head">
               <span>Hand {hand}</span>
               <span className="sheet-chip sheet-chip-live">In play</span>
             </h3>
             <Lines entries={linesOf(hand)} />
-          </li>
+          </Panel>
         ))}
         {finished.map((h) => (
           <FinishedHand
@@ -74,7 +86,11 @@ export function ScoreSheet({
           />
         ))}
       </ol>
-      {view.handHistory.length === 0 && <p className="sheet-dim">No hands scored yet.</p>}
+      {view.handHistory.length === 0 && (
+        <Text as="p" tone="muted">
+          No hands scored yet.
+        </Text>
+      )}
     </section>
   );
 }
@@ -96,7 +112,7 @@ function FinishedHand({
   const good = (result.biddingTeam === team) === result.made;
   const them = otherTeam(team);
   return (
-    <li className="sheet-hand">
+    <Panel as="li" tone="outlined" pad="sm" className="sheet-hand">
       <h3 className="sheet-hand-head">
         <span>Hand {result.handNumber}</span>
         <span className={`sheet-chip ${good ? 'good' : 'bad'}`}>
@@ -119,10 +135,12 @@ function FinishedHand({
           ] as const
         ).map(([side, t]) => (
           <span key={side} className={`sheet-hand-side side-${side}`}>
-            <span className={result.delta[t] < 0 ? 'neg' : 'pos'}>
+            <Text tone={result.delta[t] < 0 ? 'bad' : 'good'}>
               {signedShortMoney(result.delta[t])}
-            </span>{' '}
-            <span className="sheet-dim">→ {shortMoney(result.scoresAfter[t])}</span>
+            </Text>{' '}
+            <Text tone="muted" weight="regular">
+              → {shortMoney(result.scoresAfter[t])}
+            </Text>
           </span>
         ))}
       </div>
@@ -132,7 +150,7 @@ function FinishedHand({
           <Lines entries={lines} />
         </details>
       )}
-    </li>
+    </Panel>
   );
 }
 

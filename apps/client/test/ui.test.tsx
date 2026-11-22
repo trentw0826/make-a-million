@@ -508,8 +508,9 @@ describe('table status', () => {
     const corner = document.querySelector('.table-corner') as HTMLElement;
     for (const name of ['Score sheet', 'Mute sounds', 'How to play']) {
       const button = within(corner).getByRole('button', { name });
-      expect(button).toHaveClass('icon-btn');
+      // An icon, named for screen readers, with no words of its own.
       expect(button.querySelector('svg')).not.toBeNull();
+      expect(button).toHaveTextContent(/^$/);
     }
   });
 

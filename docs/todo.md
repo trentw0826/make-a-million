@@ -7,9 +7,11 @@ A scratchpad for future fixes, features, and updates
 ## Later
 - [ ] Create a design system so that styles and animations are standardized across the entire project (avoid manually copying/individually deciding on fonts, animations, text size, colors, etc for each element)
   - [x] Token scales for type, spacing, colour, radii, stacking, opacity and motion, enforced by Stylelint and `designTokens.test.ts`
-  - [ ] Shared components (`Button`, `Panel`, `Text`) so screens compose rather than restyle; move styles into CSS Modules
+  - [x] Shared components (`Button`, `Panel`, `Text`) in `components/ui`, with CSS Modules, so screens compose rather than restyle
+  - [x] Clickable elements share one response to hover, press, focus and disabled (the `Button` variants)
+  - [ ] Move the rest of `styles.css` into per-component CSS Modules, a component at a time, switching tests and e2e from class hooks to roles or data attributes as each moves
+  - [ ] Give the game pieces that are buttons (cards, trump tokens, bid plaque, guide tabs, bot level) the same press and focus response
   - [ ] A dev-only style guide page of every token and component, screenshotted by `pnpm e2e`
-  - [ ] As part of it, clickable/interactable elements should have standardized animations (e.g. the 'pass' button during the bidding phase gives no feedback that it's clickable other than mouse hover state)
 - [ ] Create a phone-friendly UI
 - [] Strong bots: fit Expert to its reply time and offer it; load-test Hard rooms. Details in `docs/bot-roadmap.md`
 - [ ] Solo mode

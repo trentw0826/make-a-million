@@ -9,6 +9,11 @@
  *
  * The motion durations are mirrored for script in theme/motion.ts; keep the two in step.
  */
+
+/* The cascade, lowest first: element resets, then the shared components. The app's own
+   rules in styles.css are unlayered and win over both. */
+@layer base, ui;
+
 :root {
   /* Colour: table ------------------------------------------------------- */
   --felt: #1f5f3b;
@@ -48,6 +53,21 @@
   --glow-strong: color-mix(in srgb, var(--accent-light) 70%, transparent);
   /* The pulse round whoever the table waits on, at its brightest. */
   --pulse: color-mix(in srgb, var(--accent) 60%, transparent);
+
+  /* Colour: interaction --------------------------------------------------- */
+  /* The keyboard focus ring, on every control. */
+  --focus-ring: var(--accent);
+  /* Drawn from the text colour where they are used, so they suit the felt and paper alike:
+     an outline, and the wash a control takes on under the pointer. */
+  --line-current: color-mix(in srgb, currentcolor 40%, transparent);
+  --tint-hover: color-mix(in srgb, currentcolor 10%, transparent);
+
+  /* Colour: text, by surface ---------------------------------------------- */
+  /* Quiet text, and gains and losses. These are for paper; the felt and the bars over it
+     set them to their on-felt versions (styles.css), so a Text tone suits wherever it is. */
+  --text-muted: var(--muted);
+  --text-good: var(--good-ink);
+  --text-bad: var(--danger);
 
   /* Colour: suits and specials ----------------------------------------- */
   --red: #c62828;

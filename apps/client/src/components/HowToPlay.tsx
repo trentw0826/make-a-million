@@ -11,6 +11,7 @@ import { type KeyboardEvent, type ReactNode, useId, useRef, useState } from 'rea
 import { money } from '../format';
 import { CardFace } from './CardFace';
 import { Modal } from './Modal';
+import { Button } from './ui/Button';
 
 /** "$40k · $30k · $15k · 11 · $10k · …", highest first, straight from the engine's table. */
 const RANK_ORDER = [...RANKS]
@@ -303,21 +304,15 @@ export function HowToPlay({
           ))}
         </div>
         <div className="guide-steps">
-          {prev ? (
-            <button type="button" onClick={() => go(at - 1)}>
-              ← {prev.title}
-            </button>
-          ) : (
-            <span />
-          )}
+          {prev ? <Button onClick={() => go(at - 1)}>← {prev.title}</Button> : <span />}
           {next ? (
-            <button type="button" className="primary" onClick={() => go(at + 1)}>
+            <Button variant="primary" onClick={() => go(at + 1)}>
               {next.title} →
-            </button>
+            </Button>
           ) : (
-            <button type="button" className="primary" onClick={onClose}>
+            <Button variant="primary" onClick={onClose}>
               Done
-            </button>
+            </Button>
           )}
         </div>
       </div>

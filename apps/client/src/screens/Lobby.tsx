@@ -2,6 +2,8 @@ import type { Seat } from '@mam/engine';
 import type { Difficulty, RoomView, SeatView } from '@mam/protocol';
 import type { CSSProperties } from 'react';
 import { SeatName } from '../components/SeatName';
+import { Button } from '../components/ui/Button';
+import { Text } from '../components/ui/Text';
 import { DIFFICULTY_LABELS, DIFFICULTY_ORDER } from '../format';
 import { type Spot, spotOf } from '../spots';
 import { useGame } from '../store';
@@ -40,16 +42,15 @@ export function Lobby({ room }: { room: RoomView }) {
           </svg>
           <div className="lobby-felt-text">
             {isHost ? (
-              <button
-                type="button"
-                className="primary"
+              <Button
+                variant="primary"
                 disabled={!anyHuman}
                 onClick={() => send({ type: 'startGame' })}
               >
                 Start game
-              </button>
+              </Button>
             ) : (
-              <span className="muted">Waiting for the host…</span>
+              <Text tone="muted">Waiting for the host…</Text>
             )}
           </div>
         </div>
@@ -108,7 +109,7 @@ function Chair(p: ChairProps) {
         <strong className="chair-name">
           {/* The host's level picker already says how strong the bot is. */}
           {bot && p.isHost ? bot.name : <SeatName seat={v} />}
-          {p.isMine && <span className="muted"> (you)</span>}
+          {p.isMine && <Text tone="muted"> (you)</Text>}
           {p.isHostSeat && <span className="tag">host</span>}
           {v.kind === 'human' && !v.connected && <span className="tag warn">away</span>}
         </strong>
@@ -136,13 +137,13 @@ function Chair(p: ChairProps) {
       {(p.isMine || bot) && (
         <div className="chair-actions">
           {p.isMine ? (
-            <button type="button" className="ghost small" onClick={p.onStand}>
+            <Button variant="ghost" size="sm" onClick={p.onStand}>
               Stand up
-            </button>
+            </Button>
           ) : (
-            <button type="button" className="primary small" onClick={p.onSit}>
+            <Button variant="primary" size="sm" onClick={p.onSit}>
               Sit here
-            </button>
+            </Button>
           )}
         </div>
       )}

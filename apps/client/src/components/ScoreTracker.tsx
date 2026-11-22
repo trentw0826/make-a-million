@@ -2,6 +2,8 @@ import { otherTeam, type TableView } from '@mam/engine';
 import type { RoomView } from '@mam/protocol';
 import { type ReactNode, useState } from 'react';
 import { money, signedShortMoney, teamLabel } from '../format';
+import { Panel } from './ui/Panel';
+import { Text } from './ui/Text';
 
 /**
  * One side's total and how far it is toward the target, in its own top corner of the felt:
@@ -36,29 +38,34 @@ export function ScoreTracker({
       className={`tracker tracker-${side} side-${side}`}
       aria-label={side === 'us' ? 'Us' : 'Them'}
     >
-      <div className="total" title={teamLabel(room, team)}>
+      <Panel tone="felt" pad="sm" className="total" title={teamLabel(room, team)}>
         <div className="total-head">
           <span className="side-dot" aria-hidden="true" />
           <span className="total-name">{side === 'us' ? 'Us' : 'Them'}</span>
-          <strong className={score < 0 ? 'total-score neg' : 'total-score'}>{money(score)}</strong>
+          <Text as="strong" numeric tone={score < 0 ? 'bad' : undefined}>
+            {money(score)}
+          </Text>
         </div>
         <div className="progress" aria-hidden="true">
           <span style={{ width: `${progress}%` }} />
         </div>
         {side === 'them' && (
-          <div className="total-caption">
+          <Text as="div" size="xs" tone="muted" className="total-caption">
             {view.handNumber > 0 && `Hand ${view.handNumber} · `}to {money(target)}
-          </div>
+          </Text>
         )}
         {fresh && (
-          <span
+          <Text
             key={fresh.handNumber}
-            className={`delta-float delta-float-${side} ${fresh.delta[team] < 0 ? 'neg' : 'pos'}`}
+            size="sm"
+            weight="bold"
+            tone={fresh.delta[team] < 0 ? 'bad' : 'good'}
+            className={`delta-float delta-float-${side}`}
           >
             {signedShortMoney(fresh.delta[team])}
-          </span>
+          </Text>
         )}
-      </div>
+      </Panel>
       {pile}
     </section>
   );

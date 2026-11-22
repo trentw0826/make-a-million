@@ -1,0 +1,109 @@
+/*
+ * Every ordinary button: its variants, sizes and shapes, and the same response everywhere —
+ * a change under the pointer, a small press when clicked, the focus ring from the keyboard,
+ * and a fade when it can't be used.
+ */
+@layer ui {
+  .button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-3);
+    padding: var(--space-3) var(--space-5);
+    border: 1px solid transparent;
+    border-radius: var(--radius-m);
+    white-space: nowrap;
+    cursor: pointer;
+    transition:
+      background-color var(--dur-fast) var(--ease-out),
+      border-color var(--dur-fast) var(--ease-out),
+      color var(--dur-fast) var(--ease-out),
+      filter var(--dur-fast) var(--ease-out),
+      transform var(--dur-fast) var(--ease-out);
+  }
+  .button:active:not(:disabled, [aria-disabled="true"]) {
+    transform: translateY(1px);
+  }
+  .button:disabled,
+  .button[aria-disabled="true"] {
+    opacity: var(--opacity-disabled);
+    cursor: default;
+  }
+
+  /* Variants ----------------------------------------------------------------- */
+  .primary {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--on-accent);
+    font-weight: var(--weight-bold);
+  }
+  .primary:hover:not(:disabled, [aria-disabled="true"]) {
+    filter: brightness(1.1);
+  }
+  .secondary {
+    background: var(--paper);
+    border-color: var(--line);
+    color: var(--ink);
+  }
+  .secondary:hover:not(:disabled, [aria-disabled="true"]) {
+    background: var(--paper-raised);
+    border-color: var(--accent);
+  }
+  .ghost {
+    background: transparent;
+    border-color: var(--line-current);
+    color: inherit;
+  }
+  .ghost:hover:not(:disabled, [aria-disabled="true"]) {
+    background: var(--tint-hover);
+    border-color: currentcolor;
+  }
+  .danger {
+    background: var(--paper);
+    border-color: var(--danger);
+    color: var(--danger);
+  }
+  .danger:hover:not(:disabled, [aria-disabled="true"]) {
+    background: var(--bad-bg);
+  }
+  .link {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+  .link:hover:not(:disabled, [aria-disabled="true"]) {
+    text-decoration-thickness: 2px;
+  }
+
+  /* Sizes and shapes --------------------------------------------------------- */
+  .sm {
+    padding: var(--space-1) var(--space-4);
+    font-size: var(--text-sm);
+  }
+  .pill {
+    border-radius: var(--radius-pill);
+  }
+  .square,
+  .round {
+    width: var(--icon-btn-size);
+    height: var(--icon-btn-size);
+    padding: 0;
+    line-height: 0;
+  }
+  .round {
+    border-radius: 50%;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .button {
+      transition: none;
+    }
+
+    .button:active:not(:disabled, [aria-disabled="true"]) {
+      transform: none;
+    }
+  }
+}

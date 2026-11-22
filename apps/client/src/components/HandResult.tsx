@@ -25,6 +25,9 @@ import { BidTrack, bidCaption } from './BidTrack';
 import { CardFace } from './CardFace';
 import { CountUp } from './CountUp';
 import { Modal } from './Modal';
+import { Button } from './ui/Button';
+import { Panel } from './ui/Panel';
+import { Text } from './ui/Text';
 
 /**
  * Shown when the last trick is taken: both sides count their Money openly. One bar says how
@@ -88,9 +91,10 @@ export function HandResult({
         <span className={`suit-word suit-${result.trump}`}>{SUIT_NAMES[result.trump]}</span>
       </p>
       <ScoreBar result={result} team={team} still={still} />
-      <button
-        type="button"
-        className="small result-cards-toggle"
+      <Button
+        size="sm"
+        shape="pill"
+        className="result-cards-toggle"
         aria-expanded={showCards}
         aria-controls={cardsId}
         onClick={() => setShowCards((v) => !v)}
@@ -99,7 +103,7 @@ export function HandResult({
         <span className="result-cards-chevron" aria-hidden="true">
           ▾
         </span>
-      </button>
+      </Button>
       <AnimatePresence initial={false}>
         {showCards && (
           <motion.section
@@ -144,16 +148,13 @@ export function HandResult({
           })}
         </ul>
         {pending.includes(seat) ? (
-          <button
-            type="button"
-            className="primary"
-            data-autofocus
-            onClick={() => act({ type: 'continue' })}
-          >
+          <Button variant="primary" data-autofocus onClick={() => act({ type: 'continue' })}>
             Ready
-          </button>
+          </Button>
         ) : (
-          <span className="muted small ready-wait">Waiting for the others…</span>
+          <Text size="sm" tone="muted" className="ready-wait">
+            Waiting for the others…
+          </Text>
         )}
       </div>
     </Modal>
@@ -184,10 +185,17 @@ function ScoreBar({ result, team, still }: { result: Result; team: Team; still: 
               <span className="side-dot" aria-hidden="true" />
               {name}
             </span>
-            <span className={`score-bar-delta ${result.delta[side] < 0 ? 'neg' : 'pos'}`}>
+            <Text
+              size="2xl"
+              weight="bold"
+              tone={result.delta[side] < 0 ? 'bad' : 'good'}
+              className="score-bar-delta"
+            >
               <CountUp value={result.delta[side]} format={signedMoney} />
-            </span>
-            <span className="score-bar-total">Total {money(result.scoresAfter[side])}</span>
+            </Text>
+            <Text size="sm" tone="muted" numeric>
+              Total {money(result.scoresAfter[side])}
+            </Text>
           </section>
         ))}
       </div>
@@ -217,7 +225,12 @@ function TrickRow({
 }) {
   const mod = trick.modifier === 'bull' ? ' ×2' : trick.modifier === 'bear' ? ' Bear' : '';
   return (
-    <li className={`result-trick side-${side} mod-${trick.modifier}`}>
+    <Panel
+      as="li"
+      tone="outlined"
+      pad="sm"
+      className={`result-trick side-${side} mod-${trick.modifier}`}
+    >
       <span className="result-trick-head">
         <span className="result-trick-who">
           <span className="side-dot" aria-hidden="true" />
@@ -236,7 +249,7 @@ function TrickRow({
           <CardFace key={c} id={c} size="small" />
         ))}
       </span>
-    </li>
+    </Panel>
   );
 }
 

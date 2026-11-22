@@ -7,6 +7,7 @@ import { DUR_BASE_MS, EASE_OUT } from '../theme/motion';
 import { Icon } from './Icon';
 import { isModalOpen } from './Modal';
 import { ScoreSheet } from './ScoreSheet';
+import { Button } from './ui/Button';
 
 const DRAWER_S = DUR_BASE_MS / 1000;
 
@@ -54,10 +55,11 @@ export function TableDrawer({ view, room, log }: Props) {
 
   return (
     <>
-      <button
+      <Button
         ref={toggle}
-        type="button"
-        className="ghost small icon-btn drawer-toggle"
+        variant="ghost"
+        shape="square"
+        className="drawer-toggle"
         aria-label="Score sheet"
         title="Score sheet"
         aria-expanded={open}
@@ -65,7 +67,7 @@ export function TableDrawer({ view, room, log }: Props) {
         onClick={() => setOpen((o) => !o)}
       >
         <Icon name="sheet" />
-      </button>
+      </Button>
       {/* It leaves the way it came: the sheet slides back out and the table brightens. */}
       <AnimatePresence>
         {open && (
@@ -91,8 +93,9 @@ export function TableDrawer({ view, room, log }: Props) {
             exit={{ opacity: 0, x: 40 }}
             transition={{ duration: DRAWER_S, ease: EASE_OUT }}
           >
-            <button
-              type="button"
+            <Button
+              variant="ghost"
+              shape="square"
               className="drawer-close"
               aria-label="Close the score sheet"
               onClick={() => {
@@ -100,8 +103,8 @@ export function TableDrawer({ view, room, log }: Props) {
                 toggle.current?.focus();
               }}
             >
-              ✕
-            </button>
+              <Icon name="close" />
+            </Button>
             <ScoreSheet view={view} room={room} log={log} />
           </motion.aside>
         )}

@@ -3,6 +3,7 @@ import { sound } from '../sound/player';
 import { useGame } from '../store';
 import { Icon } from './Icon';
 import { Modal } from './Modal';
+import { Button } from './ui/Button';
 import { Wordmark } from './Wordmark';
 
 /** Turns the game's sounds off and on; the choice is kept for next time. */
@@ -13,16 +14,16 @@ export function SoundToggle() {
     setMuted(!muted);
   };
   return (
-    <button
-      type="button"
-      className="ghost small icon-btn"
+    <Button
+      variant="ghost"
+      shape="square"
       aria-pressed={muted}
       aria-label="Mute sounds"
       title={muted ? 'Sounds are off' : 'Sounds are on'}
       onClick={toggle}
     >
       <Icon name={muted ? 'muted' : 'sound'} />
-    </button>
+    </Button>
   );
 }
 
@@ -32,22 +33,22 @@ export function HelpButton({ icon = false }: { icon?: boolean }) {
   const open = () => dispatch({ kind: 'help', open: true });
   if (icon) {
     return (
-      <button
-        type="button"
-        className="ghost small icon-btn"
+      <Button
+        variant="ghost"
+        shape="square"
         aria-label="How to play"
         title="How to play (?)"
         aria-keyshortcuts="?"
         onClick={open}
       >
         <Icon name="help" />
-      </button>
+      </Button>
     );
   }
   return (
-    <button type="button" className="ghost small" aria-keyshortcuts="?" onClick={open}>
+    <Button variant="ghost" size="sm" aria-keyshortcuts="?" onClick={open}>
       How to play
-    </button>
+    </Button>
   );
 }
 
@@ -95,13 +96,13 @@ export function TopBar() {
           </>
         )}
         {room && (
-          <button
-            type="button"
-            className="ghost small"
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={() => (midGame ? setConfirming(true) : leave())}
           >
             Leave
-          </button>
+          </Button>
         )}
       </nav>
       {confirming && room && (
@@ -121,12 +122,10 @@ export function TopBar() {
             </p>
           )}
           <div className="row">
-            <button type="button" onClick={() => setConfirming(false)}>
-              Stay
-            </button>
-            <button type="button" className="warn-btn" onClick={leave}>
+            <Button onClick={() => setConfirming(false)}>Stay</Button>
+            <Button variant="danger" onClick={leave}>
               {lastHuman ? 'Leave and end the game' : 'Leave game'}
-            </button>
+            </Button>
           </div>
         </Modal>
       )}
