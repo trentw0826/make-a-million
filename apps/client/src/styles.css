@@ -774,6 +774,16 @@
   grid-area: top;
   justify-self: center;
 }
+/* The partner sits at the foot of their row and leans over the board's far rim, which the
+   tilt pushes down, so their cards sit as close to the board as the side seats' do. Shifted
+   rather than given a negative margin, so the row keeps its height and the board stays put. */
+@media (min-width: 601px) {
+  .top-side {
+    align-self: end;
+    position: relative;
+    top: var(--space-8);
+  }
+}
 .left-side,
 .right-side {
   display: flex;
@@ -810,6 +820,9 @@
   min-height: 24px;
   margin: 0;
 }
+.me-name > .seat-chip {
+  margin-left: var(--space-4);
+}
 .seat-acting > .seat-name,
 .me-turn > .me-name {
   border-color: var(--accent);
@@ -829,12 +842,11 @@
   justify-content: center;
   gap: var(--space-1);
   min-height: 24px;
-  margin-bottom: var(--space-3);
+  margin-top: var(--space-3);
   opacity: var(--opacity-soft);
 }
 /* A seat's badge (the dealer, the contract): the same size by every seat and by yours. */
 .seat-chip {
-  margin-left: var(--space-4);
   padding: var(--space-1) var(--space-4);
   border-radius: var(--radius-l);
   font-size: var(--text-sm);
@@ -2054,7 +2066,10 @@ button.card-selected:hover:not([aria-disabled="true"]) {
     margin-bottom: 0;
   }
   .seat-role {
-    margin-bottom: var(--space-1);
+    margin-top: var(--space-1);
+  }
+  .top-side {
+    top: var(--space-5);
   }
   .trick-area {
     min-height: 180px;
