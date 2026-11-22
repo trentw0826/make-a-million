@@ -914,19 +914,18 @@ describe('table status', () => {
     expect(document.querySelector('.me .action-bar')).toBeNull();
   });
 
-  it('makes your plaque the bid button, − and + beside it and Pass below, with no bar', () => {
+  it('puts your bid controls at your spot: the amount between − and +, then Pass and Bid', () => {
     renderWith(atTable);
-    const yours = document.querySelector('.plaque-bottom .your-bid') as HTMLElement;
+    const yours = document.querySelector('.bid-spot-bottom .your-bid') as HTMLElement;
     expect(
       within(yours)
         .getAllByRole('button')
         .map((b) => b.getAttribute('aria-label') ?? b.textContent),
-    ).toEqual(['lower bid', 'Bid $175k', 'raise bid', 'Pass']);
+    ).toEqual(['lower bid', 'raise bid', 'Pass', 'Bid $175k']);
+    expect(within(yours).getByRole('status')).toHaveTextContent('$175k');
     fireEvent.click(screen.getByRole('button', { name: 'raise bid' }));
-    expect(within(yours).getByRole('button', { name: 'Bid $180k' })).toHaveClass('plaque-yours');
-    expect(document.querySelector('.plaque-below')).toContainElement(
-      screen.getByRole('button', { name: 'Pass' }),
-    );
+    expect(within(yours).getByRole('status')).toHaveTextContent('$180k');
+    expect(within(yours).getByRole('button', { name: 'Bid $180k' })).toHaveClass('bid-submit');
     expect(document.querySelector('.action-bar')).toBeNull();
   });
 
@@ -944,17 +943,17 @@ describe('table status', () => {
     expect(document.querySelector('.action-bar')).toBeNull();
   });
 
-  it('gives each player in the auction a plaque, the high bid glowing, and none once passed', () => {
+  it('gives each player in the auction a chip, the high bid marked, and none once passed', () => {
     const auction = (entries: TableView['auction']): readonly ServerMessage[] => [
       welcome,
       { type: 'room', room: room('playing') },
       { type: 'view', view: { ...dealt, turn: 2, legal: { kind: 'none' }, auction: entries } },
     ];
-    const plaque = (spot: string) => document.querySelector(`.plaque-${spot} .plaque`);
+    const chip = (spot: string) => document.querySelector(`.bid-spot-${spot} .bid-chip`);
     const { unmount } = renderWith(auction([]));
     for (const spot of ['bottom', 'left', 'top', 'right']) {
-      expect(plaque(spot)).toHaveTextContent('No bid');
-      expect(plaque(spot)).toHaveClass('plaque-none');
+      expect(chip(spot)).toHaveTextContent('No bid');
+      expect(chip(spot)).toHaveClass('bid-chip-none');
     }
     unmount();
     renderWith(
@@ -964,13 +963,13 @@ describe('table status', () => {
         { seat: 2, kind: 'pass' },
       ]),
     );
-    expect(plaque('bottom')).toHaveTextContent('$175k');
-    expect(plaque('bottom')).not.toHaveClass('plaque-high');
-    expect(plaque('left')).toHaveTextContent('$180k');
-    expect(plaque('left')).toHaveClass('plaque-high');
-    expect(plaque('left')).not.toHaveTextContent(/high/i);
-    expect(document.querySelector('.plaque-top')).toBeNull();
-    expect(plaque('right')).toHaveTextContent('No bid');
+    expect(chip('bottom')).toHaveTextContent('$175k');
+    expect(chip('bottom')).not.toHaveClass('bid-chip-high');
+    expect(chip('left')).toHaveTextContent('$180k');
+    expect(chip('left')).toHaveClass('bid-chip-high');
+    expect(chip('left')).not.toHaveTextContent(/high/i);
+    expect(document.querySelector('.bid-spot-top')).toBeNull();
+    expect(chip('right')).toHaveTextContent('No bid');
     expect(document.querySelector('.seat-chip')).toBeNull();
   });
 

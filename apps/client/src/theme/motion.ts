@@ -24,7 +24,7 @@ export const EASE_IN_OUT = [0.42, 0, 0.58, 1] as const;
 
 /** A springy settle for cards: quick, with a little overshoot. */
 export const CARD_SPRING = { type: 'spring', stiffness: 520, damping: 34, mass: 0.9 } as const;
-/** Something arriving and settling without a bounce (a bid plaque, a seat's badge). */
+/** Something arriving and settling without a bounce (a bid chip, a seat's badge). */
 export const SETTLE_SPRING = { type: 'spring', stiffness: 320, damping: 24 } as const;
 /** A lively bounce, to draw the eye (a raised bid, the hand's outcome). */
 export const POP_SPRING = { type: 'spring', stiffness: 380, damping: 18 } as const;

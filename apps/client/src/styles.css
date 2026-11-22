@@ -47,7 +47,7 @@
   }
 
   /* A bare button has no look of its own: an ordinary one is a Button (components/ui), and
-     a game piece (a card, a trump token, your bid plaque) styles itself. */
+     a game piece (a card, a trump token) styles itself. */
   button {
     font: inherit;
     color: inherit;
@@ -1063,137 +1063,92 @@
   min-height: 0;
   animation: fade-in var(--dur-slow) var(--ease-out);
 }
-/* The auction on the felt (BidPlaques): a plaque in front of each player still in it. Each
-   is centred on its spot, a little in from the felt's rim on that player's side. */
-.plaque-spot {
+/* The auction on the felt (BidChips): a chip in front of each player still in it, or your
+   bid controls at your own spot. Each is centred on its spot, a little in from the felt's
+   rim on that player's side. */
+.bid-spot {
   position: absolute;
   z-index: var(--z-raised);
   translate: -50% -50%;
 }
-.plaque-bottom {
+.bid-spot-bottom {
   left: 50%;
   top: 68%;
 }
-.plaque-top {
+.bid-spot-top {
   left: 50%;
   top: 27%;
 }
-.plaque-left {
+.bid-spot-left {
   left: 20%;
   top: 50%;
 }
-.plaque-right {
+.bid-spot-right {
   left: 80%;
   top: 50%;
 }
-.plaque {
-  display: inline-flex;
-  align-items: baseline;
-  justify-content: center;
-  gap: var(--space-3);
-  min-width: 104px;
-  padding: var(--space-4) var(--space-6);
-  border: 0;
-  border-radius: var(--radius-pill);
-  font-family: var(--font-display);
+/* A player's standing in the auction, shaped like a seat's badge. */
+.bid-chip {
+  display: inline-block;
+  min-width: 84px;
+  padding: var(--space-2) var(--space-5);
+  border-radius: var(--radius-l);
+  font-size: var(--text-md);
   font-weight: var(--weight-bold);
+  line-height: var(--leading-tight);
+  text-align: center;
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
   transition:
-    background-color var(--dur-slow) var(--ease-out),
-    color var(--dur-slow) var(--ease-out),
-    box-shadow var(--dur-slow) var(--ease-out),
-    var(--press-transition);
+    background-color var(--dur-base) var(--ease-out),
+    color var(--dur-base) var(--ease-out),
+    box-shadow var(--dur-base) var(--ease-out);
 }
-.plaque-amount {
-  display: inline-block;
-  font-size: var(--text-xl);
-  line-height: var(--leading-tight);
-}
-/* Nobody has heard from this player yet: a quiet outline. */
-.plaque-none {
+/* Nobody has heard from this player yet. */
+.bid-chip-none {
   background: var(--shade-1);
   color: var(--on-felt-muted);
-  box-shadow: inset 0 0 0 1px var(--glow-soft);
-}
-.plaque-none .plaque-amount {
-  font-size: var(--text-md);
   font-weight: var(--weight-regular);
-  font-family: var(--font-body);
-  padding: var(--space-1) 0;
 }
-/* A bid since topped: solid but dull. */
-.plaque-bid {
+/* A bid since topped. */
+.bid-chip-topped {
   background: var(--shade-2);
   color: var(--paper);
-  box-shadow: inset 0 0 0 1px var(--line-on-felt);
 }
-/* The standing high bid glows. */
-.plaque-high {
-  background: linear-gradient(180deg, var(--accent-light), var(--accent));
-  color: var(--on-accent);
-  box-shadow:
-    0 0 0 2px var(--glow),
-    0 0 22px 4px var(--glow);
-  animation: plaque-glow var(--dur-pulse) var(--ease-in-out) infinite;
+/* The standing high bid: drawn as the contract badge it becomes if nobody tops it. */
+.bid-chip-high {
+  background: var(--paper);
+  color: var(--ink);
+  box-shadow: inset 0 0 0 2px var(--accent);
 }
-@keyframes plaque-glow {
-  50% {
-    box-shadow:
-      0 0 0 2px var(--glow-strong),
-      0 0 30px 8px var(--glow-strong);
-  }
-}
-/* Your turn: your plaque is the bid button, − and + either side, Pass below. They hang off
-   the plaque so it stays on its spot. */
-.your-bid {
-  position: relative;
+/* Your turn: the amount between − and +, and Pass and Bid below it. */
+.your-bid-fields {
+  display: grid;
+  gap: var(--space-4);
+  min-width: 0;
   margin: 0;
   padding: 0;
   border: 0;
-  min-width: 0;
 }
-.plaque-yours {
-  background: linear-gradient(180deg, var(--accent-light), var(--accent));
-  color: var(--on-accent);
-  box-shadow:
-    0 0 0 2px var(--glow),
-    var(--shadow-1);
-  cursor: pointer;
+.bid-stepper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-4);
 }
-.plaque-yours:hover {
-  filter: brightness(1.06);
-}
-.plaque-verb {
-  font-family: var(--font-body);
-  font-size: var(--text-sm);
-  font-weight: var(--weight-semibold);
-}
-.plaque-step {
-  position: absolute;
-  top: 50%;
-  translate: 0 -50%;
+.bid-step {
   font-size: var(--text-lg);
-  line-height: var(--leading-none);
 }
-.plaque-lower {
-  right: calc(100% + 10px);
+.bid-amount {
+  min-width: 72px;
+  text-align: center;
 }
-.plaque-raise {
-  left: calc(100% + 10px);
-}
-.plaque-below {
-  position: absolute;
-  top: calc(100% + 10px);
-  left: 50%;
-  translate: -50% 0;
+.bid-actions {
   display: flex;
   gap: var(--space-4);
 }
-/* Pass is always there but rarely the point: a quiet outline, a little wider than usual. */
-.plaque-pass {
-  padding: var(--space-1) var(--space-6);
-  color: var(--on-felt-muted);
+.bid-actions > * {
+  flex: 1;
 }
 /* The marker on the felt's rim pointing at whoever the table waits on. */
 .turn-marker {
@@ -2243,7 +2198,6 @@ button.card-selected:hover:not([aria-disabled="true"]) {
   .seat-acting > .seat-name,
   .me-turn > .me-name,
   .screen,
-  .plaque-high,
   .modal-backdrop,
   .modal,
   .guide-panel,
