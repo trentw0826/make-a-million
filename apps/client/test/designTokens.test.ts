@@ -61,6 +61,11 @@ describe('design tokens', () => {
       .map((f) => relative(SRC, f))
       .filter((f) => !PIECES.includes(f));
     expect(plain).toEqual([]);
+    // ...and each of them, and Button, gives under a press like everything else.
+    const unpressed = PIECES.filter(
+      (f) => !readFileSync(join(SRC, f), 'utf8').includes('PRESSABLE'),
+    );
+    expect(unpressed).toEqual([]);
   });
 
   it('loads the tokens before any component, so the cascade layers keep their order', () => {

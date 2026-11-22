@@ -2,6 +2,7 @@ import { type Card, type CardId, cardById, cardLabel, isMoney } from '@mam/engin
 import { CardArt } from '../art/CardArt';
 import { CardBackArt } from '../art/CardBackArt';
 import { SUIT_NAMES } from '../format';
+import { PRESSABLE } from './ui/pressable';
 
 export interface CardFaceProps {
   readonly id: CardId;
@@ -85,7 +86,7 @@ export function CardFace({
   return (
     <button
       type="button"
-      className={classes.join(' ')}
+      className={`${classes.join(' ')} ${PRESSABLE}`}
       onClick={disabled ? onBlockedClick : onClick}
       aria-disabled={disabled || undefined}
       aria-pressed={selected ?? false}

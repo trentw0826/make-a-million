@@ -1,0 +1,26 @@
+/*
+ * How anything clickable answers a press: it gives a little (--press-scale) while held. Button
+ * uses it, and so does every game piece that is a button (a card, a trump token, your bid
+ * plaque, the guide's tabs, the bot level switch), each of which keeps its own look and hover.
+ *
+ * A piece that sets its own `transition` must list var(--press-transition) in it, or its
+ * transition replaces this one and the press snaps instead of easing.
+ *
+ * Something that can't be used doesn't give: a greyed-out card explains itself when clicked,
+ * and mustn't look as if it had been played.
+ */
+@layer ui {
+  .pressable {
+    transition: var(--press-transition);
+  }
+
+  .pressable:active:not(:disabled, [aria-disabled="true"]) {
+    scale: var(--press-scale);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .pressable:active:not(:disabled, [aria-disabled="true"]) {
+      scale: none;
+    }
+  }
+}

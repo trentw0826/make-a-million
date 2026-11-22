@@ -520,7 +520,8 @@
   opacity: var(--opacity-muted);
   transition:
     color var(--dur-base),
-    opacity var(--dur-base);
+    opacity var(--dur-base),
+    var(--press-transition);
 }
 .bot-level button:hover {
   opacity: var(--opacity-soft);
@@ -950,7 +951,8 @@
   box-shadow: var(--shadow-1);
   transition:
     transform var(--dur-base) var(--ease-out),
-    border-color var(--dur-base) var(--ease-out);
+    border-color var(--dur-base) var(--ease-out),
+    var(--press-transition);
 }
 .trump-pick:hover,
 .trump-pick:focus-visible,
@@ -1067,7 +1069,8 @@
   transition:
     background-color var(--dur-slow) var(--ease-out),
     color var(--dur-slow) var(--ease-out),
-    box-shadow var(--dur-slow) var(--ease-out);
+    box-shadow var(--dur-slow) var(--ease-out),
+    var(--press-transition);
 }
 .plaque-amount {
   display: inline-block;
@@ -1353,7 +1356,8 @@
   cursor: default;
   transition:
     transform var(--dur-fast),
-    box-shadow var(--dur-base);
+    box-shadow var(--dur-base),
+    var(--press-transition);
 }
 /* A card with two faces, for turning over: its face and, behind it, its back. */
 .card-3d {
@@ -1601,7 +1605,8 @@ button.card-selected:hover:not([aria-disabled="true"]) {
   white-space: nowrap;
   transition:
     background-color var(--dur-fast),
-    color var(--dur-fast);
+    color var(--dur-fast),
+    var(--press-transition);
 }
 .guide-topic:hover {
   color: var(--ink);

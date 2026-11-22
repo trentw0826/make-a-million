@@ -12,6 +12,7 @@ import { money } from '../format';
 import { CardFace } from './CardFace';
 import { Modal } from './Modal';
 import { Button } from './ui/Button';
+import { PRESSABLE } from './ui/pressable';
 
 /** "$40k · $30k · $15k · 11 · $10k · …", highest first, straight from the engine's table. */
 const RANK_ORDER = [...RANKS]
@@ -275,7 +276,7 @@ export function HowToPlay({
               aria-selected={i === at}
               tabIndex={i === at ? 0 : -1}
               data-autofocus={i === at ? true : undefined}
-              className="guide-topic"
+              className={`guide-topic ${PRESSABLE}`}
               onClick={() => go(i)}
               onKeyDown={onTabKey}
             >

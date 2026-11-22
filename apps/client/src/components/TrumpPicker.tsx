@@ -2,6 +2,7 @@ import { cardById, type LegalMoves, type Suit } from '@mam/engine';
 import { SuitGlyph } from '../art/CardArt';
 import { SUIT_NAMES } from '../format';
 import { useGame } from '../store';
+import { PRESSABLE } from './ui/pressable';
 
 /**
  * Naming trump, in the middle of the felt: a token for each color, with how many of it the
@@ -34,7 +35,7 @@ export function TrumpPicker({
             <button
               type="button"
               key={suit}
-              className={`trump-pick suit-${suit}${preview === suit ? ' trump-pick-lit' : ''}`}
+              className={`trump-pick suit-${suit}${preview === suit ? ' trump-pick-lit' : ''} ${PRESSABLE}`}
               aria-label={`${SUIT_NAMES[suit]}, ${n} in your hand`}
               onClick={() => act({ type: 'nameTrump', suit })}
             >

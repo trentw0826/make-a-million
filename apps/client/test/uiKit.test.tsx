@@ -1,7 +1,9 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
+import { CardFace } from '../src/components/CardFace';
 import { Button } from '../src/components/ui/Button';
 import { Panel } from '../src/components/ui/Panel';
+import { PRESSABLE } from '../src/components/ui/pressable';
 import { Text } from '../src/components/ui/Text';
 
 describe('Button', () => {
@@ -64,6 +66,29 @@ describe('Button', () => {
     );
     fireEvent.click(screen.getByRole('button', { name: 'Pass' }));
     expect(onClick).not.toHaveBeenCalled();
+  });
+});
+
+describe('pressing', () => {
+  it('makes buttons and clickable cards give under a press, but not a card that is only shown', () => {
+    const { container } = render(
+      <>
+        <Button>Pass</Button>
+        <CardFace id={12} onClick={() => {}} />
+        <CardFace id={11} />
+      </>,
+    );
+    expect(PRESSABLE).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Pass' })).toHaveClass(PRESSABLE);
+    const [clickable, shown] = Array.from(container.querySelectorAll('.card'));
+    expect(clickable).toHaveClass(PRESSABLE);
+    expect(shown).not.toHaveClass(PRESSABLE);
+  });
+
+  it('marks a greyed-out card so the press passes it by', () => {
+    render(<CardFace id={12} disabled onClick={() => {}} />);
+    // The press applies only to :not(:disabled, [aria-disabled="true"]).
+    expect(screen.getByRole('button')).toHaveAttribute('aria-disabled', 'true');
   });
 });
 

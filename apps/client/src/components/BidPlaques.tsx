@@ -8,6 +8,7 @@ import { useGame } from '../store';
 import { POP_IN, POP_SPRING, SETTLE_SPRING } from '../theme/motion';
 import { useGameKeys } from '../useHotkeys';
 import { Button } from './ui/Button';
+import { PRESSABLE } from './ui/pressable';
 
 const SEATS: readonly Seat[] = [0, 1, 2, 3];
 
@@ -119,7 +120,12 @@ function YourBid({
       >
         −
       </Button>
-      <button type="button" className="plaque plaque-yours" onClick={bid} aria-keyshortcuts="Enter">
+      <button
+        type="button"
+        className={`plaque plaque-yours ${PRESSABLE}`}
+        onClick={bid}
+        aria-keyshortcuts="Enter"
+      >
         <span className="plaque-verb">Bid</span>{' '}
         <span className="plaque-amount">{shortMoney(amount)}</span>
       </button>
