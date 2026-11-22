@@ -47,6 +47,7 @@ export function Shell() {
       {helpOpen && (
         <HowToPlay
           ruleset={state.view?.ruleset ?? DEFAULT_RULESET}
+          phase={state.view?.phase}
           onClose={() => dispatch({ kind: 'help', open: false })}
         />
       )}
