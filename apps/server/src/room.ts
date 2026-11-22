@@ -88,9 +88,14 @@ export class Room {
   private result: { timer: NodeJS.Timeout; endsAt: number } | null = null;
   private closed = false;
 
+  /** Solo only: the analysis is on. */
+  analysis = false;
+
   constructor(
     readonly code: string,
     private readonly deps: RoomDeps,
+    /** A private room for one player: no joining, no takeover, no hand-result clock. */
+    readonly solo = false,
   ) {}
 
   // ---------------------------------------------------------------------------
@@ -104,6 +109,8 @@ export class Room {
       this.reconnect(playerId);
       return null;
     }
+    // A solo room has its one player; to anyone else its code leads nowhere.
+    if (this.solo && this.members.size > 0) return err('ROOM_NOT_FOUND', 'no room with that code');
     if (this.phase !== 'lobby') return err('GAME_IN_PROGRESS', 'a game is in progress');
     this.members.set(playerId, {
       id: playerId,
@@ -182,6 +189,8 @@ export class Room {
     const member = this.members.get(playerId);
     if (!member || member.connected) return;
     member.graceTimer = null;
+    // A solo game waits for its player; the room's idle timer still closes it in the end.
+    if (this.solo) return;
     if (this.phase === 'lobby') {
       this.removeMember(member, 'kicked');
     } else {
@@ -281,6 +290,15 @@ export class Room {
     if (playerId !== this.hostId) return err('NOT_HOST', 'only the host can start a new game');
     if (this.phase !== 'finished') return err('GAME_IN_PROGRESS', 'the game has not finished');
     this.startGame();
+    return null;
+  }
+
+  /** Solo only: turns the analysis on or off, at any point. */
+  setAnalysis(playerId: string, on: boolean): RoomError | null {
+    if (!this.members.has(playerId)) return err('NOT_IN_ROOM', 'you are not in this room');
+    if (!this.solo) return err('NOT_SOLO', 'analysis is only offered in solo games');
+    this.analysis = on;
+    this.broadcastRoom();
     return null;
   }
 
@@ -484,7 +502,8 @@ export class Room {
 
   /** Starts the countdown when a hand result goes up, and stops it once the result is gone. */
   private syncResultTimer(): void {
-    const showing = this.phase === 'playing' && this.game?.phase === 'hand-complete';
+    // Solo: the result waits for its one player, however long they study it.
+    const showing = !this.solo && this.phase === 'playing' && this.game?.phase === 'hand-complete';
     if (!showing) {
       this.clearResultTimer();
     } else if (!this.result) {
@@ -606,6 +625,10 @@ export class Room {
       hostId: this.hostId,
       seats,
       yourSeat: this.seatOf(forPlayerId),
+      solo: this.solo,
+      analysis: this.analysis,
+      canUndo: false,
+      canRedo: false,
     };
   }
 

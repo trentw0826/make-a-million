@@ -13,6 +13,7 @@ import { SeatPanel } from '../src/components/SeatPanel';
 import { TableDrawer } from '../src/components/TableDrawer';
 import { TrickPile } from '../src/components/TrickPile';
 import { displayOrder } from '../src/handOrder';
+import { GameSocket } from '../src/socket';
 import { GameProvider, useGame } from '../src/store';
 import { RESULT_PAUSE_MS } from '../src/theme/motion';
 
@@ -50,6 +51,10 @@ function room(phase: RoomView['phase']): RoomView {
       { kind: 'bot', name: 'Bot 4', difficulty: 'normal' },
     ],
     yourSeat: 0,
+    solo: false,
+    analysis: false,
+    canUndo: false,
+    canRedo: false,
   };
 }
 
@@ -347,6 +352,46 @@ describe('lobby', () => {
     expect(screen.queryByRole('group', { name: 'Bot level' })).toBeNull();
     expect(screen.getAllByRole('button', { name: 'Sit here' })).toHaveLength(4);
     expect(screen.queryByRole('button', { name: 'Start game' })).toBeNull();
+  });
+});
+
+describe('solo', () => {
+  const solo = (phase: RoomView['phase']): RoomView => ({ ...room(phase), solo: true });
+
+  it('is offered on the home screen once there is a name', () => {
+    const connect = vi.spyOn(GameSocket.prototype, 'connect').mockImplementation(() => {});
+    renderWith();
+    const play = screen.getByRole('button', { name: 'Play solo' });
+    expect(play).toBeDisabled();
+    fireEvent.change(screen.getByLabelText('Your name'), { target: { value: 'Ann' } });
+    fireEvent.click(play);
+    expect(connect).toHaveBeenCalledWith(expect.objectContaining({ name: 'Ann' }));
+    connect.mockRestore();
+  });
+
+  it('lets you set each bot and the analysis, with no seats to change and no code', () => {
+    const send = vi.spyOn(GameSocket.prototype, 'send').mockReturnValue(true);
+    renderWith([welcome, { type: 'room', room: solo('lobby') }]);
+    expect(screen.getAllByRole('group', { name: 'Bot level' })).toHaveLength(3);
+    expect(screen.queryByRole('button', { name: 'Sit here' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Stand up' })).toBeNull();
+    expect(screen.queryByText('host')).toBeNull();
+    expect(screen.queryByText('ABC123')).toBeNull();
+    const analysis = screen.getByRole('button', { name: 'Analysis: off' });
+    expect(analysis).toHaveAttribute('aria-pressed', 'false');
+    fireEvent.click(analysis);
+    expect(send).toHaveBeenCalledWith({ type: 'setAnalysis', on: true });
+    fireEvent.click(screen.getByRole('button', { name: 'Start game' }));
+    expect(send).toHaveBeenCalledWith({ type: 'startGame' });
+    send.mockRestore();
+  });
+
+  it('warns that leaving ends the solo game', () => {
+    renderWith([welcome, { type: 'room', room: solo('playing') }, { type: 'view', view: dealt }]);
+    fireEvent.click(screen.getByRole('button', { name: 'Leave' }));
+    expect(screen.getByRole('dialog', { name: 'End the game?' })).toHaveTextContent(
+      'This ends your solo game.',
+    );
   });
 });
 

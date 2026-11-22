@@ -113,6 +113,23 @@ describe('over a real socket', () => {
     await c.close();
   });
 
+  it('creates a solo room with its player seated, which no one else can join', async () => {
+    const ann = await Client.connect(port);
+    ann.send({ type: 'hello', name: 'Ann' });
+    await ann.next('welcome');
+    ann.send({ type: 'createSolo' });
+    const { room } = await ann.next('room', (m) => m.room.yourSeat !== null);
+    expect(room).toMatchObject({ solo: true, phase: 'lobby', yourSeat: 0 });
+    expect(room.seats.filter((s) => s?.kind === 'bot')).toHaveLength(3);
+
+    const bob = await Client.connect(port);
+    bob.send({ type: 'hello', name: 'Bob' });
+    await bob.next('welcome');
+    bob.send({ type: 'joinRoom', code: room.code });
+    expect((await bob.next('error')).code).toBe('ROOM_NOT_FOUND');
+    await Promise.all([ann.close(), bob.close()]);
+  });
+
   it('plays a full game with one human and three bots, then survives a reconnect', async () => {
     const c = await Client.connect(port);
     c.send({ type: 'hello', name: 'Ann' });

@@ -15,20 +15,24 @@ interface Harness {
   clear(): void;
 }
 
-function harness(overrides = {}): Harness {
+function harness(overrides = {}, solo = false): Harness {
   const sent = new Map<string, ServerMessage[]>();
   const closed: Room[] = [];
-  const room = new Room('ABC123', {
-    config: testConfig({ graceMs: 60_000, roomIdleMs: 600_000, ...overrides }),
-    log: silentLogger,
-    send: (id, msg) => {
-      const list = sent.get(id) ?? [];
-      list.push(msg);
-      sent.set(id, list);
+  const room = new Room(
+    'ABC123',
+    {
+      config: testConfig({ graceMs: 60_000, roomIdleMs: 600_000, ...overrides }),
+      log: silentLogger,
+      send: (id, msg) => {
+        const list = sent.get(id) ?? [];
+        list.push(msg);
+        sent.set(id, list);
+      },
+      onClosed: (r) => closed.push(r),
+      decideBot: decideInline,
     },
-    onClosed: (r) => closed.push(r),
-    decideBot: decideInline,
-  });
+    solo,
+  );
   return {
     room,
     sent,
@@ -300,20 +304,20 @@ describe('play', () => {
   });
 });
 
-describe('hand result', () => {
-  /** Plays on for the humans until the first hand result is up. */
-  async function playToResult(h: Harness, humans: readonly string[]): Promise<void> {
-    const showing = () => h.room.game?.phase === 'hand-complete';
-    for (let i = 0; i < 2_000 && !showing(); i++) {
-      await vi.advanceTimersByTimeAsync(5);
-      for (const id of humans) {
-        if (showing()) break;
-        humanActs(h, id);
-      }
+/** Plays on for the humans until the first hand result is up. */
+async function playToResult(h: Harness, humans: readonly string[]): Promise<void> {
+  const showing = () => h.room.game?.phase === 'hand-complete';
+  for (let i = 0; i < 2_000 && !showing(); i++) {
+    await vi.advanceTimersByTimeAsync(5);
+    for (const id of humans) {
+      if (showing()) break;
+      humanActs(h, id);
     }
-    expect(showing()).toBe(true);
   }
+  expect(showing()).toBe(true);
+}
 
+describe('hand result', () => {
   it('waits for the humans to confirm, then deals at once', async () => {
     const h = harness({ handResultMs: 20_000 });
     readyRoom(h);
@@ -366,5 +370,85 @@ describe('hand result', () => {
     );
     expect(h.room.action('bob', { type: 'continue' })).toBeNull();
     expect(h.room.game?.hand?.handNumber).toBe(2);
+  });
+});
+
+describe('solo', () => {
+  /** A solo room as the manager makes it: Ann alone, at Seat 1, with three bots. */
+  function soloRoom(overrides = {}): Harness {
+    const h = harness(overrides, true);
+    h.room.join('ann', 'Ann');
+    h.room.sit('ann', 0);
+    return h;
+  }
+
+  it('is private: no one else can join it, but its player can come back', () => {
+    const h = soloRoom();
+    expect(h.room.join('bob', 'Bob')).toEqual(expect.objectContaining({ code: 'ROOM_NOT_FOUND' }));
+    expect(h.room.members.has('bob')).toBe(false);
+    h.room.disconnect('ann');
+    expect(h.room.join('ann', 'Ann')).toBeNull();
+    expect(h.last('ann', 'room')).toMatchObject({
+      room: { solo: true, analysis: false, canUndo: false, canRedo: false, yourSeat: 0 },
+    });
+  });
+
+  it('lets its player set every bot and turn the analysis on', () => {
+    const h = soloRoom();
+    for (const seat of [1, 2, 3] as const) expect(h.room.setBot('ann', seat, 'hard')).toBeNull();
+    expect(h.room.setAnalysis('ann', true)).toBeNull();
+    expect(h.last('ann', 'room')).toMatchObject({
+      room: {
+        analysis: true,
+        seats: [
+          expect.objectContaining({ kind: 'human' }),
+          expect.objectContaining({ difficulty: 'hard' }),
+          expect.objectContaining({ difficulty: 'hard' }),
+          expect.objectContaining({ difficulty: 'hard' }),
+        ],
+      },
+    });
+  });
+
+  it('offers the analysis only in solo rooms', () => {
+    const h = harness();
+    readyRoom(h);
+    expect(h.room.setAnalysis('ann', true)).toEqual(expect.objectContaining({ code: 'NOT_SOLO' }));
+  });
+
+  it('keeps the hand result up until its player is ready, with no countdown', async () => {
+    const h = soloRoom({ handResultMs: 20_000 });
+    h.room.start('ann');
+    await playToResult(h, ['ann']);
+    expect(h.last('ann', 'view')).not.toHaveProperty('resultTimer');
+    await vi.advanceTimersByTimeAsync(5 * 60_000);
+    expect(h.room.game?.phase).toBe('hand-complete');
+    expect(h.room.game?.hand?.continuePending).toEqual([0]);
+    expect(h.room.action('ann', { type: 'continue' })).toBeNull();
+    expect(h.room.game?.hand?.handNumber).toBe(2);
+  });
+
+  it('waits for its player rather than handing the seat to a bot, then closes when idle', async () => {
+    const h = soloRoom();
+    h.room.start('ann');
+    await vi.advanceTimersByTimeAsync(10);
+    const before = h.room.game;
+    h.room.disconnect('ann');
+    await vi.advanceTimersByTimeAsync(2 * 60_000);
+    expect(h.room.isBotControlled(0)).toBe(false);
+    expect(h.room.game).toBe(before);
+    expect(h.room.members.has('ann')).toBe(true);
+    await vi.advanceTimersByTimeAsync(9 * 60_000);
+    expect(h.room.isClosed).toBe(true);
+  });
+
+  it('closes when its player leaves, in the lobby or mid-game', () => {
+    const lobby = soloRoom();
+    lobby.room.leave('ann');
+    expect(lobby.room.isClosed).toBe(true);
+    const playing = soloRoom();
+    playing.room.start('ann');
+    playing.room.leave('ann');
+    expect(playing.room.isClosed).toBe(true);
   });
 });

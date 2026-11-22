@@ -50,6 +50,8 @@ export const ClientMessageSchema = z.discriminatedUnion('type', [
   /** First message on every connection. A token reclaims an existing identity. */
   z.object({ type: z.literal('hello'), name: PlayerNameSchema, token: z.string().optional() }),
   z.object({ type: z.literal('createRoom') }),
+  /** A private room for one player and three bots (see "Solo rooms" in docs/multiplayer.md). */
+  z.object({ type: z.literal('createSolo') }),
   z.object({ type: z.literal('joinRoom'), code: RoomCodeSchema }),
   z.object({ type: z.literal('leaveRoom') }),
   z.object({ type: z.literal('sit'), seat: SeatSchema }),
@@ -57,6 +59,8 @@ export const ClientMessageSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('setBot'), seat: SeatSchema, difficulty: DifficultySchema }),
   z.object({ type: z.literal('startGame') }),
   z.object({ type: z.literal('playAgain') }),
+  /** Solo only: turn the analysis (win-chance bar, move values, move labels) on or off. */
+  z.object({ type: z.literal('setAnalysis'), on: z.boolean() }),
   z.object({ type: z.literal('action'), action: ActionSchema }),
   z.object({ type: z.literal('ping') }),
 ]);
@@ -102,6 +106,13 @@ export interface RoomView {
   readonly seats: readonly [SeatView, SeatView, SeatView, SeatView];
   /** The receiving player's own seat, if seated. */
   readonly yourSeat: Seat | null;
+  /** A solo room: one player and three bots, private, with no clocks on the player. */
+  readonly solo: boolean;
+  /** Solo only: the analysis is on. */
+  readonly analysis: boolean;
+  /** Solo only: there is a decision of yours to take back, or one taken back to replay. */
+  readonly canUndo: boolean;
+  readonly canRedo: boolean;
 }
 
 export interface ResultTimer {
@@ -120,7 +131,8 @@ export type ErrorCode =
   | 'SEAT_TAKEN'
   | 'NOT_SEATED'
   | 'ROOM_NOT_READY'
-  | 'ILLEGAL_ACTION';
+  | 'ILLEGAL_ACTION'
+  | 'NOT_SOLO';
 
 export type ServerMessage =
   | {

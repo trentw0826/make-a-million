@@ -23,6 +23,10 @@ const room: RoomView = {
     { kind: 'bot', name: 'Bot 4', difficulty: 'normal' },
   ],
   yourSeat: 0,
+  solo: false,
+  analysis: false,
+  canUndo: false,
+  canRedo: false,
 };
 
 const welcome: ServerMessage = { type: 'welcome', playerId: 'p1', token: 't', name: 'Ann' };

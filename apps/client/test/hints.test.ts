@@ -23,6 +23,10 @@ const room: RoomView = {
     { kind: 'bot', name: 'Bot 4', difficulty: 'normal' },
   ],
   yourSeat: 0,
+  solo: false,
+  analysis: false,
+  canUndo: false,
+  canRedo: false,
 };
 
 // Card ids: each color holds 13 ids in rank order (1 2 3 4 $5k 7 8 9 $10k 11 $15k $30k $40k).

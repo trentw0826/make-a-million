@@ -308,6 +308,16 @@
 .home-way button {
   justify-self: start;
 }
+.home-solo {
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  padding-top: var(--space-5);
+  border-top: 1px solid var(--line);
+}
+.home-solo-text {
+  display: grid;
+  gap: var(--space-2);
+}
 .home-help {
   margin: 0;
 }
@@ -319,6 +329,9 @@
     padding: var(--space-5) 0 0;
     border-left: 0;
     border-top: 1px solid var(--line);
+  }
+  .home-solo {
+    grid-template-columns: 1fr;
   }
 }
 

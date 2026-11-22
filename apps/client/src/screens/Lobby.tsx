@@ -42,7 +42,13 @@ export function Lobby({ room }: { room: RoomView }) {
             <line className={`side-${sideOf(1)}`} x1="82" y1="50" x2="97" y2="50" />
           </svg>
           <div className="lobby-felt-text">
-            {isHost ? (
+            {room.solo ? (
+              <SoloOptions
+                analysis={room.analysis}
+                onAnalysis={(on) => send({ type: 'setAnalysis', on })}
+                onStart={() => send({ type: 'startGame' })}
+              />
+            ) : isHost ? (
               <Button
                 variant="primary"
                 disabled={!anyHuman}
@@ -67,6 +73,7 @@ export function Lobby({ room }: { room: RoomView }) {
               room.seats[seat]?.kind === 'human' && room.seats[seat]?.playerId === room.hostId
             }
             isHost={isHost}
+            solo={room.solo}
             onSit={() => send({ type: 'sit', seat })}
             onStand={() => send({ type: 'stand' })}
             onSetBot={(difficulty) => send({ type: 'setBot', seat, difficulty })}
@@ -85,6 +92,8 @@ interface ChairProps {
   isMine: boolean;
   isHostSeat: boolean;
   isHost: boolean;
+  /** A solo room: your chair is fixed, so there is no sitting or standing. */
+  solo: boolean;
   onSit: () => void;
   onStand: () => void;
   onSetBot: (difficulty: Difficulty) => void;
@@ -111,7 +120,7 @@ function Chair(p: ChairProps) {
           {/* The host's level picker already says how strong the bot is. */}
           {bot && p.isHost ? bot.name : <SeatName seat={v} />}
           {p.isMine && <Text tone="muted"> (you)</Text>}
-          {p.isHostSeat && <span className="tag">host</span>}
+          {p.isHostSeat && !p.solo && <span className="tag">host</span>}
           {v.kind === 'human' && !v.connected && <span className="tag warn">away</span>}
         </strong>
       )}
@@ -136,7 +145,7 @@ function Chair(p: ChairProps) {
           ))}
         </fieldset>
       )}
-      {(p.isMine || bot) && (
+      {(p.isMine || bot) && !p.solo && (
         <div className="chair-actions">
           {p.isMine ? (
             <Button variant="ghost" size="sm" onClick={p.onStand}>
@@ -150,6 +159,38 @@ function Chair(p: ChairProps) {
         </div>
       )}
     </fieldset>
+  );
+}
+
+/**
+ * The middle of a solo table: the analysis switch, what it gives, and Start. The bots' levels
+ * are chosen on their chairs.
+ */
+function SoloOptions(p: {
+  analysis: boolean;
+  onAnalysis: (on: boolean) => void;
+  onStart: () => void;
+}) {
+  return (
+    <>
+      <Text as="p" tone="muted" size="sm">
+        Choose each bot's level on its chair.
+      </Text>
+      <Button
+        variant="secondary"
+        aria-pressed={p.analysis}
+        onClick={() => p.onAnalysis(!p.analysis)}
+      >
+        Analysis: {p.analysis ? 'on' : 'off'}
+      </Button>
+      <Text as="p" tone="muted" size="sm">
+        Shows your side's chance of winning, what each of your choices is worth, and how each move
+        you make compares with the best.
+      </Text>
+      <Button variant="primary" onClick={p.onStart}>
+        Start game
+      </Button>
+    </>
   );
 }
 
