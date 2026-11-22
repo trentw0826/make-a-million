@@ -2078,8 +2078,10 @@ button.card-selected:hover:not([aria-disabled="true"]) {
     padding: var(--space-2) var(--space-4);
     gap: var(--space-2);
   }
+  /* Only the space above the hand tightens: the room below is what the fan's outer cards
+     drop into, and with less of it they hang out of the felt and make it scroll. */
   .hand {
-    padding: var(--space-3) 0 calc(var(--fan-drop) * 24);
+    padding-top: var(--space-3);
   }
 }
 
