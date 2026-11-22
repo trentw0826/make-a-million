@@ -5,6 +5,8 @@ A scratchpad for future fixes, features, and updates
 ## Immediate
 
 ## Later
+- [ ] Create a design system so that styles and animations are standardized across the entire project (avoid manually copying/individually deciding on fonts, animations, text size, colors, etc for each element)
+  - [ ] As part of it, clickable/interactable elements should have standardized animations (e.g. the 'pass' button during the bidding phase gives no feedback that it's clickable other than mouse hover state)
 - [ ] Create a phone-friendly UI
 - [] Strong bots: fit Expert to its reply time and offer it; load-test Hard rooms. Details in `docs/bot-roadmap.md`
 - [ ] Solo mode

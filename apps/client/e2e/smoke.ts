@@ -220,8 +220,8 @@ const cardMoves = (page: Page) =>
   );
 
 /**
- * Home → room → seat 1 → a Hard bot and two Normal bots → start. The Hard bot searches on
- * a server worker thread, so this also checks that the built server runs one.
+ * Home → room (every chair a Normal bot) → seat 1 → one bot set to Hard → start. The Hard
+ * bot searches on a server worker thread, so this also checks that the built server runs one.
  */
 async function openTable(page: Page, base: string): Promise<void> {
   await page.goto(base);
@@ -230,31 +230,31 @@ async function openTable(page: Page, base: string): Promise<void> {
   await page.screenshot({ path: path.join(OUT, '0-home.png') });
   await checkNoScroll(page, 'the home page');
   await page.getByRole('button', { name: 'Create a room' }).click();
-  await page.getByRole('button', { name: 'Sit here' }).first().click();
-  const addHard = page.getByRole('button', { name: '+ Bot · Hard' });
-  const addNormal = page.getByRole('button', { name: '+ Bot · Normal' });
-  await until(async () => (await addHard.count()) === 3, '3 empty seats');
+  const sit = page.getByRole('button', { name: 'Sit here' });
+  await until(async () => (await sit.count()) === 4, 'four chairs, each held by a bot');
+  await sit.first().click();
+  const levels = page.getByRole('group', { name: 'Bot level' });
+  await until(async () => (await levels.count()) === 3, 'three bots left to set');
   check(
-    (await page.getByRole('button', { name: '+ Bot · Expert' }).count()) === 0,
+    (await page.locator('.bot-level [aria-pressed="true"]', { hasText: 'Normal' }).count()) === 3,
+    'every bot starts at Normal',
+  );
+  check(
+    (await levels.first().getByRole('button', { name: 'Expert' }).count()) === 0,
     'the lobby offers no Expert bot yet',
   );
   check(
     (await page.locator('.chair-mine.chair-bottom').count()) === 1,
-    'your chair sits at the bottom of the lobby table',
+    'Seat 1 sits at the bottom of the lobby table',
   );
-  await addHard.first().click();
-  await until(async () => (await addHard.count()) === 2, 'a Hard bot seated');
+  await levels.first().getByRole('button', { name: 'Hard' }).click();
+  await until(
+    async () =>
+      (await page.locator('.bot-level [aria-pressed="true"]', { hasText: 'Hard' }).count()) === 1,
+    'a Hard bot seated',
+  );
   await page.screenshot({ path: path.join(OUT, '0-lobby.png') });
   await checkNoScroll(page, 'the lobby');
-  for (let left = 2; left > 0; left--) {
-    await until(async () => (await addNormal.count()) === left, `${left} empty seats`);
-    await addNormal.first().click();
-  }
-  await until(async () => (await addNormal.count()) === 0, 'a full table');
-  check(
-    (await page.locator('.chair-name', { hasText: /^Bot \d Hard$/ }).count()) === 1,
-    'a seat shows "Bot 2 Hard", its strength in quiet type',
-  );
   await page.getByRole('button', { name: 'Start game' }).click();
   await page.locator('.felt').waitFor();
 }
