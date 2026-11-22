@@ -253,6 +253,30 @@ describe('client reducer', () => {
     expect(texts(s).at(-1)).toBe('You replayed a move.');
   });
 
+  it('keeps the latest analysis for the position on the table, and the last review', () => {
+    const decision = {
+      kind: 'bid' as const,
+      best: 0,
+      options: [{ action: { type: 'pass' as const }, points: 3, winChance: 0.55 }],
+    };
+    let s = reduce(seated(), server({ type: 'view', view: dealt }));
+    s = reduce(s, server({ type: 'analysis', ply: 4, winChance: 0.55, decision }));
+    expect(s.analysis).toEqual({ winChance: 0.55, decision });
+    // A new position: its values are not known yet, but the bar stays where it was.
+    s = reduce(s, server({ type: 'view', view: dealt }));
+    expect(s.analysis).toEqual({ winChance: 0.55, decision: null });
+    s = reduce(
+      s,
+      server({ type: 'moveReview', ply: 4, label: 'mistake', lossK: 22, best: { type: 'pass' } }),
+    );
+    expect(s.review).toMatchObject({ label: 'mistake', lossK: 22 });
+    // An undo drops the review; turning the analysis off drops everything.
+    expect(reduce(s, server({ type: 'rewound', by: 'undo' })).review).toBeNull();
+    s = reduce(s, server({ type: 'room', room: { ...room, analysis: false } }));
+    expect(s.analysis).toEqual({ winChance: null, decision: null });
+    expect(s.review).toBeNull();
+  });
+
   it('turns server errors into toasts', () => {
     const s = reduce(
       initialState,

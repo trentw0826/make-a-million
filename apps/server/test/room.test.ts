@@ -1,11 +1,38 @@
-import { fallbackAction } from '@mam/bots';
-import { type Action, legalMoves } from '@mam/engine';
+import {
+  ANALYSIS_DEFAULTS,
+  type AnalysisOptions,
+  analyze,
+  fallbackAction,
+  HARD_DEFAULTS,
+} from '@mam/bots';
+import { type Action, legalMoves, Rng } from '@mam/engine';
 import type { ServerMessage } from '@mam/protocol';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { decideInline } from '../src/botPool';
+import { type AnalyzeSeat, decideInline } from '../src/botPool';
 import { testConfig } from '../src/config';
 import { silentLogger } from '../src/log';
 import { Room } from '../src/room';
+
+/** The analysis on small budgets: these tests check when it is sent, not how good it is. */
+const CHEAP: AnalysisOptions = {
+  ...ANALYSIS_DEFAULTS,
+  hard: {
+    ...HARD_DEFAULTS,
+    worlds: 4,
+    exactWorlds: 4,
+    nodes: 60_000,
+    worldNodes: 15_000,
+    bidWorlds: 16,
+    screenWorlds: 6,
+    refineWorlds: 2,
+    refineTop: 2,
+  },
+  positionWorlds: 3,
+  positionNodes: 40_000,
+  positionWorldNodes: 15_000,
+};
+const analyzeCheap: AnalyzeSeat = (obs, seed, deadline, include) =>
+  Promise.resolve(analyze(obs, Rng.fromSeed(seed), CHEAP, deadline, include ?? null));
 
 interface Harness {
   room: Room;
@@ -15,7 +42,7 @@ interface Harness {
   clear(): void;
 }
 
-function harness(overrides = {}, solo = false): Harness {
+function harness(overrides = {}, solo = false, analyzer: AnalyzeSeat = analyzeCheap): Harness {
   const sent = new Map<string, ServerMessage[]>();
   const closed: Room[] = [];
   const room = new Room(
@@ -30,6 +57,7 @@ function harness(overrides = {}, solo = false): Harness {
       },
       onClosed: (r) => closed.push(r),
       decideBot: decideInline,
+      analyze: analyzer,
     },
     solo,
   );
@@ -546,6 +574,135 @@ describe('solo', () => {
       expect(h.room.undo('ann')).toEqual(expect.objectContaining({ code: 'NOT_SOLO' }));
       expect(h.room.redo('ann')).toEqual(expect.objectContaining({ code: 'NOT_SOLO' }));
       expect(h.last('ann', 'room')).toMatchObject({ room: { canUndo: false, canRedo: false } });
+    });
+  });
+
+  describe('analysis', () => {
+    /** An analyser whose answers wait until the test releases them. */
+    function deferred() {
+      const calls: {
+        obs: Parameters<AnalyzeSeat>[0];
+        include: readonly number[] | null;
+        release(): void;
+      }[] = [];
+      const fn: AnalyzeSeat = (obs, _seed, _deadline, include) =>
+        new Promise((resolve) => {
+          calls.push({
+            obs,
+            include: include ?? null,
+            release: () =>
+              resolve(analyze(obs, Rng.fromSeed(1), CHEAP, undefined, include ?? null)),
+          });
+        });
+      return { fn, calls };
+    }
+
+    const sentOf = (h: Harness, type: ServerMessage['type']) =>
+      (h.sent.get('ann') ?? []).filter((m) => m.type === type);
+
+    async function untilAnnDecides(h: Harness): Promise<void> {
+      for (let i = 0; i < 2_000; i++) {
+        const kind = h.room.game ? legalMoves(h.room.game, 0).kind : 'none';
+        if (kind !== 'none' && kind !== 'continue') return;
+        if (kind === 'continue') humanActs(h, 'ann');
+        await vi.advanceTimersByTimeAsync(5);
+      }
+      throw new Error('Ann never had a decision');
+    }
+
+    /** A solo room with Ann seated, the analysis on or off, started. */
+    function begun(on: boolean, analyzer?: AnalyzeSeat): Harness {
+      const h = harness({}, true, analyzer);
+      h.room.join('ann', 'Ann');
+      h.room.sit('ann', 0);
+      if (on) h.room.setAnalysis('ann', true);
+      h.room.start('ann');
+      return h;
+    }
+
+    it('sends nothing while it is off', async () => {
+      const h = begun(false);
+      await untilAnnDecides(h);
+      humanActs(h, 'ann');
+      await vi.advanceTimersByTimeAsync(50);
+      expect(sentOf(h, 'analysis')).toHaveLength(0);
+      expect(sentOf(h, 'moveReview')).toHaveLength(0);
+    });
+
+    it('values each position after its view, with the options on her turn', async () => {
+      const h = begun(true);
+      await untilAnnDecides(h);
+      await vi.advanceTimersByTimeAsync(0);
+      const all = sentOf(h, 'analysis');
+      expect(all.length).toBeGreaterThan(0);
+      const last = all.at(-1);
+      if (last?.type !== 'analysis') throw new Error('no analysis');
+      expect(last.winChance).toBeGreaterThanOrEqual(0);
+      expect(last.winChance).toBeLessThanOrEqual(1);
+      expect(last.decision?.options.length).toBeGreaterThan(0);
+      // It always follows the view it belongs to.
+      const list = h.sent.get('ann') ?? [];
+      expect(list.lastIndexOf(last)).toBeGreaterThan(list.findLastIndex((m) => m.type === 'view'));
+    });
+
+    it('drops an analysis that arrives after the position has changed', async () => {
+      const d = deferred();
+      const h = begun(true, d.fn);
+      await untilAnnDecides(h);
+      const pending = d.calls.length;
+      humanActs(h, 'ann');
+      // Every analysis asked for before the move is of a position the table no longer shows.
+      for (const c of d.calls.slice(0, pending)) c.release();
+      await vi.advanceTimersByTimeAsync(0);
+      expect(sentOf(h, 'analysis')).toHaveLength(0);
+    });
+
+    it('reviews a move made before its analysis was ready', async () => {
+      const d = deferred();
+      const h = begun(true, d.fn);
+      await untilAnnDecides(h);
+      humanActs(h, 'ann');
+      await vi.advanceTimersByTimeAsync(50); // the game moves on meanwhile
+      for (const c of d.calls) c.release();
+      await vi.advanceTimersByTimeAsync(0);
+      for (const c of d.calls) c.release(); // a discard may need a second look
+      await vi.advanceTimersByTimeAsync(0);
+      const [review] = sentOf(h, 'moveReview');
+      expect(review).toMatchObject({ type: 'moveReview', ply: expect.any(Number) });
+      expect(h.room.reviews).toHaveLength(1);
+    });
+
+    it('sends no review for a move taken back first', async () => {
+      const d = deferred();
+      const h = begun(true, d.fn);
+      await untilAnnDecides(h);
+      humanActs(h, 'ann');
+      expect(h.room.undo('ann')).toBeNull();
+      for (const c of d.calls) c.release();
+      await vi.advanceTimersByTimeAsync(0);
+      expect(sentOf(h, 'moveReview')).toHaveLength(0);
+    });
+
+    it('values a position met again after an undo exactly as before', async () => {
+      const h = begun(true);
+      await untilAnnDecides(h);
+      await vi.advanceTimersByTimeAsync(0);
+      const first = sentOf(h, 'analysis').at(-1);
+      humanActs(h, 'ann');
+      await untilAnnDecides(h);
+      h.clear();
+      expect(h.room.undo('ann')).toBeNull();
+      await vi.advanceTimersByTimeAsync(0);
+      expect(sentOf(h, 'analysis').at(-1)).toEqual(first);
+    });
+
+    it('never holds up the bots, even when it never answers', async () => {
+      const h = begun(true, () => new Promise(() => {}));
+      await untilAnnDecides(h);
+      const before = h.room.game;
+      humanActs(h, 'ann');
+      await untilAnnDecides(h);
+      expect(h.room.game).not.toBe(before);
     });
   });
 });

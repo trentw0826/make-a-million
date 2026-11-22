@@ -68,6 +68,8 @@ The application reproduces the **physical tabletop experience**. A player sees e
 
 There is **no** record of cards played in earlier tricks and **no** running money total during a hand. Players who want that information must remember it, just as at the table. (Bots are held to the same information limits; see `bot-standards.md`.)
 
+**Solo analysis.** A solo game (one player and three bots; see `multiplayer.md`) can turn on a training aid: a bar showing your side's chance of winning, the value of each of your choices, and a grade for each move you make. It knows exactly what a bot in your seat would know, which is everything your seat could legitimately know, including the earlier tricks you would otherwise have to remember (see *Analysis* in `bot-standards.md`). It never reveals another player's cards. It is offered only in solo games, where there is nobody else at the table to gain an edge over.
+
 ## Other Notes
 
 - **Misdeal calls:** In the application, bidding begins as soon as the cards are dealt. A player whose Money totals \$15,000 or less is offered "Call misdeal" alongside bidding and passing on their first turn in the auction, and only then; nobody else sees the offer. A call re‑deals immediately with the same dealer.

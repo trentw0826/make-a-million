@@ -4,6 +4,7 @@ import { type ReactNode, useId } from 'react';
 import { useGame } from '../store';
 import { CARD_SPRING } from '../theme/motion';
 import { useGameKeys } from '../useHotkeys';
+import { SuggestedDiscards } from './analysis/Analysis';
 import { CardFace } from './CardFace';
 import { cardLayoutId } from './TrickArea';
 import { Button } from './ui/Button';
@@ -21,12 +22,15 @@ export function DiscardTray({
   legal,
   onReturn,
   onDone,
+  onPick,
 }: {
   ids: readonly CardId[];
   legal: Extract<LegalMoves, { kind: 'discard' }>;
   onReturn: (id: CardId) => void;
   /** Called once the discard is sent, to clear the picks. */
   onDone: () => void;
+  /** Picks these three in the hand (a suggested discard, with the analysis on). */
+  onPick?: (ids: readonly CardId[]) => void;
 }) {
   const { act } = useGame();
   const numbers = ids.filter((id) => isNumberCard(cardById(id))).length;
@@ -70,6 +74,7 @@ export function DiscardTray({
       <Button variant="primary" className="discard-go" disabled={!ok} onClick={discard}>
         Discard
       </Button>
+      {onPick && <SuggestedDiscards onPick={onPick} />}
     </section>
   );
 }

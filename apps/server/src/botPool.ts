@@ -1,6 +1,7 @@
 import { Worker } from 'node:worker_threads';
-import { createBot, type Difficulty } from '@mam/bots';
-import { type Action, type Observation, Rng } from '@mam/engine';
+import { ANALYSIS_DEFAULTS, type Analysis, analyze, createBot, type Difficulty } from '@mam/bots';
+import { type Action, type CardId, type Observation, Rng } from '@mam/engine';
+import type { WorkerJob } from './botWorker';
 import type { Logger } from './log';
 
 /**
@@ -13,6 +14,17 @@ export type DecideBot = (
   seed: number,
   deadline?: number,
 ) => Promise<Action>;
+
+/**
+ * Computes a solo analysis of one seat's observation (see `analyze` in @mam/bots). `include`
+ * adds the player's own discard to a discard decision's list.
+ */
+export type AnalyzeSeat = (
+  obs: Observation,
+  seed: number,
+  deadline?: number,
+  include?: readonly CardId[] | null,
+) => Promise<Analysis>;
 
 /** Bots that search run off the main thread so they never freeze other rooms. */
 const SEARCHING: ReadonlySet<Difficulty> = new Set(['hard', 'expert']);
@@ -32,19 +44,19 @@ export function decideInline(
   );
 }
 
-interface Job {
-  readonly id: number;
-  readonly difficulty: Difficulty;
-  readonly obs: Observation;
-  readonly seed: number;
-  readonly deadline: number | undefined;
-  resolve(action: Action): void;
+export const analyzeInline: AnalyzeSeat = (obs, seed, deadline, include) =>
+  Promise.resolve(analyze(obs, Rng.fromSeed(seed), ANALYSIS_DEFAULTS, deadline, include ?? null));
+
+type Job = WorkerJob & {
+  resolve(result: Action | Analysis): void;
   reject(err: Error): void;
-}
+};
 
 /**
- * A fixed pool of worker threads for searching bots. Jobs queue when every worker is busy.
- * Each job is stateless: the observation and a seed are all a decision depends on.
+ * A fixed pool of worker threads for searching bots and the solo analysis. Jobs queue when
+ * every worker is busy, and a bot's decision goes ahead of any analysis waiting, so the
+ * analysis never makes a bot late. Each job is stateless: the observation and a seed are
+ * all it depends on.
  */
 export class BotPool {
   private readonly idle: Worker[] = [];
@@ -65,7 +77,37 @@ export class BotPool {
       return decideInline(difficulty, obs, seed, deadline);
     }
     return new Promise<Action>((resolve, reject) => {
-      this.queue.push({ id: this.nextId++, difficulty, obs, seed, deadline, resolve, reject });
+      const job: Job = {
+        id: this.nextId++,
+        kind: 'decide',
+        difficulty,
+        obs,
+        seed,
+        ...(deadline !== undefined ? { deadline } : {}),
+        resolve: resolve as Job['resolve'],
+        reject,
+      };
+      // Ahead of every analysis job, behind other bots.
+      const firstAnalysis = this.queue.findIndex((j) => j.kind === 'analyze');
+      if (firstAnalysis < 0) this.queue.push(job);
+      else this.queue.splice(firstAnalysis, 0, job);
+      this.pump();
+    });
+  };
+
+  readonly analyze: AnalyzeSeat = (obs, seed, deadline, include) => {
+    if (this.size === 0) return analyzeInline(obs, seed, deadline, include);
+    return new Promise<Analysis>((resolve, reject) => {
+      this.queue.push({
+        id: this.nextId++,
+        kind: 'analyze',
+        obs,
+        seed,
+        ...(deadline !== undefined ? { deadline } : {}),
+        include: include ?? null,
+        resolve: resolve as Job['resolve'],
+        reject,
+      });
       this.pump();
     });
   };
@@ -87,16 +129,20 @@ export class BotPool {
     const worker = new Worker(new URL(ts ? './botWorker.ts' : './botWorker.js', import.meta.url), {
       execArgv: ts ? ['--import', 'tsx'] : [],
     });
-    worker.on('message', (msg: { id: number; action?: Action; error?: string }) => {
-      const job = this.busy.get(worker);
-      this.busy.delete(worker);
-      if (job && job.id === msg.id) {
-        if (msg.action) job.resolve(msg.action);
-        else job.reject(new Error(msg.error ?? 'bot worker failed'));
-      }
-      this.idle.push(worker);
-      this.pump();
-    });
+    worker.on(
+      'message',
+      (msg: { id: number; action?: Action; analysis?: Analysis; error?: string }) => {
+        const job = this.busy.get(worker);
+        this.busy.delete(worker);
+        if (job && job.id === msg.id) {
+          const result = msg.action ?? msg.analysis;
+          if (result) job.resolve(result);
+          else job.reject(new Error(msg.error ?? 'bot worker failed'));
+        }
+        this.idle.push(worker);
+        this.pump();
+      },
+    );
     worker.on('error', (e) => {
       this.log('error', 'bot worker crashed', { error: String(e) });
       const job = this.busy.get(worker);
@@ -112,13 +158,8 @@ export class BotPool {
       const worker = this.idle.pop() as Worker;
       const job = this.queue.shift() as Job;
       this.busy.set(worker, job);
-      worker.postMessage({
-        id: job.id,
-        difficulty: job.difficulty,
-        obs: job.obs,
-        seed: job.seed,
-        deadline: job.deadline,
-      });
+      const { resolve: _resolve, reject: _reject, ...message } = job;
+      worker.postMessage(message satisfies WorkerJob);
     }
   }
 }

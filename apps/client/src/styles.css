@@ -816,12 +816,20 @@
 }
 /* Yours, above your hand, with the contract badge beside it when you hold it. */
 .me-name {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
   justify-self: center;
   min-height: 24px;
   margin: 0;
+}
+/* Solo: the review of your last move, beside your name, so nothing shifts when it comes. */
+.me-review {
+  position: absolute;
+  left: 100%;
+  margin-left: var(--space-4);
+  white-space: nowrap;
 }
 .seat-acting > .seat-name,
 .me-turn > .me-name {

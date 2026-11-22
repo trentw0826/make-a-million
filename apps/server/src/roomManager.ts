@@ -1,5 +1,5 @@
 import type { ServerMessage } from '@mam/protocol';
-import type { DecideBot } from './botPool';
+import type { AnalyzeSeat, DecideBot } from './botPool';
 import type { ServerConfig } from './config';
 import { newRoomCode } from './ids';
 import type { Logger } from './log';
@@ -10,6 +10,7 @@ export interface RoomManagerDeps {
   readonly log: Logger;
   send(playerId: string, message: ServerMessage): void;
   readonly decideBot: DecideBot;
+  readonly analyze: AnalyzeSeat;
 }
 
 /** All live rooms, keyed by code. */
@@ -31,6 +32,7 @@ export class RoomManager {
         send: this.deps.send,
         onClosed: (closed) => this.rooms.delete(closed.code),
         decideBot: this.deps.decideBot,
+        analyze: this.deps.analyze,
       },
       options.solo === true,
     );

@@ -1,4 +1,4 @@
-import type { GameEvent, Seat, TableView } from '@mam/engine';
+import type { Action, GameEvent, Seat, TableView } from '@mam/engine';
 import { SUITS } from '@mam/engine';
 import { z } from 'zod';
 
@@ -123,6 +123,27 @@ export interface ResultTimer {
   readonly totalMs: number;
 }
 
+/** Solo analysis of one of the player's decisions (see "Solo rooms" in docs/multiplayer.md). */
+export interface AnalysisDecision {
+  readonly kind: 'play' | 'bid' | 'discard' | 'trump';
+  /**
+   * The choices valued: every legal card or trump, bid (at the minimum) or pass (and call a
+   * misdeal), or the best few discards.
+   */
+  readonly options: readonly {
+    readonly action: Action;
+    /** Expected score change for your side minus the opponents' this hand ($1000s). */
+    readonly points: number;
+    /** Your side's chance of winning the game after this choice (0–1). */
+    readonly winChance: number;
+  }[];
+  /** Index of the option worth the most points. */
+  readonly best: number;
+}
+
+/** How a move compares with the best: graded by the money it gave up. */
+export type MoveLabel = 'best' | 'good' | 'inaccuracy' | 'mistake' | 'blunder' | 'forced';
+
 export type ErrorCode =
   | 'BAD_MESSAGE'
   | 'NOT_IDENTIFIED'
@@ -160,6 +181,25 @@ export type ServerMessage =
    * the table; no events explain the jump.
    */
   | { readonly type: 'rewound'; readonly by: 'undo' | 'redo' }
+  /**
+   * Solo, with the analysis on: the value of the position in the view last sent (and of your
+   * decision there, if it is yours to make). A later view makes it stale. `ply` counts the
+   * game's actions so far.
+   */
+  | {
+      readonly type: 'analysis';
+      readonly ply: number;
+      readonly winChance: number;
+      readonly decision: AnalysisDecision | null;
+    }
+  /** Solo, with the analysis on: how the decision you made at `ply` compares with the best. */
+  | {
+      readonly type: 'moveReview';
+      readonly ply: number;
+      readonly label: MoveLabel;
+      readonly lossK: number;
+      readonly best: Action;
+    }
   | {
       readonly type: 'error';
       readonly code: ErrorCode;

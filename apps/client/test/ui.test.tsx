@@ -411,6 +411,123 @@ describe('solo', () => {
     expect(screen.queryByRole('button', { name: 'Undo your last move' })).toBeNull();
   });
 
+  describe('analysis', () => {
+    const analysed = (r: RoomView): RoomView => ({ ...r, solo: true, analysis: true });
+    const hand = dealt.hand;
+    const [c1, c2, c3] = hand as [number, number, number];
+    /** Ann to play, with two of her cards legal. */
+    const playing: TableView = {
+      ...dealt,
+      phase: 'playing',
+      turn: 0,
+      contract: { bidder: 1, amount: 150_000 },
+      trump: 'red',
+      legal: { kind: 'play', cardIds: [c1, c2] },
+    };
+    const values: ServerMessage = {
+      type: 'analysis',
+      ply: 9,
+      winChance: 0.62,
+      decision: {
+        kind: 'play',
+        best: 0,
+        options: [
+          { action: { type: 'playCard', cardId: c1 }, points: 40, winChance: 0.62 },
+          { action: { type: 'playCard', cardId: c2 }, points: 28, winChance: 0.58 },
+        ],
+      },
+    };
+
+    it('shows the win chance, and each legal card worth against the best', () => {
+      renderWith([
+        welcome,
+        { type: 'room', room: analysed(room('playing')) },
+        { type: 'view', view: playing },
+        values,
+      ]);
+      expect(screen.getByRole('meter', { name: "Your side's chance of winning" })).toHaveAttribute(
+        'value',
+        '62',
+      );
+      const cards = within(screen.getByRole('region', { name: 'Your hand' }));
+      expect(cards.getByText('Best')).toBeInTheDocument();
+      expect(cards.getByText('−12k')).toHaveAttribute(
+        'title',
+        'Worth $12k less this hand than the best choice',
+      );
+      // Only the legal cards are valued.
+      expect(cards.getAllByText(/^(Best|−\d+k)$/)).toHaveLength(2);
+      expect(c3).toBeDefined();
+    });
+
+    it('drops the values once the position moves on, until new ones come', () => {
+      renderWith([
+        welcome,
+        { type: 'room', room: analysed(room('playing')) },
+        { type: 'view', view: playing },
+        values,
+        { type: 'view', view: playing },
+      ]);
+      expect(screen.queryByText('Best')).toBeNull();
+      expect(screen.getByRole('meter')).toHaveAttribute('value', '62');
+    });
+
+    it('values Bid, Pass and the trump colors on their own controls', () => {
+      renderWith([
+        welcome,
+        { type: 'room', room: analysed(room('playing')) },
+        { type: 'view', view: dealt },
+        {
+          type: 'analysis',
+          ply: 0,
+          winChance: 0.5,
+          decision: {
+            kind: 'bid',
+            best: 1,
+            options: [
+              { action: { type: 'bid', amount: 150_000 }, points: -5, winChance: 0.45 },
+              { action: { type: 'pass' }, points: 2, winChance: 0.5 },
+            ],
+          },
+        },
+      ]);
+      expect(screen.getByRole('button', { name: /^Pass/ })).toHaveTextContent('Pass Best');
+      expect(screen.getByRole('button', { name: /^Bid/ })).toHaveTextContent('−$7k');
+    });
+
+    it('says how your last move compared, and what was best', () => {
+      renderWith([
+        welcome,
+        { type: 'room', room: analysed(room('playing')) },
+        { type: 'view', view: playing },
+        {
+          type: 'moveReview',
+          ply: 9,
+          label: 'mistake',
+          lossK: 22,
+          best: { type: 'playCard', cardId: 53 },
+        },
+      ]);
+      expect(screen.getByText('Mistake')).toBeInTheDocument();
+      expect(screen.getByText('−$22k · best was the Bull')).toBeInTheDocument();
+    });
+
+    it('is switched from the table corner, and shows nothing while off', () => {
+      const send = vi.spyOn(GameSocket.prototype, 'send').mockReturnValue(true);
+      renderWith([
+        welcome,
+        { type: 'room', room: { ...room('playing'), solo: true } },
+        { type: 'view', view: playing },
+        values,
+      ]);
+      expect(screen.queryByRole('meter')).toBeNull();
+      expect(screen.queryByText('Best')).toBeNull();
+      fireEvent.click(screen.getByRole('button', { name: 'Analysis: off' }));
+      expect(send).toHaveBeenCalledWith({ type: 'setAnalysis', on: true });
+      send.mockRestore();
+    });
+  });
+
   it('warns that leaving ends the solo game', () => {
     renderWith([welcome, { type: 'room', room: solo('playing') }, { type: 'view', view: dealt }]);
     fireEvent.click(screen.getByRole('button', { name: 'Leave' }));

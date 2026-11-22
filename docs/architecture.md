@@ -10,7 +10,7 @@ A pnpm monorepo, TypeScript throughout.
 |---|---|---|
 | `packages/engine` | `@mam/engine` | Pure rules engine. No I/O, no timers, no network. |
 | `packages/search` | `@mam/search` | Search machinery for the strong bots: a fast mutable play state, the open‑hand solver, the belief sampler, the match‑equity table. |
-| `packages/bots` | `@mam/bots` | `BotStrategy` interface and the strategies behind each difficulty. |
+| `packages/bots` | `@mam/bots` | `BotStrategy` interface and the strategies behind each difficulty; the solo analysis of one seat. |
 | `packages/sim` | `@mam/sim` | Command‑line simulator: tournaments, invariant checks, replays. |
 | `packages/protocol` | `@mam/protocol` | Message schemas shared by client and server (validated with zod). |
 | `apps/server` | `@mam/server` | Node WebSocket server: rooms, sessions, bot runner, static hosting of the client. |
@@ -73,6 +73,7 @@ Hidden information is enforced by projection, never by flags.
 - One interface: `decide(observation, rng) → action`. Strategies are registered by difficulty id and can be swapped per seat.
 - Current strategies: `easy` (random legal play, never raises), `normal` (heuristic evaluation, bidding, discarding and play) and `hard` (search: sampled deals solved with all hands open, plus simulation for contract decisions; see `bot-design.md`). Hard runs on server worker threads. An `expert` strategy (Hard with about three times the budget) exists in `@mam/bots` and the simulator but is not offered at the table yet; see `bot-roadmap.md`.
 - The think delay is applied by the server, not the strategy, so timing carries no information.
+- **Solo analysis** (`analysis/` in `@mam/bots`) values one seat's position and decisions from its Observation, with Hard's search: the side's chance of winning, and each choice in money against the best. The server runs it on the same worker threads as Hard, behind any bot decision (`BotPool.analyze`). See *Analysis* in `bot-standards.md`.
 
 ## Server
 
@@ -97,6 +98,7 @@ Hidden information is enforced by projection, never by flags.
 - Card motion uses the Motion library: the deal flies from the dealer's seat, the fanned hand re-sorts, a card you play flies from your hand to the felt (it shares a layout id with its place there), the others' cards turn over as they land, every played card touches down a little short and slides to a stop, and a taken trick is gathered face down into its side's pile, which lies beneath that side's score; the piles show only how many tricks each side holds. The rest is CSS. Under `prefers-reduced-motion` cards appear in place and nothing moves.
 - Sounds (the deal, a card played, a trick taken, your turn, the end of a hand) come from the sound manifest (`sound/manifest.ts`). Each is a placeholder synthesised with Web Audio until a recorded file is set. Audio starts on the player's first click or key, as browsers require, and the top bar's mute toggle is remembered in the browser.
 - Keyboard: `?` opens How to play, Esc closes a dialog, ←/→ step a bid, Enter takes the main action. In a solo game, Ctrl+Z (⌘Z) undoes your last move and Ctrl+Shift+Z redoes it; the Undo and Redo buttons sit in the felt's corner.
+- Solo analysis (`components/analysis/`), when it is on: a bar down the felt's left edge with your side's chance of winning (gold from the bottom, blue above), a chip on each choice ("Best" or what it gives up, such as "−$12k": above each legal card, on Bid and Pass, on each trump token, and on the suggested discards under the discard tray), and a grade for each move beside your name for a few seconds. It shows only what the server sent for the position on the table.
 
 ## Testing
 

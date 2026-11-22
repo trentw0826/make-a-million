@@ -1,5 +1,13 @@
-import type { AuctionEntry, GameEvent, HandResult, Seat, TableView, TrickPlay } from '@mam/engine';
-import type { RoomView, ServerMessage } from '@mam/protocol';
+import type {
+  Action,
+  AuctionEntry,
+  GameEvent,
+  HandResult,
+  Seat,
+  TableView,
+  TrickPlay,
+} from '@mam/engine';
+import type { AnalysisDecision, MoveLabel, RoomView, ServerMessage } from '@mam/protocol';
 import { nameOf, SUIT_NAMES, shortMoney, signedShortMoney, teamLabel } from './format';
 
 export type Connection = 'idle' | 'connecting' | 'open' | 'reconnecting';
@@ -46,7 +54,27 @@ export interface ClientState {
   readonly resultDeadline: ResultDeadline | null;
   /** Solo: the game jumped (undo or redo); the next view replaces the table and its log. */
   readonly rewound: 'undo' | 'redo' | null;
+  /**
+   * Solo, with the analysis on: the side's chance of winning (kept between positions, so the
+   * bar moves rather than blinks) and the values of your decision in the position on the
+   * table (null until they arrive, and again with every new view).
+   */
+  readonly analysis: {
+    readonly winChance: number | null;
+    readonly decision: AnalysisDecision | null;
+  };
+  /** Solo, with the analysis on: how your last move compared with the best. */
+  readonly review: Review | null;
 }
+
+export interface Review {
+  readonly id: number;
+  readonly label: MoveLabel;
+  readonly lossK: number;
+  readonly best: Action;
+}
+
+const NO_ANALYSIS = { winChance: null, decision: null } as const;
 
 export interface ResultDeadline {
   /** `Date.now()` time at which the countdown reaches zero. */
@@ -67,6 +95,8 @@ export const initialState: ClientState = {
   helpOpen: false,
   resultDeadline: null,
   rewound: null,
+  analysis: NO_ANALYSIS,
+  review: null,
 };
 
 export type Msg =
@@ -110,10 +140,13 @@ function onServer(state: ClientState, message: ServerMessage): ClientState {
       // Sent on every (re)connection. Events missed while away are gone, so the felt is
       // rebuilt from the next view rather than from stale cards.
       return { ...state, ...CLEAR_TABLE, me: { playerId: message.playerId, name: message.name } };
-    case 'room':
+    case 'room': {
+      // With the analysis off, nothing of it is kept.
+      const off = message.room.analysis ? {} : { analysis: NO_ANALYSIS, review: null };
       return message.room.phase === 'lobby'
-        ? { ...state, ...CLEAR_TABLE, room: message.room, view: null, log: [] }
-        : { ...state, room: message.room };
+        ? { ...state, ...CLEAR_TABLE, ...off, room: message.room, view: null, log: [] }
+        : { ...state, ...off, room: message.room };
+    }
     case 'left': {
       const text =
         message.reason === 'closed'
@@ -127,6 +160,8 @@ function onServer(state: ClientState, message: ServerMessage): ClientState {
         room: null,
         view: null,
         log: [],
+        analysis: NO_ANALYSIS,
+        review: null,
         toast: { id: nextId++, kind: 'info', text },
       };
     }
@@ -142,12 +177,25 @@ function onServer(state: ClientState, message: ServerMessage): ClientState {
       const resultDeadline = timer
         ? { endsAt: Date.now() + timer.remainingMs, totalMs: timer.totalMs }
         : null;
-      const next = { ...state, view: message.view, trickPlays, resultDeadline };
+      // A new position: the values of the last decision no longer apply.
+      const analysis = { winChance: state.analysis.winChance, decision: null };
+      const next = { ...state, view: message.view, trickPlays, resultDeadline, analysis };
       return state.rewound ? afterRewind(next, message.view, state.rewound) : next;
     }
     case 'rewound':
-      // No events explain the jump, so nothing on the felt carries over.
-      return { ...state, ...CLEAR_TABLE, rewound: message.by };
+      // No events explain the jump, so nothing on the felt carries over, nor the review of a
+      // move that may have been taken back.
+      return { ...state, ...CLEAR_TABLE, rewound: message.by, review: null };
+    case 'analysis':
+      return {
+        ...state,
+        analysis: { winChance: message.winChance, decision: message.decision },
+      };
+    case 'moveReview':
+      return {
+        ...state,
+        review: { id: nextId++, label: message.label, lossK: message.lossK, best: message.best },
+      };
     case 'events':
       return message.events.reduce(onEvent, state);
     case 'error':

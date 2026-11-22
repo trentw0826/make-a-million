@@ -1,6 +1,7 @@
 import type { Seat } from '@mam/engine';
 import type { Difficulty, RoomView, SeatView } from '@mam/protocol';
 import type { CSSProperties } from 'react';
+import { AnalysisToggle } from '../components/analysis/Analysis';
 import { SeatName } from '../components/SeatName';
 import { Button } from '../components/ui/Button';
 import { PRESSABLE } from '../components/ui/pressable';
@@ -43,11 +44,7 @@ export function Lobby({ room }: { room: RoomView }) {
           </svg>
           <div className="lobby-felt-text">
             {room.solo ? (
-              <SoloOptions
-                analysis={room.analysis}
-                onAnalysis={(on) => send({ type: 'setAnalysis', on })}
-                onStart={() => send({ type: 'startGame' })}
-              />
+              <SoloOptions onStart={() => send({ type: 'startGame' })} />
             ) : isHost ? (
               <Button
                 variant="primary"
@@ -164,25 +161,12 @@ function Chair(p: ChairProps) {
 
 /**
  * The middle of a solo table: the analysis switch, what it gives, and Start. The bots' levels
- * are chosen on their chairs.
+ * are chosen on their chairs, with the same pickers as any table.
  */
-function SoloOptions(p: {
-  analysis: boolean;
-  onAnalysis: (on: boolean) => void;
-  onStart: () => void;
-}) {
+function SoloOptions(p: { onStart: () => void }) {
   return (
     <>
-      <Text as="p" tone="muted" size="sm">
-        Choose each bot's level on its chair.
-      </Text>
-      <Button
-        variant="secondary"
-        aria-pressed={p.analysis}
-        onClick={() => p.onAnalysis(!p.analysis)}
-      >
-        Analysis: {p.analysis ? 'on' : 'off'}
-      </Button>
+      <AnalysisToggle />
       <Text as="p" tone="muted" size="sm">
         Shows your side's chance of winning, what each of your choices is worth, and how each move
         you make compares with the best.

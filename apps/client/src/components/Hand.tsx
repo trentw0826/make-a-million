@@ -29,6 +29,8 @@ interface Props {
    * focus, or null.
    */
   readonly onHoverColor?: ((suit: Suit | null) => void) | undefined;
+  /** Something to show above a card, such as the analysis's value of playing it. */
+  readonly annotation?: ((id: CardId) => ReactNode) | undefined;
 }
 
 /** Offsets from the hand to each dealer's seat, roughly, for the deal to start from. */
@@ -80,7 +82,7 @@ function Present({ children }: { children: ReactNode }) {
  * on the felt. Hovering or focusing a card you can click raises it and parts the cards around
  * it; a card you can't click stays still.
  */
-export function Hand({ ids, trump, dealer, cardProps, onHoverColor }: Props) {
+export function Hand({ ids, trump, dealer, cardProps, onHoverColor, annotation }: Props) {
   const order = useMemo(() => displayOrder(ids, trump), [ids, trump]);
   // The first render is the deal; cards that mount after it are the widow. A card that left
   // and comes back (a discard put back) flies home on its own, so it isn't dealt in again.
@@ -184,6 +186,7 @@ export function Hand({ ids, trump, dealer, cardProps, onHoverColor }: Props) {
                       <CardBackArt />
                     </div>
                   </motion.div>
+                  {annotation?.(id)}
                 </div>
               </Present>
             </motion.div>

@@ -94,6 +94,18 @@
   --warn-bg: #ffe0b2;
   --warn-ink: #7a3e00;
 
+  /* Colour: analysis (solo) ------------------------------------------- */
+  /* How a move compares with the best, from best to worst, each with the ink that reads on
+     it; and a forced move, which had no alternative. */
+  --label-best: #2e7d32;
+  --label-good: #5b8c2a;
+  --label-inaccuracy: #e9c46a;
+  --label-mistake: #e07b24;
+  --label-blunder: #c62828;
+  --label-forced: #6b6b6b;
+  --on-label: #fff;
+  --on-label-light: #1b1b1b;
+
   /* Opacity -------------------------------------------------------------- */
   /* A control that can't be used right now. */
   --opacity-disabled: 0.5;
@@ -221,6 +233,8 @@
   --topbar-h: 48px;
   /* A square icon button (the top bar's and the table corner's, and the bid steppers). */
   --icon-btn-size: 36px;
+  /* The solo win-chance bar down the felt's left edge. */
+  --eval-bar-w: 10px;
   /* A modal's padding; its sticky footer reaches back out to the modal's edges. */
   --modal-pad-y: var(--space-7);
   --modal-pad-x: var(--space-8);

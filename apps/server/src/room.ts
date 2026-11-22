@@ -1,4 +1,4 @@
-import { fallbackAction } from '@mam/bots';
+import { type Analysis, fallbackAction, type MoveReview, reviewMove } from '@mam/bots';
 import {
   type Action,
   applyAction,
@@ -22,7 +22,7 @@ import type {
   SeatView,
   ServerMessage,
 } from '@mam/protocol';
-import type { DecideBot } from './botPool';
+import type { AnalyzeSeat, DecideBot } from './botPool';
 import type { ServerConfig } from './config';
 import { newGameSeed } from './ids';
 import type { Logger } from './log';
@@ -39,6 +39,8 @@ export interface RoomDeps {
   onClosed(room: Room): void;
   /** Computes a bot decision (inline or on a worker thread). */
   decideBot: DecideBot;
+  /** Computes a solo analysis of one seat's observation. */
+  analyze: AnalyzeSeat;
 }
 
 interface Member {
@@ -101,6 +103,12 @@ export class Room {
   private redoLine: RecordedAction[] = [];
   /** What the players were last told about undo and redo, to re-send the room on a change. */
   private undoFlags = '';
+  /** Solo analysis of the player's position, by ply (the record's length), this game only. */
+  private analyses = new Map<number, { game: GameState; result: Promise<Analysis | null> }>();
+  /** Plies whose move review is still to be sent; their analyses are kept until it is. */
+  private reviewing = new Set<number>();
+  /** Every move review sent this game, for a later game review. */
+  readonly reviews: (MoveReview & { readonly ply: number; readonly hand: number })[] = [];
 
   constructor(
     readonly code: string,
@@ -310,6 +318,7 @@ export class Room {
     if (!this.solo) return err('NOT_SOLO', 'analysis is only offered in solo games');
     this.analysis = on;
     this.broadcastRoom();
+    if (on) this.sendAnalysis();
     return null;
   }
 
@@ -328,6 +337,9 @@ export class Room {
     this.game = createGame({ seed, ruleset: this.deps.config.ruleset, dealer });
     this.record = { seed, dealer, actions: [] };
     this.redoLine = [];
+    this.analyses.clear();
+    this.reviewing.clear();
+    this.reviews.length = 0;
     this.phase = 'playing';
     this.deps.log('info', 'game started', { room: this.code, seed, game: this.gamesStarted });
     this.broadcastRoom();
@@ -346,6 +358,7 @@ export class Room {
     if (seat === null) return err('NOT_SEATED', 'you are not seated');
     if (this.phase !== 'playing' || !this.game)
       return err('GAME_IN_PROGRESS', 'no game is in progress');
+    const before = this.game;
     const result = applyAction(this.game, seat, action);
     if (!result.ok) {
       // Re-send the view so a confused client gets back in step.
@@ -353,7 +366,12 @@ export class Room {
       return { code: 'ILLEGAL_ACTION', message: result.error.message };
     }
     this.game = result.state;
-    this.record?.actions.push({ seat, action });
+    const ply = this.record?.actions.length ?? 0;
+    const recorded = { seat, action };
+    this.record?.actions.push(recorded);
+    if (this.solo && this.analysis && action.type !== 'continue') {
+      this.review(playerId, ply, before, recorded);
+    }
     // A new decision of yours starts a new line: the one taken back is gone.
     if (action.type !== 'continue') this.redoLine = [];
     this.afterGameChange(result.events);
@@ -392,6 +410,10 @@ export class Room {
     if (!record || at < 0) return err('NOTHING_TO_UNDO', 'there is no move of yours to take back');
     this.redoLine = [...record.actions.slice(at), ...this.redoLine];
     record.actions.length = at;
+    // Reviews of the moves taken back go too (redo replays the moves, not their reviews).
+    const kept = this.reviews.filter((r) => r.ply < at);
+    this.reviews.length = 0;
+    this.reviews.push(...kept);
     this.rebuild('undo');
     return null;
   }
@@ -436,6 +458,96 @@ export class Room {
     this.afterGameChange([]);
     // Undo and redo always change what can be undone, so the room is re-sent regardless.
     this.broadcastRoom();
+  }
+
+  // ---------------------------------------------------------------------------
+  // Solo analysis
+
+  /**
+   * The analysis of the player's position at `ply` (once per position), computed from their
+   * seat's observation alone, on its own random source. Null when it fails.
+   */
+  private analysisAt(ply: number, game: GameState, seat: Seat): Promise<Analysis | null> {
+    const cached = this.analyses.get(ply);
+    if (cached && cached.game === game) return cached.result;
+    const seed = this.analysisSeed(ply);
+    const result = this.deps
+      .analyze(observe(game, seat), seed, Date.now() + this.deps.config.analysisMs)
+      .catch((e: unknown) => {
+        this.deps.log('error', 'analysis failed', { room: this.code, error: String(e) });
+        return null;
+      });
+    this.analyses.set(ply, { game, result });
+    return result;
+  }
+
+  /**
+   * The analysis's own random source for the position at `ply`: apart from the bots', so
+   * turning it on never changes what they play, and fixed by the position, so a position met
+   * again (after an undo) is valued exactly as before.
+   */
+  private analysisSeed(ply: number, purpose = 'position'): number {
+    return Rng.fromSeed(
+      `${this.record?.seed ?? this.code}:analysis:${ply}:${purpose}`,
+    ).nextUint32();
+  }
+
+  /** Sends the analysis of the position just sent to the player, once it is ready. */
+  private sendAnalysis(): void {
+    const game = this.game;
+    const member = [...this.members.values()][0];
+    const seat = member ? this.seatOf(member.id) : null;
+    if (!this.solo || !this.analysis || !game || !member?.connected || seat === null) return;
+    const ply = this.record?.actions.length ?? 0;
+    // Positions gone by are dropped, except those whose review is still to come.
+    for (const key of this.analyses.keys()) {
+      if (key !== ply && !this.reviewing.has(key)) this.analyses.delete(key);
+    }
+    void this.analysisAt(ply, game, seat).then((a) => {
+      // Sent only while the table still shows that position: a later view makes it stale.
+      if (!a || this.game !== game || this.closed || !this.analysis) return;
+      this.deps.send(member.id, {
+        type: 'analysis',
+        ply,
+        winChance: a.winChance,
+        decision: a.decision,
+      });
+    });
+  }
+
+  /**
+   * Grades the decision the player made at `ply` against its analysis (computed now, if the
+   * player was quicker than the analysis), and sends the review even if the game has moved
+   * on, unless the move has been taken back.
+   */
+  private review(playerId: string, ply: number, before: GameState, recorded: RecordedAction): void {
+    const { seat, action } = recorded;
+    const hand = before.hand?.handNumber ?? 0;
+    this.reviewing.add(ply);
+    const stillPlayed = () =>
+      !this.closed && this.analysis && this.record?.actions[ply] === recorded;
+    void this.analysisAt(ply, before, seat)
+      .then(async (a) => {
+        if (!a?.decision || !stillPlayed()) return null;
+        const graded = reviewMove(a.decision, action);
+        if (graded || action.type !== 'discard') return graded;
+        // A discard the list left out: value it alongside the listed ones.
+        const again = await this.deps
+          .analyze(
+            observe(before, seat),
+            this.analysisSeed(ply, 'include'),
+            Date.now() + this.deps.config.analysisMs,
+            action.cardIds,
+          )
+          .catch(() => null);
+        return again?.decision ? reviewMove(again.decision, action) : null;
+      })
+      .then((graded) => {
+        this.reviewing.delete(ply);
+        if (!graded || !stillPlayed()) return;
+        this.reviews.push({ ...graded, ply, hand });
+        this.deps.send(playerId, { type: 'moveReview', ply, ...graded });
+      });
   }
 
   private afterGameChange(events: readonly GameEvent[]): void {
@@ -775,5 +887,7 @@ export class Room {
       playerId,
       timer ? { type: 'view', view, resultTimer: timer } : { type: 'view', view },
     );
+    // Every view the solo player is sent is followed by its analysis, when that is on.
+    if (this.solo) this.sendAnalysis();
   }
 }

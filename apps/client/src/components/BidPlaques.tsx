@@ -7,6 +7,7 @@ import { type Spot, spotOf } from '../spots';
 import { useGame } from '../store';
 import { POP_IN, POP_SPRING, SETTLE_SPRING } from '../theme/motion';
 import { useGameKeys } from '../useHotkeys';
+import { MoveValue } from './analysis/Analysis';
 import { Button } from './ui/Button';
 import { PRESSABLE } from './ui/pressable';
 
@@ -128,6 +129,8 @@ function YourBid({
       >
         <span className="plaque-verb">Bid</span>{' '}
         <span className="plaque-amount">{shortMoney(amount)}</span>
+        {/* The analysis values bidding the minimum only; a higher bid commits more. */}
+        {amount === legal.minBid && <MoveValue action={{ type: 'bid', amount }} />}
       </button>
       <Button
         shape="round"
@@ -146,6 +149,7 @@ function YourBid({
             onClick={() => act({ type: 'callMisdeal' })}
           >
             Call misdeal
+            <MoveValue action={{ type: 'callMisdeal' }} />
           </Button>
         )}
         <Button
@@ -157,6 +161,7 @@ function YourBid({
           onClick={() => act({ type: 'pass' })}
         >
           Pass
+          <MoveValue action={{ type: 'pass' }} />
         </Button>
       </div>
     </fieldset>

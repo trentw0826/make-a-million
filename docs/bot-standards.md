@@ -62,6 +62,14 @@ A bot must never have access to:
 - **Purpose:** To measure how much a bot loses by not seeing the cards, the simulator may run an *oracle*: a strategy that sees the full game state.
 - **Never in play:** An oracle breaks every information rule above. It lives only in the simulator package, is never registered as a difficulty, and the server and the bot package cannot import it.
 
+## Analysis
+
+- **Purpose:** In a solo game the player may turn on an analysis of their own seat: their side's chance of winning, the value of each of their choices, and a grade for each move they make (see `game-rules.md`, Table Visibility). It lives in `@mam/bots` (`analysis/`) and reuses Hard's search.
+- **Same limits as a bot:** Its only input is the player's own `Observation`, so it knows exactly what a bot in that seat would know, and nothing more. Its values come from sampled deals consistent with that observation, never from the real deal, so they cannot reveal another player's cards. A leak test checks this: hiding the other hands differently leaves the analysis unchanged.
+- **Never plays:** No bot uses it, and it has no effect on what any bot does. It runs on its own random source, so turning it on never changes the bots' choices. On the server a bot decision goes ahead of any analysis still waiting for a worker thread. An analysis already running holds its worker until it finishes (well under its deadline), so with a single worker a Hard bot can occasionally start late; the server's `bot answered after its deadline` warning would show it.
+- **Budgets and timing:** Like the bots, it is limited by counts (deals, search nodes). A deadline (`analysisMs`, 2 s) is only a safety net. It is shown only to the player it analyses, who already knows their own hand, so the time it takes reveals nothing.
+- **Units:** Each choice is valued as the hand's expected score change for the player's side minus the opponents' (in dollars); the bar shows match equity. A move is graded by the money it gives up against the best choice: Best (under $1k), Good (under $5k), Inaccuracy (under $15k), Mistake (under $40k), otherwise Blunder; a lone legal move is Forced. Only the minimum bid is valued, so any bid is graded as bidding the minimum, and a misdeal is valued as an even fresh deal.
+
 ## Seat Substitution
 
 - **Takeover:** When a bot takes over the seat of a disconnected human, it receives that seat's observation: the seat's hand, any widow knowledge the seat has, and the full public history. It receives nothing else.

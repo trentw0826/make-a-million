@@ -12,6 +12,13 @@ import {
 import type { RoomView } from '@mam/protocol';
 import { LayoutGroup } from 'motion/react';
 import { useEffect, useState } from 'react';
+import {
+  AnalysisToggle,
+  EvalBar,
+  MoveReview,
+  MoveValue,
+  useDecision,
+} from '../components/analysis/Analysis';
 import { ContractBar } from '../components/ContractBar';
 import { DiscardTray } from '../components/DiscardTray';
 import { GameOver } from '../components/GameOver';
@@ -121,6 +128,9 @@ export function Table({ room, view }: { room: RoomView; view: TableView }) {
   };
 
   const myChip = seatChip(view, me);
+  // The analysis is still working on your decision.
+  const decision = useDecision();
+  const thinking = room.solo && room.analysis && myTurn && decision === null;
   const dealKey = `${view.handNumber}-${view.redeals}`;
 
   // Each side's taken tricks, in one pile beneath its score. The view counts a trick as soon
@@ -148,6 +158,7 @@ export function Table({ room, view }: { room: RoomView; view: TableView }) {
         {/* The hand's status in words, for screen readers; on screen it is shown by the
             bid on the felt, the bidder's badge (with trump) and each side's pile. */}
         <ContractBar view={view} room={room} />
+        <EvalBar thinking={thinking} />
         {/* One group per deal: a card you play flies from your hand to the felt, and on to
             the winners' pile, and ids never carry over from an earlier deal. */}
         <LayoutGroup id={dealKey}>
@@ -180,6 +191,7 @@ export function Table({ room, view }: { room: RoomView; view: TableView }) {
               legal={view.legal}
               onReturn={onCard}
               onDone={() => setSelected(new Set())}
+              onPick={(ids) => setSelected(new Set(ids))}
             />
           )}
 
@@ -195,6 +207,9 @@ export function Table({ room, view }: { room: RoomView; view: TableView }) {
               You
               {hasPassed(view, me) && <span className="visually-hidden">, passed</span>}
               <SeatBadge chip={myChip} />
+              <span className="me-review">
+                <MoveReview />
+              </span>
             </div>
             <TurnNotice view={view} room={room} />
             <Hand
@@ -203,6 +218,11 @@ export function Table({ room, view }: { room: RoomView; view: TableView }) {
               trump={view.trump}
               dealer={spotOf(view.dealer, me)}
               onHoverColor={naming ? setTrumpPreview : undefined}
+              annotation={(id) =>
+                legalPlays?.has(id) ? (
+                  <MoveValue onCard action={{ type: 'playCard', cardId: id }} />
+                ) : null
+              }
               cardProps={(id) => {
                 if (naming) {
                   // The Tiger, Bull and Bear have no color to name; they fade back.
@@ -233,6 +253,7 @@ export function Table({ room, view }: { room: RoomView; view: TableView }) {
         </LayoutGroup>
         <div className="table-corner">
           <TableDrawer view={view} room={room} log={state.log} />
+          {room.solo && <AnalysisToggle compact />}
           {room.solo && <UndoControls room={room} />}
           <SoundToggle />
           <HelpButton icon />
