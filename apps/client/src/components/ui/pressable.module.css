@@ -1,7 +1,7 @@
 /*
  * How anything clickable answers a press: it gives a little (--press-scale) while held. Button
- * uses it, and so does every game piece that is a button (a card, a trump token, your bid
- * plaque, the guide's tabs, the bot level switch), each of which keeps its own look and hover.
+ * uses it, and so does every game piece that is a button (a card, a trump token, the
+ * guide's tabs, the bot level switch), each of which keeps its own look and hover.
  *
  * A piece that sets its own `transition` must list var(--press-transition) in it, or its
  * transition replaces this one and the press snaps instead of easing.

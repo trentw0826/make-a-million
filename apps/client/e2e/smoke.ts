@@ -96,7 +96,7 @@ function noteActFailure(e: unknown): void {
  * Why a hand stalled: saves a screenshot and a JSON snapshot of the table to e2e/out/
  * (stall.png, stall.json) and returns a summary for the error. The snapshot names whose
  * turn the table shows, the hand's status in words, every button on the felt and whether it
- * is enabled and visible, the auction plaques, and the actions that kept failing.
+ * is enabled and visible, the auction chips, and the actions that kept failing.
  */
 async function describeStall(page: Page): Promise<string> {
   const shot = path.join(OUT, 'stall.png');
@@ -108,8 +108,8 @@ async function describeStall(page: Page): Promise<string> {
       status: document.querySelector('.contract-bar')?.textContent?.trim() ?? null,
       said: [...document.querySelectorAll('.felt output')].map((el) => el.textContent?.trim()),
       actionBar: document.querySelector('.action-bar')?.className ?? null,
-      plaques: [...document.querySelectorAll('.plaque-spot')].map(
-        (el) => `${el.className.replace('plaque-spot ', '')}: ${el.textContent?.trim()}`,
+      bids: [...document.querySelectorAll('.bid-spot')].map(
+        (el) => `${el.className.replace('bid-spot ', '')}: ${el.textContent?.trim()}`,
       ),
       passed: [...document.querySelectorAll('.seat-passed .seat-name')].map((el) =>
         el.textContent?.trim(),
@@ -297,13 +297,13 @@ async function act(page: Page, shoot: Shoot): Promise<boolean> {
     const pass = page.getByRole('button', { name: 'Pass', exact: true });
     if (await pass.isVisible()) {
       // One look at the felt, before the screenshot gives the table time to move on: Pass
-      // and the Bid button sit in your plaque at the bottom spot, and nothing else is shown.
+      // and the Bid button sit in your bid controls at the bottom spot, and nothing else is shown.
       const felt = await page.evaluate(() => ({
         yours:
           document
-            .querySelector('.plaque-bottom .your-bid .plaque-pass')
+            .querySelector('.bid-spot-bottom .your-bid .bid-pass')
             ?.closest('.your-bid')
-            ?.querySelector('.plaque-yours') != null,
+            ?.querySelector('.bid-submit') != null,
         bars: document.querySelectorAll('.action-bar').length,
         chips: document.querySelectorAll('.seat-chip').length,
       }));
@@ -311,14 +311,16 @@ async function act(page: Page, shoot: Shoot): Promise<boolean> {
       check(
         ok,
         `the auction is bid on the felt, with no badges on the seats and no action bar${
-          ok ? '' : ` (your plaque shown: ${felt.yours}, bars: ${felt.bars}, badges: ${felt.chips})`
+          ok
+            ? ''
+            : ` (bid controls shown: ${felt.yours}, bars: ${felt.bars}, badges: ${felt.chips})`
         }`,
       );
       await shoot('3-bidding');
       if (!pressChecked) {
         // Everything clickable gives a little under a press: an ordinary button and a game
         // piece alike.
-        const plaque = await pressScale(page, page.locator('.plaque-yours'), undefined, () =>
+        const bid = await pressScale(page, page.locator('.bid-submit'), undefined, () =>
           shoot('3b-bid-pressed'),
         );
         const help = await pressScale(
@@ -326,8 +328,8 @@ async function act(page: Page, shoot: Shoot): Promise<boolean> {
           page.getByRole('button', { name: 'How to play', exact: true }),
         );
         check(
-          plaque === '0.97' && help === '0.97',
-          `pressing your bid plaque or a button makes it give (plaque: ${plaque}, button: ${help})`,
+          bid === '0.97' && help === '0.97',
+          `pressing Bid or another button makes it give (bid: ${bid}, button: ${help})`,
         );
         pressChecked = true;
       }

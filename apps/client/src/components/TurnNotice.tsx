@@ -5,7 +5,7 @@ import { playHint, waitingText } from '../hints';
 /**
  * Whose turn it is, and what is asked, in words for screen readers. On screen the table
  * shows it: the marker on the felt's rim and the ring round the name, and every decision is
- * made on the felt (the bid plaques, the discard tray, the trump picker) or in the hand.
+ * made on the felt (the bid controls, the discard tray, the trump picker) or in the hand.
  */
 export function TurnNotice({ view, room }: { view: TableView; room: RoomView }) {
   const legal = view.legal;

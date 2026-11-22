@@ -23,7 +23,7 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 /**
  * Every ordinary button in the client. The look of each variant, and how every button answers
  * the pointer, a press and the keyboard, is decided once, here. Game pieces that are buttons
- * (cards, the trump tokens, your bid plaque) keep their own look.
+ * (cards, the trump tokens) keep their own look.
  */
 export function Button({
   variant = 'secondary',
