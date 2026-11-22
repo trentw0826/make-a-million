@@ -194,7 +194,7 @@ input {
 }
 /* The name on the home table. */
 .wordmark-large {
-  font-size: var(--text-display);
+  font-size: var(--text-3xl);
 }
 .topbar-room {
   display: flex;

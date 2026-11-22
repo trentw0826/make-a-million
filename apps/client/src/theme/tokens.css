@@ -107,9 +107,7 @@
   --text-lg: 1.15rem; /* 17.25px */
   --text-xl: 1.3rem; /* 19.5px */
   --text-2xl: 1.5rem; /* 22.5px */
-  --text-3xl: 2rem; /* 30px */
-  /* The wordmark on the home table, and nothing else. */
-  --text-display: 2.3rem; /* 34.5px */
+  --text-3xl: 2rem; /* 30px: the page title (the wordmark on the home table) */
 
   --weight-regular: 400;
   --weight-semibold: 600;
