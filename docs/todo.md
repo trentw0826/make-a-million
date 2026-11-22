@@ -6,6 +6,9 @@ A scratchpad for future fixes, features, and updates
 
 ## Later
 - [ ] Create a design system so that styles and animations are standardized across the entire project (avoid manually copying/individually deciding on fonts, animations, text size, colors, etc for each element)
+  - [x] Token scales for type, spacing, colour, radii, stacking, opacity and motion, enforced by Stylelint and `designTokens.test.ts`
+  - [ ] Shared components (`Button`, `Panel`, `Text`) so screens compose rather than restyle; move styles into CSS Modules
+  - [ ] A dev-only style guide page of every token and component, screenshotted by `pnpm e2e`
   - [ ] As part of it, clickable/interactable elements should have standardized animations (e.g. the 'pass' button during the bidding phase gives no feedback that it's clickable other than mouse hover state)
 - [ ] Create a phone-friendly UI
 - [] Strong bots: fit Expert to its reply time and offer it; load-test Hard rooms. Details in `docs/bot-roadmap.md`

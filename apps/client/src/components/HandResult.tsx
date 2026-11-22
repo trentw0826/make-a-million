@@ -13,7 +13,14 @@ import { type CSSProperties, useEffect, useId, useState } from 'react';
 import { money, nameOf, SUIT_NAMES, shortMoney } from '../format';
 import type { ResultDeadline } from '../state';
 import { useGame } from '../store';
-import { EASE_OUT } from '../theme/motion';
+import {
+  AFTER_MODAL_MS,
+  DUR_BASE_MS,
+  DUR_TICK_MS,
+  EASE_OUT,
+  POP_IN,
+  POP_SPRING,
+} from '../theme/motion';
 import { BidTrack, bidCaption } from './BidTrack';
 import { CardFace } from './CardFace';
 import { CountUp } from './CountUp';
@@ -64,9 +71,9 @@ export function HandResult({
           {/* Green when the hand went your way, red when it didn't. */}
           <motion.span
             className={`result-status ${good ? 'good' : 'bad'}`}
-            initial={still ? false : { scale: 0.85, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ type: 'spring', stiffness: 420, damping: 18, delay: 0.12 }}
+            initial={still ? false : POP_IN.initial}
+            animate={POP_IN.animate}
+            transition={{ ...POP_SPRING, delay: AFTER_MODAL_MS / 1000 }}
           >
             {good && !still && <Burst />}
             <span className="visually-hidden">: </span>
@@ -103,7 +110,7 @@ export function HandResult({
             initial={still ? false : { height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
             exit={still ? { opacity: 0 } : { height: 0, opacity: 0 }}
-            transition={{ duration: 0.25, ease: EASE_OUT }}
+            transition={{ duration: DUR_BASE_MS / 1000, ease: EASE_OUT }}
           >
             <ol className="result-tricks">
               {result.tricks.map((t, i) => (
@@ -284,7 +291,7 @@ function useNow(running: boolean): number {
   useEffect(() => {
     if (!running) return;
     setNow(Date.now());
-    const id = window.setInterval(() => setNow(Date.now()), 100);
+    const id = window.setInterval(() => setNow(Date.now()), DUR_TICK_MS);
     return () => window.clearInterval(id);
   }, [running]);
   return now;

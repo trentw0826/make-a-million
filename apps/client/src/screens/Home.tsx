@@ -4,7 +4,7 @@ import { CardFace } from '../components/CardFace';
 import { Wordmark } from '../components/Wordmark';
 import { storage } from '../storage';
 import { codeFromHash, useGame } from '../store';
-import { DEAL_MS, EASE_OUT } from '../theme/motion';
+import { DEAL_MS, EASE_OUT, SHOWCASE_DELAY_MS, SHOWCASE_STAGGER_MS } from '../theme/motion';
 
 /** The cards fanned over the felt: a $40k at each end, and the Tiger, Bull and Bear. */
 const SHOWCASE = [12, 52, 53, 54, 51] as const;
@@ -44,7 +44,11 @@ export function Home() {
                 className="home-fan-flip"
                 initial={{ opacity: 0, y: 60, rotateY: 180 }}
                 animate={{ opacity: 1, y: 0, rotateY: 0 }}
-                transition={{ duration: DEAL_MS / 1000, delay: 0.1 + i * 0.09, ease: EASE_OUT }}
+                transition={{
+                  duration: DEAL_MS / 1000,
+                  delay: (SHOWCASE_DELAY_MS + i * SHOWCASE_STAGGER_MS) / 1000,
+                  ease: EASE_OUT,
+                }}
               >
                 <CardFace id={id} />
               </motion.div>

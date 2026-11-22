@@ -3,12 +3,12 @@ import type { RoomView } from '@mam/protocol';
 import { AnimatePresence, motion } from 'motion/react';
 import { useEffect, useId, useRef, useState } from 'react';
 import type { LogEntry } from '../state';
-import { EASE_OUT } from '../theme/motion';
+import { DUR_BASE_MS, EASE_OUT } from '../theme/motion';
 import { Icon } from './Icon';
 import { isModalOpen } from './Modal';
 import { ScoreSheet } from './ScoreSheet';
 
-const DRAWER_S = 0.22;
+const DRAWER_S = DUR_BASE_MS / 1000;
 
 interface Props {
   readonly view: TableView;

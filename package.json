@@ -14,8 +14,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "pnpm -r typecheck",
-    "lint": "biome check .",
-    "lint:fix": "biome check --write .",
+    "lint": "biome check . && stylelint \"apps/client/src/**/*.css\"",
+    "lint:fix": "biome check --write . && stylelint --fix \"apps/client/src/**/*.css\"",
     "format": "biome format --write .",
     "sim": "pnpm --filter @mam/sim start",
     "e2e": "pnpm build && tsx apps/client/e2e/smoke.ts",
@@ -24,6 +24,7 @@
   "devDependencies": {
     "@biomejs/biome": "^2.6.7",
     "@types/node": "^26.6.6",
+    "stylelint": "17.13.0",
     "tsx": "^4.23.15",
     "typescript": "~5.9.0",
     "vitest": "^5.1.0"
