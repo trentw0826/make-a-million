@@ -49,7 +49,7 @@ export const DEFAULT_CONFIG: ServerConfig = {
   botDeadlineMarginMs: 200,
   trickPauseMs: 1_500,
   botContinueDelayMs: 4_000,
-  handResultMs: 60_000,
+  handResultMs: 25_000,
   takeoverDifficulty: 'normal',
   botWorkers: Number(env.BOT_WORKERS ?? Math.max(1, Math.min(4, availableParallelism() - 1))),
   ruleset: DEFAULT_RULESET,

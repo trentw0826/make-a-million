@@ -272,7 +272,7 @@ describe('score sheet', () => {
 });
 
 describe('score trackers', () => {
-  it("shows each side's total in its own tracker, with its pile beside it", () => {
+  it("shows each side's total in its own tracker, with its pile beneath it", () => {
     const view: TableView = { ...dealt, team: 1, scores: [-40_000, 250_000] };
     render(
       <>

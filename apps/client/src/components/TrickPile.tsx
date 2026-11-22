@@ -29,7 +29,7 @@ function lie(t: number, k: number): { x: number; y: number; rotate: number } {
 const CARDS_PER_TRICK = 4;
 
 /**
- * A side's taken tricks, face down in a loose pile beside its score. Only how many tricks
+ * A side's taken tricks, face down in a loose pile beneath its score. Only how many tricks
  * there are shows, never what is in them (see "Table Visibility" in game-rules.md). A trick
  * being gathered is drawn here already: its cards share their layout ids with their places
  * on the felt, so Motion flies them in, turning them over on the way.

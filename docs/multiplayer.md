@@ -39,7 +39,7 @@ How rooms, seats and connections behave. The aim is a small, predictable set of 
 ## Timers
 
 - There are **no turn timers**. A connected player may take as long as they like over a decision.
-- **Hand result: 60 seconds.** When a hand is scored, every seat reads the result and presses Ready; bots confirm at once. The next hand is dealt as soon as all four seats are ready, or when the 60 seconds run out, whichever comes first. The dialog shows who is ready and a ring counting down the time left.
+- **Hand result: 25 seconds.** When a hand is scored, every seat reads the result and presses Ready; bots confirm at once. The next hand is dealt as soon as all four seats are ready, or when the 25 seconds run out, whichever comes first. The dialog shows who is ready and a ring counting down the time left.
 - **After a trick: 1.5 seconds.** When a trick is taken, the table rests before the bots' next turn begins, so everyone can see the finished trick before it is gathered to the winners' pile. Each bot's usual reply time follows the rest, so it never changes how long a bot thinks. A human who leads sooner may do so.
 - These, the bots' reply times and the grace period are the only clocks in the game.
 
