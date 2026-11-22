@@ -386,6 +386,31 @@ describe('solo', () => {
     send.mockRestore();
   });
 
+  it('undoes and redoes from the table corner and with Ctrl+Z, when there is something to', () => {
+    const send = vi.spyOn(GameSocket.prototype, 'send').mockReturnValue(true);
+    renderWith([
+      welcome,
+      { type: 'room', room: { ...solo('playing'), canUndo: true } },
+      { type: 'view', view: dealt },
+    ]);
+    const undo = screen.getByRole('button', { name: 'Undo your last move' });
+    expect(screen.getByRole('button', { name: 'Redo' })).toBeDisabled();
+    fireEvent.click(undo);
+    expect(send).toHaveBeenLastCalledWith({ type: 'undo' });
+    send.mockClear();
+    fireEvent.keyDown(window, { key: 'z', ctrlKey: true });
+    expect(send).toHaveBeenLastCalledWith({ type: 'undo' });
+    send.mockClear();
+    fireEvent.keyDown(window, { key: 'Z', ctrlKey: true, shiftKey: true });
+    expect(send).not.toHaveBeenCalled(); // nothing to redo
+    send.mockRestore();
+  });
+
+  it('has no undo at a table that is not solo', () => {
+    renderWith(atTable);
+    expect(screen.queryByRole('button', { name: 'Undo your last move' })).toBeNull();
+  });
+
   it('warns that leaving ends the solo game', () => {
     renderWith([welcome, { type: 'room', room: solo('playing') }, { type: 'view', view: dealt }]);
     fireEvent.click(screen.getByRole('button', { name: 'Leave' }));

@@ -211,6 +211,48 @@ describe('client reducer', () => {
     expect(s.toast).toMatchObject({ kind: 'info', text: 'The room has closed.' });
   });
 
+  it('after an undo, clears the felt and writes the hand on the table again from the view', () => {
+    // Hand 1 is done; in hand 2 a trick is under way when Ann takes her card back.
+    let s = reduce(seated(), events({ type: 'handScored', result: result(1, true) }));
+    const hand2: TableView = {
+      ...dealt,
+      handNumber: 2,
+      dealer: 1,
+      phase: 'playing',
+      auction: [
+        { seat: 2, kind: 'pass' },
+        { seat: 3, kind: 'bid', amount: 150_000 },
+        { seat: 0, kind: 'pass' },
+        { seat: 1, kind: 'pass' },
+      ],
+      contract: { bidder: 3, amount: 150_000 },
+      trump: 'red',
+    };
+    s = reduce(s, server({ type: 'view', view: hand2 }));
+    s = reduce(s, events({ type: 'handStarted', handNumber: 2, dealer: 1, redeals: 0 }));
+    s = reduce(s, events(play(0, 5), play(1, 6)));
+    s = reduce(s, server({ type: 'rewound', by: 'undo' }));
+    expect(s.trickPlays).toEqual([]);
+    expect(s.completedTrick).toBeNull();
+    s = reduce(s, server({ type: 'view', view: { ...hand2, currentTrick: null } }));
+    expect(s.rewound).toBeNull();
+    expect(s.trickPlays).toEqual([]);
+    expect(texts(s)).toEqual([
+      expect.stringContaining('made the $185k bid'),
+      'Bot 2 deals.',
+      'Auction: Cid pass · Bot 4 $150k · Ann pass · Bot 2 pass → Bot 4 at $150k.',
+      'Bot 4 names Red trump.',
+      'You took back a move.',
+    ]);
+    expect(s.log.map((e) => e.hand)).toEqual([1, 2, 2, 2, 2]);
+  });
+
+  it('says so after a redo', () => {
+    let s = reduce(seated(), server({ type: 'rewound', by: 'redo' }));
+    s = reduce(s, server({ type: 'view', view: dealt }));
+    expect(texts(s).at(-1)).toBe('You replayed a move.');
+  });
+
   it('turns server errors into toasts', () => {
     const s = reduce(
       initialState,

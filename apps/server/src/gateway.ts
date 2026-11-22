@@ -144,6 +144,10 @@ export class Gateway {
           return room.start(playerId);
         case 'playAgain':
           return room.playAgain(playerId);
+        case 'undo':
+          return room.undo(playerId);
+        case 'redo':
+          return room.redo(playerId);
         case 'setAnalysis':
           return room.setAnalysis(playerId, message.on);
         case 'action':

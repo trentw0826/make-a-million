@@ -59,6 +59,9 @@ export const ClientMessageSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('setBot'), seat: SeatSchema, difficulty: DifficultySchema }),
   z.object({ type: z.literal('startGame') }),
   z.object({ type: z.literal('playAgain') }),
+  /** Solo only: take back your last decision, or replay the one last taken back. */
+  z.object({ type: z.literal('undo') }),
+  z.object({ type: z.literal('redo') }),
   /** Solo only: turn the analysis (win-chance bar, move values, move labels) on or off. */
   z.object({ type: z.literal('setAnalysis'), on: z.boolean() }),
   z.object({ type: z.literal('action'), action: ActionSchema }),
@@ -132,7 +135,8 @@ export type ErrorCode =
   | 'NOT_SEATED'
   | 'ROOM_NOT_READY'
   | 'ILLEGAL_ACTION'
-  | 'NOT_SOLO';
+  | 'NOT_SOLO'
+  | 'NOTHING_TO_UNDO';
 
 export type ServerMessage =
   | {
@@ -151,6 +155,11 @@ export type ServerMessage =
       readonly resultTimer?: ResultTimer;
     }
   | { readonly type: 'events'; readonly events: readonly GameEvent[] }
+  /**
+   * Solo: the game jumped to another point (undo or redo). The view that follows replaces
+   * the table; no events explain the jump.
+   */
+  | { readonly type: 'rewound'; readonly by: 'undo' | 'redo' }
   | {
       readonly type: 'error';
       readonly code: ErrorCode;

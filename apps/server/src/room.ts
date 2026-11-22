@@ -7,7 +7,9 @@ import {
   type GameState,
   legalMoves,
   observe,
+  type RecordedAction,
   Rng,
+  replay,
   SEATS,
   type Seat,
   tableView,
@@ -90,6 +92,15 @@ export class Room {
 
   /** Solo only: the analysis is on. */
   analysis = false;
+  /**
+   * The current game as a record (seed, dealer and every action applied), so that a solo
+   * game can be rebuilt by the engine at any earlier point.
+   */
+  private record: { seed: string; dealer: Seat; actions: RecordedAction[] } | null = null;
+  /** Solo: the actions taken back, oldest first, ready to be replayed. */
+  private redoLine: RecordedAction[] = [];
+  /** What the players were last told about undo and redo, to re-send the room on a change. */
+  private undoFlags = '';
 
   constructor(
     readonly code: string,
@@ -313,11 +324,10 @@ export class Room {
     const seed = newGameSeed();
     this.gamesStarted += 1;
     this.botRng = Rng.fromSeed(`${seed}:bots`);
-    this.game = createGame({
-      seed,
-      ruleset: this.deps.config.ruleset,
-      dealer: ((this.gamesStarted - 1) % 4) as Seat,
-    });
+    const dealer = ((this.gamesStarted - 1) % 4) as Seat;
+    this.game = createGame({ seed, ruleset: this.deps.config.ruleset, dealer });
+    this.record = { seed, dealer, actions: [] };
+    this.redoLine = [];
     this.phase = 'playing';
     this.deps.log('info', 'game started', { room: this.code, seed, game: this.gamesStarted });
     this.broadcastRoom();
@@ -343,13 +353,95 @@ export class Room {
       return { code: 'ILLEGAL_ACTION', message: result.error.message };
     }
     this.game = result.state;
+    this.record?.actions.push({ seat, action });
+    // A new decision of yours starts a new line: the one taken back is gone.
+    if (action.type !== 'continue') this.redoLine = [];
     this.afterGameChange(result.events);
     return null;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Undo and redo (solo)
+
+  /** The seat of a solo room's player (Seat 1 unless they moved in the lobby). */
+  private soloSeat(playerId: string): Seat | null {
+    return this.solo ? this.seatOf(playerId) : null;
+  }
+
+  /** Index in the record of the player's last decision (a confirmed result is not one). */
+  private lastDecision(seat: Seat): number {
+    const actions = this.record?.actions ?? [];
+    for (let i = actions.length - 1; i >= 0; i--) {
+      const a = actions[i] as RecordedAction;
+      if (a.seat === seat && a.action.type !== 'continue') return i;
+    }
+    return -1;
+  }
+
+  /**
+   * Takes back the player's last decision and everything after it, back to the moment it
+   * was theirs to make. The engine rebuilds that position from the record, and the deal is
+   * seeded, so it is exactly as it was, even in an earlier hand.
+   */
+  undo(playerId: string): RoomError | null {
+    if (!this.members.has(playerId)) return err('NOT_IN_ROOM', 'you are not in this room');
+    const seat = this.soloSeat(playerId);
+    if (seat === null) return err('NOT_SOLO', 'moves can only be taken back in solo games');
+    const record = this.record;
+    const at = this.lastDecision(seat);
+    if (!record || at < 0) return err('NOTHING_TO_UNDO', 'there is no move of yours to take back');
+    this.redoLine = [...record.actions.slice(at), ...this.redoLine];
+    record.actions.length = at;
+    this.rebuild('undo');
+    return null;
+  }
+
+  /**
+   * Replays the decision last taken back and what followed it, up to the player's next
+   * decision, so the bots play exactly the line that was undone.
+   */
+  redo(playerId: string): RoomError | null {
+    if (!this.members.has(playerId)) return err('NOT_IN_ROOM', 'you are not in this room');
+    const seat = this.soloSeat(playerId);
+    if (seat === null) return err('NOT_SOLO', 'moves can only be replayed in solo games');
+    const record = this.record;
+    if (!record || this.redoLine.length === 0) {
+      return err('NOTHING_TO_UNDO', 'there is no move to replay');
+    }
+    let take = 1;
+    while (take < this.redoLine.length) {
+      const next = this.redoLine[take] as RecordedAction;
+      if (next.seat === seat && next.action.type !== 'continue') break;
+      take += 1;
+    }
+    record.actions.push(...this.redoLine.splice(0, take));
+    this.rebuild('redo');
+    return null;
+  }
+
+  /** Rebuilds the game from the record and puts every seat back in step with it. */
+  private rebuild(by: 'undo' | 'redo'): void {
+    const record = this.record;
+    if (!record) return;
+    this.clearBotTimers();
+    this.clearResultTimer();
+    this.game = replay({
+      seed: record.seed,
+      ruleset: this.deps.config.ruleset,
+      dealer: record.dealer,
+      actions: record.actions,
+    }).state;
+    this.phase = this.game.phase === 'game-over' ? 'finished' : 'playing';
+    this.broadcast({ type: 'rewound', by });
+    this.afterGameChange([]);
+    // Undo and redo always change what can be undone, so the room is re-sent regardless.
+    this.broadcastRoom();
   }
 
   private afterGameChange(events: readonly GameEvent[]): void {
     this.syncResultTimer();
     this.sendViews();
+    this.syncUndoFlags();
     if (events.length > 0) this.broadcast({ type: 'events', events });
     if (this.game?.phase === 'game-over') {
       this.phase = 'finished';
@@ -474,6 +566,7 @@ export class Room {
     if (obs.legal.kind === 'none') return;
     const difficulty = this.botDifficulty(seat);
 
+    let applied = action;
     let result = action ? applyAction(game, seat, action) : null;
     if (!result?.ok) {
       this.deps.log('error', 'bot chose an illegal action; using fallback', {
@@ -484,6 +577,7 @@ export class Room {
         error: result && !result.ok ? result.error.code : 'none',
       });
       const fallback = fallbackAction(obs);
+      applied = fallback;
       result = fallback ? applyAction(game, seat, fallback) : null;
       if (!result?.ok) {
         this.deps.log('error', 'fallback action also illegal; game stalled', {
@@ -494,6 +588,7 @@ export class Room {
       }
     }
     this.game = result.state;
+    if (applied) this.record?.actions.push({ seat, action: applied });
     this.afterGameChange(result.events);
   }
 
@@ -521,6 +616,7 @@ export class Room {
       const result = applyAction(game, seat, { type: 'continue' });
       if (!result.ok) continue;
       game = result.state;
+      this.record?.actions.push({ seat, action: { type: 'continue' } });
       events.push(...result.events);
     }
     this.game = game;
@@ -627,9 +723,23 @@ export class Room {
       yourSeat: this.seatOf(forPlayerId),
       solo: this.solo,
       analysis: this.analysis,
-      canUndo: false,
-      canRedo: false,
+      ...this.undoState(forPlayerId),
     };
+  }
+
+  private undoState(playerId: string): { canUndo: boolean; canRedo: boolean } {
+    const seat = this.soloSeat(playerId);
+    if (seat === null || this.phase === 'lobby') return { canUndo: false, canRedo: false };
+    return { canUndo: this.lastDecision(seat) >= 0, canRedo: this.redoLine.length > 0 };
+  }
+
+  /** Re-sends the room when what can be undone or redone has changed. */
+  private syncUndoFlags(): void {
+    if (!this.solo) return;
+    const flags = [...this.members.keys()].map((id) => JSON.stringify(this.undoState(id))).join();
+    if (flags === this.undoFlags) return;
+    this.undoFlags = flags;
+    this.broadcastRoom();
   }
 
   private broadcastRoom(): void {

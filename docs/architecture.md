@@ -96,7 +96,7 @@ Hidden information is enforced by projection, never by flags.
 - Every other decision is made on the felt too, with no action bar: the bidder's discards are laid out in a tray in the middle ("Discards (1/3)", the Discard button below, the rules behind a ? at the last slot), and trump is named from a token per color there, each saying how many of that color the hand holds. A color can also be named by clicking one of its cards; pointing at a card lights its color's token.
 - Card motion uses the Motion library: the deal flies from the dealer's seat, the fanned hand re-sorts, a card you play flies from your hand to the felt (it shares a layout id with its place there), the others' cards turn over as they land, every played card touches down a little short and slides to a stop, and a taken trick is gathered face down into its side's pile, which lies beneath that side's score; the piles show only how many tricks each side holds. The rest is CSS. Under `prefers-reduced-motion` cards appear in place and nothing moves.
 - Sounds (the deal, a card played, a trick taken, your turn, the end of a hand) come from the sound manifest (`sound/manifest.ts`). Each is a placeholder synthesised with Web Audio until a recorded file is set. Audio starts on the player's first click or key, as browsers require, and the top bar's mute toggle is remembered in the browser.
-- Keyboard: `?` opens How to play, Esc closes a dialog, ←/→ step a bid, Enter takes the main action.
+- Keyboard: `?` opens How to play, Esc closes a dialog, ←/→ step a bid, Enter takes the main action. In a solo game, Ctrl+Z (⌘Z) undoes your last move and Ctrl+Shift+Z redoes it; the Undo and Redo buttons sit in the felt's corner.
 
 ## Testing
 

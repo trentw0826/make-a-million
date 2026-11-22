@@ -26,6 +26,7 @@ import { TrickArea } from '../components/TrickArea';
 import { TrickPile } from '../components/TrickPile';
 import { TrumpPicker } from '../components/TrumpPicker';
 import { TurnNotice } from '../components/TurnNotice';
+import { UndoControls } from '../components/UndoControls';
 import { blockedReason, hasPassed, isMyTurn, seatChip } from '../hints';
 import { sound } from '../sound/player';
 import { spotOf } from '../spots';
@@ -232,6 +233,7 @@ export function Table({ room, view }: { room: RoomView; view: TableView }) {
         </LayoutGroup>
         <div className="table-corner">
           <TableDrawer view={view} room={room} log={state.log} />
+          {room.solo && <UndoControls room={room} />}
           <SoundToggle />
           <HelpButton icon />
         </div>

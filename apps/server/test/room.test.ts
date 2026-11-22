@@ -1,5 +1,5 @@
 import { fallbackAction } from '@mam/bots';
-import type { Action } from '@mam/engine';
+import { type Action, legalMoves } from '@mam/engine';
 import type { ServerMessage } from '@mam/protocol';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { decideInline } from '../src/botPool';
@@ -450,5 +450,102 @@ describe('solo', () => {
     playing.room.start('ann');
     playing.room.leave('ann');
     expect(playing.room.isClosed).toBe(true);
+  });
+
+  describe('undo and redo', () => {
+    /** Plays on (confirming results) until Ann has a decision to make. */
+    async function untilAnnDecides(h: Harness): Promise<void> {
+      for (let i = 0; i < 2_000; i++) {
+        const game = h.room.game;
+        const kind = game ? legalMoves(game, 0).kind : 'none';
+        if (kind !== 'none' && kind !== 'continue') return;
+        if (kind === 'continue') humanActs(h, 'ann');
+        await vi.advanceTimersByTimeAsync(5);
+      }
+      throw new Error('Ann never had a decision');
+    }
+
+    async function started(): Promise<Harness> {
+      const h = soloRoom();
+      h.room.start('ann');
+      await untilAnnDecides(h);
+      return h;
+    }
+
+    it('takes back a decision to the moment Ann had it, and replays the same line', async () => {
+      const h = await started();
+      const first = h.room.game;
+      humanActs(h, 'ann');
+      await untilAnnDecides(h);
+      const second = h.room.game;
+      expect(h.last('ann', 'room')).toMatchObject({ room: { canUndo: true, canRedo: false } });
+
+      h.clear();
+      expect(h.room.undo('ann')).toBeNull();
+      expect(h.room.game).toEqual(first);
+      const sent = h.sent.get('ann') ?? [];
+      expect(sent[0]).toEqual({ type: 'rewound', by: 'undo' });
+      expect(sent.find((m) => m.type === 'view')).toBeDefined();
+      expect(h.last('ann', 'room')).toMatchObject({ room: { canUndo: false, canRedo: true } });
+
+      // Nothing moves while it is Ann's turn again, and redo brings back the bots' replies.
+      await vi.advanceTimersByTimeAsync(1_000);
+      expect(h.room.game).toEqual(first);
+      expect(h.room.redo('ann')).toBeNull();
+      expect(h.room.game).toEqual(second);
+      expect(h.last('ann', 'room')).toMatchObject({ room: { canUndo: true, canRedo: false } });
+    });
+
+    it('steps back more than once, and forgets the undone line once Ann plays on', async () => {
+      const h = await started();
+      const first = h.room.game;
+      humanActs(h, 'ann');
+      await untilAnnDecides(h);
+      humanActs(h, 'ann');
+      await untilAnnDecides(h);
+      expect(h.room.undo('ann')).toBeNull();
+      expect(h.room.undo('ann')).toBeNull();
+      expect(h.room.game).toEqual(first);
+      expect(h.room.undo('ann')).toEqual(expect.objectContaining({ code: 'NOTHING_TO_UNDO' }));
+
+      humanActs(h, 'ann');
+      expect(h.last('ann', 'room')).toMatchObject({ room: { canRedo: false } });
+      expect(h.room.redo('ann')).toEqual(expect.objectContaining({ code: 'NOTHING_TO_UNDO' }));
+    });
+
+    it('drops a bot answer that was still on its way', async () => {
+      const h = soloRoom({ botDelayMs: { easy: 500, normal: 500, hard: 500 } });
+      h.room.start('ann');
+      await untilAnnDecides(h);
+      const first = h.room.game;
+      humanActs(h, 'ann');
+      await vi.advanceTimersByTimeAsync(100); // a bot is thinking
+      expect(h.room.undo('ann')).toBeNull();
+      await vi.advanceTimersByTimeAsync(2_000);
+      expect(h.room.game).toEqual(first);
+    });
+
+    it('reaches back into the hand before', async () => {
+      const h = soloRoom();
+      h.room.start('ann');
+      await playToResult(h, ['ann']);
+      await untilAnnDecides(h);
+      expect(h.room.game?.hand?.handNumber).toBe(2);
+      // Each undo steps back one of Ann's decisions, through hand 2 and into hand 1.
+      for (let i = 0; i < 20 && h.room.game?.hand?.handNumber === 2; i++) {
+        expect(h.room.undo('ann')).toBeNull();
+      }
+      expect(h.room.game?.hand?.handNumber).toBe(1);
+      expect(h.room.game?.hand?.phase).not.toBe('hand-complete');
+    });
+
+    it('is only offered in solo rooms', () => {
+      const h = harness();
+      readyRoom(h);
+      h.room.start('ann');
+      expect(h.room.undo('ann')).toEqual(expect.objectContaining({ code: 'NOT_SOLO' }));
+      expect(h.room.redo('ann')).toEqual(expect.objectContaining({ code: 'NOT_SOLO' }));
+      expect(h.last('ann', 'room')).toMatchObject({ room: { canUndo: false, canRedo: false } });
+    });
   });
 });

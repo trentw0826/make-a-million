@@ -1,6 +1,6 @@
 /** Line icons for the table's small buttons. They inherit the text colour and hide from
  *  screen readers: the button that holds one carries its name. */
-export type IconName = 'sheet' | 'sound' | 'muted' | 'help' | 'close';
+export type IconName = 'sheet' | 'sound' | 'muted' | 'help' | 'close' | 'undo' | 'redo';
 
 const PATHS: Record<IconName, React.ReactNode> = {
   // A ruled score sheet with a folded corner.
@@ -32,6 +32,9 @@ const PATHS: Record<IconName, React.ReactNode> = {
   ),
   // A cross, for closing a dialog or the score sheet.
   close: <path d="M6 6l12 12M18 6L6 18" />,
+  // An arrow turning back on itself, and its mirror image.
+  undo: <path d="M9 14L4 9l5-5M4 9h10.5a5.5 5.5 0 0 1 0 11H11" />,
+  redo: <path d="M15 14l5-5-5-5M20 9H9.5a5.5 5.5 0 0 0 0 11H13" />,
 };
 
 export function Icon({ name }: { name: IconName }) {
