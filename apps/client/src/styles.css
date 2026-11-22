@@ -841,9 +841,6 @@
   margin-left: var(--space-4);
   white-space: nowrap;
 }
-.me-name > .seat-chip {
-  margin-left: var(--space-4);
-}
 .seat-acting > .seat-name,
 .me-turn > .me-name {
   border-color: var(--accent);
@@ -874,6 +871,9 @@
   font-weight: var(--weight-bold);
   background: var(--paper);
   color: var(--ink);
+}
+.me-name > .seat-chip {
+  margin-left: var(--space-4);
 }
 /* The bidder's badge for the rest of the hand: the contract, and trump once named. */
 .chip-contract {
