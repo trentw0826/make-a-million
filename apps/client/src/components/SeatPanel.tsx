@@ -18,8 +18,8 @@ export function isActing(view: TableView, seat: Seat): boolean {
 }
 
 /**
- * Another player's place at the table: name, side, the contract badge if they hold it, and
- * face-down cards. During the auction it fades back once they pass.
+ * Another player's place at the table: name, side, face-down cards, and under them the contract
+ * badge if they hold it. During the auction it fades back once they pass.
  */
 export function SeatPanel({ seat, room, view, position }: Props) {
   const s = room.seats[seat];
@@ -43,10 +43,10 @@ export function SeatPanel({ seat, room, view, position }: Props) {
           <span className="tag warn">{s.botControlled ? 'bot playing' : 'reconnecting…'}</span>
         )}
       </div>
+      <CardBack count={view.handSizes[seat]} />
       <div className="seat-role">
         <SeatBadge chip={chip} />
       </div>
-      <CardBack count={view.handSizes[seat]} />
     </div>
   );
 }
