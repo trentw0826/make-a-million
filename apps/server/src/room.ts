@@ -49,7 +49,11 @@ interface Member {
 
 type HumanSeat = { readonly kind: 'human'; readonly playerId: string; botControlled: boolean };
 type BotSeat = { readonly kind: 'bot'; readonly difficulty: Difficulty; readonly name: string };
-export type SeatState = HumanSeat | BotSeat | null;
+export type SeatState = HumanSeat | BotSeat;
+
+function defaultBot(seat: Seat): BotSeat {
+  return { kind: 'bot', difficulty: 'normal', name: `Bot ${seat + 1}` };
+}
 
 function err(code: ErrorCode, message: string): RoomError {
   return { code, message };
@@ -63,7 +67,13 @@ function err(code: ErrorCode, message: string): RoomError {
 export class Room {
   phase: RoomPhase = 'lobby';
   hostId: string | null = null;
-  readonly seats: [SeatState, SeatState, SeatState, SeatState] = [null, null, null, null];
+  /** Every chair starts with a Normal bot; a human sitting down takes its place. */
+  readonly seats: [SeatState, SeatState, SeatState, SeatState] = [
+    defaultBot(0),
+    defaultBot(1),
+    defaultBot(2),
+    defaultBot(3),
+  ];
   readonly members = new Map<string, Member>();
   game: GameState | null = null;
 
@@ -195,7 +205,7 @@ export class Room {
   private removeMember(member: Member, reason: 'left' | 'kicked'): void {
     this.clearGrace(member);
     const seat = this.seatOf(member.id);
-    if (seat !== null) this.seats[seat] = null;
+    if (seat !== null) this.seats[seat] = defaultBot(seat);
     this.members.delete(member.id);
     if (member.connected) this.deps.send(member.id, { type: 'left', reason });
     if (this.members.size === 0) {
@@ -220,12 +230,13 @@ export class Room {
   // ---------------------------------------------------------------------------
   // Lobby
 
+  /** Takes any chair not held by a human; the bot there makes way, and your old chair gets one. */
   sit(playerId: string, seat: Seat): RoomError | null {
     if (!this.members.has(playerId)) return err('NOT_IN_ROOM', 'you are not in this room');
     if (this.phase !== 'lobby') return err('GAME_IN_PROGRESS', 'seats are locked during a game');
-    if (this.seats[seat] !== null) return err('SEAT_TAKEN', 'that seat is taken');
+    if (this.seats[seat]?.kind === 'human') return err('SEAT_TAKEN', 'that seat is taken');
     const current = this.seatOf(playerId);
-    if (current !== null) this.seats[current] = null;
+    if (current !== null) this.seats[current] = defaultBot(current);
     this.seats[seat] = { kind: 'human', playerId, botControlled: false };
     this.broadcastRoom();
     return null;
@@ -236,25 +247,17 @@ export class Room {
     if (this.phase !== 'lobby') return err('GAME_IN_PROGRESS', 'seats are locked during a game');
     const current = this.seatOf(playerId);
     if (current === null) return err('NOT_SEATED', 'you are not seated');
-    this.seats[current] = null;
+    this.seats[current] = defaultBot(current);
     this.broadcastRoom();
     return null;
   }
 
-  addBot(playerId: string, seat: Seat, difficulty: Difficulty): RoomError | null {
+  /** The host sets the strength of the bot in a chair. */
+  setBot(playerId: string, seat: Seat, difficulty: Difficulty): RoomError | null {
     const denied = this.requireHostInLobby(playerId);
     if (denied) return denied;
-    if (this.seats[seat] !== null) return err('SEAT_TAKEN', 'that seat is taken');
+    if (this.seats[seat]?.kind !== 'bot') return err('SEAT_TAKEN', 'a player sits there');
     this.seats[seat] = { kind: 'bot', difficulty, name: `Bot ${seat + 1}` };
-    this.broadcastRoom();
-    return null;
-  }
-
-  removeBot(playerId: string, seat: Seat): RoomError | null {
-    const denied = this.requireHostInLobby(playerId);
-    if (denied) return denied;
-    if (this.seats[seat]?.kind !== 'bot') return err('NOT_SEATED', 'no bot in that seat');
-    this.seats[seat] = null;
     this.broadcastRoom();
     return null;
   }
@@ -262,9 +265,7 @@ export class Room {
   start(playerId: string): RoomError | null {
     const denied = this.requireHostInLobby(playerId);
     if (denied) return denied;
-    if (this.seats.some((s) => s === null))
-      return err('ROOM_NOT_READY', 'all four seats must be filled');
-    if (!this.seats.some((s) => s?.kind === 'human')) {
+    if (!this.seats.some((s) => s.kind === 'human')) {
       return err('ROOM_NOT_READY', 'at least one seat must be a human');
     }
     // Members without a seat cannot watch (no spectators): they are sent out of the room.

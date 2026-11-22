@@ -135,10 +135,8 @@ export class Gateway {
           return room.sit(playerId, message.seat);
         case 'stand':
           return room.stand(playerId);
-        case 'addBot':
-          return room.addBot(playerId, message.seat, message.difficulty);
-        case 'removeBot':
-          return room.removeBot(playerId, message.seat);
+        case 'setBot':
+          return room.setBot(playerId, message.seat, message.difficulty);
         case 'startGame':
           return room.start(playerId);
         case 'playAgain':

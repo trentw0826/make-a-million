@@ -257,29 +257,58 @@ describe('score trackers', () => {
 });
 
 describe('lobby', () => {
-  it('turns the table so your chair is at the bottom, partner across', () => {
+  it('keeps every chair where it is, Seat 1 at the bottom, each marked with its partner', () => {
     const lobby: RoomView = {
       ...room('lobby'),
       seats: [
-        null,
+        { kind: 'bot', name: 'Bot 1', difficulty: 'normal' },
         { kind: 'bot', name: 'Bot 2', difficulty: 'hard' },
         { kind: 'human', playerId: 'p1', name: 'Ann', connected: true, botControlled: false },
-        null,
+        { kind: 'bot', name: 'Bot 4', difficulty: 'normal' },
       ],
       yourSeat: 2,
     };
     renderWith([welcome, { type: 'room', room: lobby }]);
     const chair = (n: number) => screen.getByRole('group', { name: `Seat ${n}` });
-    expect(chair(3)).toHaveClass('chair-bottom', 'chair-mine', 'side-us');
-    expect(chair(1)).toHaveClass('chair-top', 'chair-empty', 'side-us');
-    expect(chair(2)).toHaveClass('chair-right', 'side-them');
+    expect(chair(3)).toHaveClass('chair-top', 'chair-mine', 'side-us');
+    expect(chair(1)).toHaveClass('chair-bottom', 'chair-bot', 'side-us');
+    expect(chair(2)).toHaveClass('chair-left', 'side-them');
+    expect(chair(4)).toHaveClass('chair-right', 'side-them');
+    expect(chair(2)).toHaveTextContent('Seat 2 · partner Seat 4');
+    // Any bot's chair can be taken; the host picks each bot's level.
+    expect(within(chair(4)).getByRole('button', { name: 'Sit here' })).toBeInTheDocument();
+    const level = within(chair(2)).getByRole('group', { name: 'Bot level' });
+    expect(within(level).getByRole('button', { name: 'Hard' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    expect(within(level).getByRole('button', { name: 'Normal' })).toHaveAttribute(
+      'aria-pressed',
+      'false',
+    );
+    expect(within(chair(3)).queryByRole('button', { name: 'Sit here' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Start game' })).toBeEnabled();
+  });
+
+  it('shows a guest each bot with its level, and no level picker', () => {
+    const lobby: RoomView = {
+      ...room('lobby'),
+      hostId: 'someone-else',
+      seats: [
+        { kind: 'bot', name: 'Bot 1', difficulty: 'normal' },
+        { kind: 'bot', name: 'Bot 2', difficulty: 'hard' },
+        { kind: 'bot', name: 'Bot 3', difficulty: 'normal' },
+        { kind: 'bot', name: 'Bot 4', difficulty: 'normal' },
+      ],
+      yourSeat: null,
+    };
+    renderWith([welcome, { type: 'room', room: lobby }]);
+    const chair = (n: number) => screen.getByRole('group', { name: `Seat ${n}` });
     expect(chair(2)).toHaveTextContent('Bot 2 Hard');
     expect(within(chair(2)).getByText('Hard')).toHaveClass('seat-difficulty');
-    expect(chair(4)).toHaveClass('chair-left', 'side-them');
-    // The host fills an empty chair with a bot of the chosen strength.
-    expect(within(chair(4)).getByRole('button', { name: '+ Bot · Hard' })).toBeInTheDocument();
-    expect(within(chair(4)).getByRole('button', { name: 'Sit here' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Start game' })).toBeDisabled();
+    expect(screen.queryByRole('group', { name: 'Bot level' })).toBeNull();
+    expect(screen.getAllByRole('button', { name: 'Sit here' })).toHaveLength(4);
+    expect(screen.queryByRole('button', { name: 'Start game' })).toBeNull();
   });
 });
 

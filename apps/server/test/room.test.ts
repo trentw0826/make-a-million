@@ -42,9 +42,9 @@ function harness(overrides = {}): Harness {
 function readyRoom(h: Harness): void {
   h.room.join('ann', 'Ann');
   h.room.sit('ann', 0);
-  h.room.addBot('ann', 1, 'easy');
-  h.room.addBot('ann', 2, 'normal');
-  h.room.addBot('ann', 3, 'easy');
+  h.room.setBot('ann', 1, 'easy');
+  h.room.setBot('ann', 2, 'normal');
+  h.room.setBot('ann', 3, 'easy');
 }
 
 function humanActs(h: Harness, playerId: string): boolean {
@@ -61,33 +61,46 @@ beforeEach(() => vi.useFakeTimers());
 afterEach(() => vi.useRealTimers());
 
 describe('lobby', () => {
-  it('makes the first member the host and lets members pick seats', () => {
+  it('starts every seat with a Normal bot that makes way for a player', () => {
     const h = harness();
     h.room.join('ann', 'Ann');
     h.room.join('bob', 'Bob');
     expect(h.room.hostId).toBe('ann');
+    expect(h.room.seats).toEqual(
+      [0, 1, 2, 3].map((s) => ({ kind: 'bot', difficulty: 'normal', name: `Bot ${s + 1}` })),
+    );
     expect(h.room.sit('ann', 2)).toBeNull();
     expect(h.room.sit('bob', 2)).toEqual(expect.objectContaining({ code: 'SEAT_TAKEN' }));
     expect(h.room.sit('bob', 0)).toBeNull();
-    expect(h.room.sit('ann', 1)).toBeNull(); // moving seats
-    expect(h.room.seats[2]).toBeNull();
-    const view = h.last('bob', 'room');
-    expect(view).toMatchObject({ type: 'room', room: { yourSeat: 0, hostId: 'ann' } });
+    expect(h.room.sit('ann', 1)).toBeNull(); // moving seats leaves a Normal bot behind
+    expect(h.room.seats[2]).toEqual({ kind: 'bot', difficulty: 'normal', name: 'Bot 3' });
+    expect(h.room.stand('bob')).toBeNull();
+    expect(h.room.seats[0]).toEqual({ kind: 'bot', difficulty: 'normal', name: 'Bot 1' });
+    const view = h.last('ann', 'room');
+    expect(view).toMatchObject({ type: 'room', room: { yourSeat: 1, hostId: 'ann' } });
   });
 
-  it('lets only the host manage bots and start, and needs four filled seats with a human', () => {
+  it('gives a lobby seat back to a bot when its player leaves', () => {
     const h = harness();
     h.room.join('ann', 'Ann');
     h.room.join('bob', 'Bob');
-    expect(h.room.addBot('bob', 1, 'easy')).toEqual(expect.objectContaining({ code: 'NOT_HOST' }));
+    h.room.sit('bob', 3);
+    h.room.leave('bob');
+    expect(h.room.seats[3]).toEqual({ kind: 'bot', difficulty: 'normal', name: 'Bot 4' });
+  });
+
+  it('lets only the host set bots and start, and needs a human seated', () => {
+    const h = harness();
+    h.room.join('ann', 'Ann');
+    h.room.join('bob', 'Bob');
+    expect(h.room.setBot('bob', 1, 'easy')).toEqual(expect.objectContaining({ code: 'NOT_HOST' }));
     expect(h.room.start('ann')).toEqual(expect.objectContaining({ code: 'ROOM_NOT_READY' }));
-    h.room.addBot('ann', 0, 'easy');
-    h.room.addBot('ann', 1, 'easy');
-    h.room.addBot('ann', 2, 'easy');
-    h.room.addBot('ann', 3, 'easy');
-    expect(h.room.start('ann')).toEqual(expect.objectContaining({ code: 'ROOM_NOT_READY' }));
-    expect(h.room.removeBot('ann', 3)).toBeNull();
+    expect(h.room.setBot('ann', 1, 'hard')).toBeNull();
+    expect(h.room.seats[1]).toEqual({ kind: 'bot', difficulty: 'hard', name: 'Bot 2' });
     h.room.sit('ann', 3);
+    expect(h.room.setBot('ann', 3, 'easy')).toEqual(
+      expect.objectContaining({ code: 'SEAT_TAKEN' }),
+    );
     expect(h.room.start('ann')).toBeNull();
     expect(h.room.phase).toBe('playing');
     // Bob had no seat: no spectators, so he was sent out.
@@ -122,8 +135,8 @@ describe('lobby', () => {
     h.room.join('bob', 'Bob');
     h.room.sit('ann', 0);
     h.room.sit('bob', 2);
-    h.room.addBot('ann', 1, 'easy');
-    h.room.addBot('ann', 3, 'easy');
+    h.room.setBot('ann', 1, 'easy');
+    h.room.setBot('ann', 3, 'easy');
     h.room.start('ann');
     // Bob has dropped but is inside his grace period: he may come back, so he counts.
     h.room.disconnect('bob');
@@ -148,7 +161,7 @@ describe('lobby', () => {
     expect(h.room.members.has('bob')).toBe(true);
     vi.advanceTimersByTime(2_000);
     expect(h.room.members.has('bob')).toBe(false);
-    expect(h.room.seats[1]).toBeNull();
+    expect(h.room.seats[1]).toMatchObject({ kind: 'bot', difficulty: 'normal' });
   });
 });
 
@@ -339,8 +352,8 @@ describe('hand result', () => {
     h.room.join('bob', 'Bob');
     h.room.sit('ann', 0);
     h.room.sit('bob', 1);
-    h.room.addBot('ann', 2, 'easy');
-    h.room.addBot('ann', 3, 'easy');
+    h.room.setBot('ann', 2, 'easy');
+    h.room.setBot('ann', 3, 'easy');
     h.room.start('ann');
     await playToResult(h, ['ann', 'bob']);
     await vi.advanceTimersByTimeAsync(50);

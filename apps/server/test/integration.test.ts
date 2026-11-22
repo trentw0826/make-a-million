@@ -121,11 +121,13 @@ describe('over a real socket', () => {
     const room = await c.next('room');
     expect(room.room.hostId).toBeTruthy();
 
+    expect(room.room.seats.every((s) => s?.kind === 'bot' && s.difficulty === 'normal')).toBe(true);
     c.send({ type: 'sit', seat: 2 });
-    c.send({ type: 'addBot', seat: 0, difficulty: 'normal' });
-    c.send({ type: 'addBot', seat: 1, difficulty: 'easy' });
-    c.send({ type: 'addBot', seat: 3, difficulty: 'normal' });
-    await c.next('room', (m) => m.room.seats.every((s) => s !== null));
+    c.send({ type: 'setBot', seat: 1, difficulty: 'easy' });
+    await c.next(
+      'room',
+      (m) => m.room.seats[1]?.kind === 'bot' && m.room.seats[1].difficulty === 'easy',
+    );
     c.send({ type: 'startGame' });
     await c.next('room', (m) => m.room.phase === 'playing');
 

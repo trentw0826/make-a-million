@@ -31,7 +31,7 @@ describe('client messages', () => {
     expect(parseClientMessage(JSON.stringify({ type: 'hello', name: 'x'.repeat(21) }))).toBeNull();
     expect(parseClientMessage(JSON.stringify({ type: 'sit', seat: 4 }))).toBeNull();
     expect(
-      parseClientMessage(JSON.stringify({ type: 'addBot', seat: 1, difficulty: 'godlike' })),
+      parseClientMessage(JSON.stringify({ type: 'setBot', seat: 1, difficulty: 'godlike' })),
     ).toBeNull();
   });
 
