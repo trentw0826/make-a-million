@@ -774,6 +774,16 @@
   grid-area: top;
   justify-self: center;
 }
+/* The partner sits at the foot of their row and leans over the board's far rim, which the
+   tilt pushes down, so their cards sit as close to the board as the side seats' do. Shifted
+   rather than given a negative margin, so the row keeps its height and the board stays put. */
+@media (min-width: 601px) {
+  .top-side {
+    align-self: end;
+    position: relative;
+    top: var(--space-8);
+  }
+}
 .left-side,
 .right-side {
   display: flex;
@@ -2057,6 +2067,9 @@ button.card-selected:hover:not([aria-disabled="true"]) {
   }
   .seat-role {
     margin-top: var(--space-1);
+  }
+  .top-side {
+    top: var(--space-5);
   }
   .trick-area {
     min-height: 180px;
