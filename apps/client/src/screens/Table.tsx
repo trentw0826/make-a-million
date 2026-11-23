@@ -52,17 +52,19 @@ export function Table({ room, view }: { room: RoomView; view: TableView }) {
     return () => clearTimeout(timer);
   }, [completed, dispatch]);
 
-  // The hand review waits until the last trick has been gathered, then a moment more.
+  // The hand review, or at the end of the game the win screen, waits until the last trick
+  // has been gathered, then a moment more.
   const handOver = view.phase === 'hand-complete';
+  const gameOver = view.phase === 'game-over';
   const [reviewOpen, setReviewOpen] = useState(false);
   useEffect(() => {
-    if (!handOver || completed) {
+    if (!(handOver || gameOver) || completed) {
       setReviewOpen(false);
       return;
     }
     const timer = setTimeout(() => setReviewOpen(true), RESULT_PAUSE_MS);
     return () => clearTimeout(timer);
-  }, [handOver, completed]);
+  }, [handOver, gameOver, completed]);
 
   // Selection only matters while discarding.
   useEffect(() => {
@@ -256,7 +258,7 @@ export function Table({ room, view }: { room: RoomView; view: TableView }) {
           pending={view.continuePending}
         />
       )}
-      {view.phase === 'game-over' && <GameOver view={view} room={room} />}
+      {gameOver && reviewOpen && <GameOver view={view} room={room} />}
     </main>
   );
 }

@@ -1023,3 +1023,57 @@ describe('Hand result', () => {
     expect(tricks[1]).toHaveTextContent(/^2\. You\$0/);
   });
 });
+
+describe('Game over', () => {
+  const over = (winner: 0 | 1): TableView => ({
+    ...dealt,
+    phase: 'game-over',
+    turn: null,
+    legal: { kind: 'none' },
+    winner,
+    scores: winner === 0 ? [1_020_000, 640_000] : [640_000, 1_020_000],
+  });
+  const messages = (view: TableView): ServerMessage[] => [
+    welcome,
+    { type: 'room', room: room('playing') },
+    { type: 'view', view },
+  ];
+
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.restoreAllMocks();
+  });
+
+  it('waits a moment, then cheers a win with confetti and a fanfare', async () => {
+    const { sound } = await import('../src/sound/player');
+    const play = vi.spyOn(sound, 'play').mockImplementation(() => {});
+    renderWith(messages(over(0)));
+    expect(screen.queryByRole('dialog')).toBeNull();
+    act(() => vi.advanceTimersByTime(RESULT_PAUSE_MS));
+    const dialog = screen.getByRole('dialog', { name: 'Your side makes a million!' });
+    expect(screen.getByTestId('confetti')).toBeInTheDocument();
+    expect(play.mock.calls.filter(([name]) => name === 'gameWon')).toHaveLength(1);
+    // Each side's final total, the winner marked.
+    const us = within(dialog).getByRole('region', { name: 'Us' });
+    expect(us).toHaveTextContent(/Us\s*Winner.*Ann & Bot 3.*\$1,020,000/);
+    expect(within(dialog).getByRole('region', { name: 'Them' })).not.toHaveTextContent('Winner');
+    expect(dialog).toHaveTextContent('First to $1,000,000');
+    // Ann is the host: she can deal a new game, or leave.
+    expect(within(dialog).getByRole('button', { name: 'Play again' })).toHaveFocus();
+    expect(within(dialog).getByRole('button', { name: 'Leave room' })).toBeInTheDocument();
+  });
+
+  it('tells a loss plainly: no confetti, no fanfare', async () => {
+    const { sound } = await import('../src/sound/player');
+    const play = vi.spyOn(sound, 'play').mockImplementation(() => {});
+    renderWith(messages(over(1)));
+    act(() => vi.advanceTimersByTime(RESULT_PAUSE_MS));
+    const dialog = screen.getByRole('dialog', { name: 'Bot 2 & Bot 4 make a million' });
+    expect(screen.queryByTestId('confetti')).toBeNull();
+    expect(play).not.toHaveBeenCalledWith('gameWon');
+    expect(within(dialog).getByRole('region', { name: 'Them' })).toHaveTextContent('Winner');
+  });
+});

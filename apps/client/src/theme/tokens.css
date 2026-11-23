@@ -185,6 +185,8 @@
   /* The top bar, the connection banner, and the buttons that stay over the open drawer. */
   --z-sticky: 6;
   --z-modal: 10;
+  /* Confetti over the win screen: above the modal, below a toast. */
+  --z-confetti: 15;
   --z-toast: 20;
 
   /* Cards --------------------------------------------------------------- */
