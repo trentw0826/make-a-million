@@ -308,6 +308,16 @@
 .home-way button {
   justify-self: start;
 }
+.home-solo {
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  padding-top: var(--space-5);
+  border-top: 1px solid var(--line);
+}
+.home-solo-text {
+  display: grid;
+  gap: var(--space-2);
+}
 .home-help {
   margin: 0;
 }
@@ -319,6 +329,9 @@
     padding: var(--space-5) 0 0;
     border-left: 0;
     border-top: 1px solid var(--line);
+  }
+  .home-solo {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -485,9 +498,9 @@
 .chair-partner {
   opacity: var(--opacity-soft);
 }
-/* The host's choice of bot level: three equal slots and a highlight that slides under the
-   chosen one. The others' labels stay quiet. */
-.bot-level {
+/* A choice of three, such as a bot's level: three equal slots and a highlight that slides
+   under the chosen one. The others' labels stay quiet. */
+.segmented {
   --at: 1;
 
   position: relative;
@@ -498,7 +511,7 @@
   border: 1px solid var(--line-on-felt);
   border-radius: var(--radius-pill);
 }
-.bot-level-thumb {
+.segmented-thumb {
   position: absolute;
   top: 2px;
   bottom: 2px;
@@ -509,7 +522,7 @@
   transform: translateX(calc(var(--at) * 100%));
   transition: transform var(--dur-base) var(--ease-out);
 }
-.bot-level button {
+.segmented button {
   position: relative;
   padding: var(--space-1) var(--space-5);
   border: 0;
@@ -523,16 +536,16 @@
     opacity var(--dur-base),
     var(--press-transition);
 }
-.bot-level button:hover {
+.segmented button:hover {
   opacity: var(--opacity-soft);
 }
-.bot-level button[aria-pressed="true"] {
+.segmented button[aria-pressed="true"] {
   color: var(--ink);
   opacity: 1;
 }
 @media (prefers-reduced-motion: reduce) {
-  .bot-level-thumb,
-  .bot-level button {
+  .segmented-thumb,
+  .segmented button {
     transition: none;
   }
 }
@@ -813,6 +826,7 @@
 }
 /* Yours, above your hand, with the contract badge beside it when you hold it. */
 .me-name {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -820,8 +834,12 @@
   min-height: 24px;
   margin: 0;
 }
-.me-name > .seat-chip {
+/* Solo: the review of your last move, beside your name, so nothing shifts when it comes. */
+.me-review {
+  position: absolute;
+  left: 100%;
   margin-left: var(--space-4);
+  white-space: nowrap;
 }
 .seat-acting > .seat-name,
 .me-turn > .me-name {
@@ -853,6 +871,9 @@
   font-weight: var(--weight-bold);
   background: var(--paper);
   color: var(--ink);
+}
+.me-name > .seat-chip {
+  margin-left: var(--space-4);
 }
 /* The bidder's badge for the rest of the hand: the contract, and trump once named. */
 .chip-contract {

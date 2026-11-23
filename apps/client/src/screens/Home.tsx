@@ -19,7 +19,7 @@ export function Home() {
   const [code, setCode] = useState(codeFromHash() ?? '');
   const busy = state.connection === 'connecting';
 
-  const submit = (intent: 'create' | 'join') => (e: FormEvent) => {
+  const submit = (intent: 'create' | 'join' | 'solo') => (e: FormEvent) => {
     e.preventDefault();
     const trimmed = name.trim();
     if (!trimmed) return;
@@ -28,7 +28,7 @@ export function Home() {
       if (c.length !== 6) return;
       enter(trimmed, { type: 'join', code: c });
     } else {
-      enter(trimmed, { type: 'create' });
+      enter(trimmed, { type: intent });
     }
   };
 
@@ -107,6 +107,18 @@ export function Home() {
             </Button>
           </form>
         </div>
+        {/* On your own: three bots of the levels you choose, and the analysis if you want it. */}
+        <form className="home-way home-solo" onSubmit={submit('solo')}>
+          <div className="home-solo-text">
+            <h2>Play solo</h2>
+            <Text as="p" size="sm">
+              Practise against bots of your choosing, with an optional analysis of every move.
+            </Text>
+          </div>
+          <Button type="submit" disabled={busy || !name.trim()}>
+            Play solo
+          </Button>
+        </form>
         <Text as="p" size="sm" tone="muted" className="home-help">
           New to the game?{' '}
           <Button variant="link" onClick={() => dispatch({ kind: 'help', open: true })}>

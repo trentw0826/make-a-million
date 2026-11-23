@@ -16,6 +16,18 @@ How rooms, seats and connections behave. The aim is a small, predictable set of 
 - **No spectators and no mid‑game joining.** During a game the only way into a room is to reclaim your own seat with your token.
 - **Play again.** After a game ends, the host may start another with the same seats. Scores reset.
 
+## Solo rooms
+
+- **Reached from Home.** "Play solo" makes a private room for one player and three bots. You sit at Seat 1, and Seat 3 is your partner. In the lobby you choose each bot's level on its chair, choose the analysis (see `game-rules.md`, Table Visibility), and start. Nobody else is involved, so there is no host tag and the room code is not shown.
+- **Nobody else can enter.** Its code leads nowhere for anyone else (`ROOM_NOT_FOUND`). Its player reclaims it with their token like any seat.
+- **No clocks on the player.** The hand result stays up until you press Ready (the bots confirm at once), with no countdown. If you disconnect, the game waits for you: there is no grace period and no bot takeover. Only the room's idle close ends it, 10 minutes after you were last connected.
+- **Undo and redo.** `undo` takes back your last decision (a confirmed hand result is not one) and everything that followed it, back to the moment the decision was yours. You can step back as far as the start of the game, across hands. `redo` replays the decision last taken back and what followed it, up to your next decision, so the bots play exactly the line you undid. A new decision of yours forgets the line taken back. The server keeps the game as a record (seed, dealer and every action) and rebuilds the position with the engine's `replay`, so the deal is exactly as it was. A bot answer still on its way is dropped. After a jump the server sends `rewound` (saying `undo` or `redo`), then the view; no events explain the jump, so the client clears the felt and rewrites the hand's log lines from the view. `RoomView.canUndo` and `canRedo` say whether there is anything to undo or redo. Elsewhere both are refused (`NOT_SOLO`), and with nothing to undo or redo, `NOTHING_TO_UNDO`.
+- **Leaving ends the game**, since you are its only human.
+- **Analysis** has three modes, chosen at any time with `setAnalysis` (`mode`: `off`, `hints` or `feedback`), in the lobby or from the table's corner, and shown in `RoomView.analysis`. A table that is not solo refuses it (`NOT_SOLO`). `hints` shows both what follows; `feedback` shows only the review after each move, so nothing tells you the best choice before you make it.
+  - with `hints`, after every view the server sends an `analysis` message: your side's chance of winning, and on your turn the value of each choice. The server sends it only while that position is still the one on the table, so it always follows the view it belongs to, and a later view makes it stale. Each position is analysed once (a re-sent view reuses it), from a seed fixed by the game and the position, so a position met again after an undo is valued exactly as before.
+  - with either mode, after each decision of yours it sends a `moveReview` grading it against the best choice, even if the game has moved on by then. If you choose faster than the analysis, the review comes when the analysis is done. No review is sent for a move taken back first. With `feedback` the server still analyses each position where you have a decision, ready for its review, but sends nothing until you have chosen.
+  - the analysis runs on the bot worker threads, and a bot decision goes ahead of any analysis waiting there (see *Analysis* in `bot-standards.md`).
+
 ## Host
 
 - The player who created the room is the host.
@@ -39,6 +51,7 @@ How rooms, seats and connections behave. The aim is a small, predictable set of 
 ## Timers
 
 - There are **no turn timers**. A connected player may take as long as they like over a decision.
+- **Solo rooms** have no hand-result countdown and no grace period (see *Solo rooms*); the clocks on the bots and the trick rest are as below.
 - **Hand result: 25 seconds.** When a hand is scored, every seat reads the result and presses Ready; bots confirm at once. The next hand is dealt as soon as all four seats are ready, or when the 25 seconds run out, whichever comes first. The dialog shows who is ready and a ring counting down the time left.
 - **After a trick: 1.5 seconds.** When a trick is taken, the table rests before the bots' next turn begins, so everyone can see the finished trick before it is gathered to the winners' pile. Each bot's usual reply time follows the rest, so it never changes how long a bot thinks. A human who leads sooner may do so.
 - These, the bots' reply times and the grace period are the only clocks in the game.

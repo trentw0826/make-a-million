@@ -30,6 +30,7 @@ export function createApp(config: ServerConfig, log: Logger): App {
     log,
     send: (id, msg) => gateway.send(id, msg),
     decideBot: pool.decide,
+    analyze: pool.analyze,
   });
   gateway.attachManager(rooms);
 

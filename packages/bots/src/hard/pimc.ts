@@ -88,6 +88,8 @@ export interface PimcResult {
   readonly nodes: number;
   /** The deadline cut the search short (values come from fewer worlds or less depth). */
   readonly timedOut: boolean;
+  /** Mean value of each move under each of `PimcCall.rootUtilities` (same order). */
+  readonly rootMeans: readonly (readonly number[])[];
 }
 
 /**
@@ -113,6 +115,12 @@ export interface PimcCall {
    * is, one world is valued one trick deep. A live-play safety net; omit in simulations.
    */
   readonly deadline?: number;
+  /**
+   * More values of final captures ($1000s), each already from the deciding seat's team's
+   * side, applied at the root like `utilityAt: 'root'` (no extra search). Analysis uses them
+   * to value each move in money and in match equity from one search.
+   */
+  readonly rootUtilities?: readonly LeafUtility[];
 }
 
 /**
@@ -128,6 +136,10 @@ export function pimcValues(
   call: PimcCall = {},
 ): PimcResult {
   const { utility, weight, utilityAt = 'leaf', deadline = Number.POSITIVE_INFINITY } = call;
+  const rootUtilities = call.rootUtilities ?? [];
+  if (rootUtilities.length > 0 && utility && utilityAt === 'leaf') {
+    throw new Error('rootUtilities need a linear search (no leaf utility)');
+  }
   const belief = call.belief ?? buildBelief(obs);
   const atRoot = utility !== undefined && utilityAt === 'root';
   const live = obs.handSizes.reduce((a, b) => a + b, 0) + (obs.currentTrick?.plays.length ?? 0);
@@ -149,6 +161,7 @@ export function pimcValues(
   };
   const legal = obs.legal.kind === 'play' ? obs.legal.cardIds : [];
   const sums = new Map<CardId, number>(legal.map((c) => [c, 0]));
+  const extraSums = rootUtilities.map(() => new Map<CardId, number>(legal.map((c) => [c, 0])));
   const sign = teamOf(obs.seat) === 0 ? 1 : -1;
   const solver = new Solver(
     utility && !atRoot
@@ -194,6 +207,7 @@ export function pimcValues(
         if (worlds > 0) {
           // Values so far were computed deeper; restart the averages at the new depth.
           for (const m of sums.keys()) sums.set(m, 0);
+          for (const e of extraSums) for (const m of e.keys()) e.set(m, 0);
           worlds = 0;
           weightTotal = 0;
           if (all) {
@@ -205,6 +219,13 @@ export function pimcValues(
     }
     result.moves.forEach((m, i) => {
       let v = result.values[i] as number;
+      if (rootUtilities.length > 0) {
+        const [f0, f1] = splitRest(root.cap0, root.cap1, root.rest, v);
+        rootUtilities.forEach((u, k) => {
+          const e = extraSums[k] as Map<CardId, number>;
+          e.set(m, (e.get(m) ?? 0) + w * u(f0, f1));
+        });
+      }
       if (atRoot && utility) {
         const [f0, f1] = splitRest(root.cap0, root.cap1, root.rest, v);
         v = utility(f0, f1);
@@ -216,7 +237,9 @@ export function pimcValues(
     if (timedOut) break;
   }
   const moves = [...sums.keys()];
+  const total = weightTotal > 0 ? weightTotal : 1;
   return {
+    rootMeans: extraSums.map((e) => moves.map((m) => (e.get(m) as number) / total)),
     moves,
     means: moves.map((m) => (sums.get(m) as number) / (weightTotal > 0 ? weightTotal : 1)),
     worlds,

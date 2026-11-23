@@ -84,9 +84,12 @@ export function TopBar() {
         <Wordmark />
       </span>
       <nav className="topbar-actions" aria-label="Game">
-        <span className="topbar-room">
-          Room <strong className="room-code">{room.code}</strong>
-        </span>
+        {/* A solo room's code is no use to anyone else, so it is not shown. */}
+        {room && !room.solo && (
+          <span className="topbar-room">
+            Room <strong className="room-code">{room.code}</strong>
+          </span>
+        )}
         {!atTable && (
           <>
             <SoundToggle />
@@ -102,7 +105,9 @@ export function TopBar() {
           title={lastHuman ? 'End the game?' : 'Leave the game?'}
           onClose={() => setConfirming(false)}
         >
-          {lastHuman ? (
+          {room.solo ? (
+            <p>This ends your solo game. It can't be picked up again afterwards.</p>
+          ) : lastHuman ? (
             <p>
               You're the last player at the table, so leaving ends the game. It can't be rejoined
               afterwards.

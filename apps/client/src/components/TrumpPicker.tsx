@@ -2,6 +2,7 @@ import { cardById, type LegalMoves, type Suit } from '@mam/engine';
 import { SuitGlyph } from '../art/CardArt';
 import { SUIT_NAMES } from '../format';
 import { useGame } from '../store';
+import { MoveValue } from './analysis/Analysis';
 import { PRESSABLE } from './ui/pressable';
 
 /**
@@ -52,6 +53,7 @@ export function TrumpPicker({
             >
               <SuitGlyph suit={suit} className="trump-pick-glyph" />
               <span className="trump-pick-name">{SUIT_NAMES[suit]}</span>
+              <MoveValue action={{ type: 'nameTrump', suit }} />
             </button>
           );
         })}

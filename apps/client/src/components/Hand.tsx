@@ -29,6 +29,8 @@ interface Props {
    * focus, or null.
    */
   readonly onHoverColor?: ((suit: Suit | null) => void) | undefined;
+  /** Something to show above a card, such as the analysis's value of playing it. */
+  readonly annotation?: ((id: CardId) => ReactNode) | undefined;
   /**
    * Discarding: the cards that can't be picked (greyed out) sink below the rest, solid and
    * grey rather than veiled, so the choosable cards stand clear and each group stays in place.
@@ -93,6 +95,7 @@ export function Hand({
   dealer,
   cardProps,
   onHoverColor,
+  annotation,
   litColor,
   sinkBlocked = false,
 }: Props) {
@@ -202,6 +205,7 @@ export function Hand({
                       <CardBackArt />
                     </div>
                   </motion.div>
+                  {annotation?.(id)}
                 </div>
               </Present>
             </motion.div>
