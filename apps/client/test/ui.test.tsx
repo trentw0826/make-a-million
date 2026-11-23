@@ -711,9 +711,17 @@ describe('table status', () => {
     // nothing setting them apart.
     expect(handIds()).toEqual(displayOrder([0, 1, 2, 12, 52, 39], null));
     expect(document.querySelector('.kept-start')).toBeNull();
+    // They sink below the cards that can go, solid grey rather than veiled.
+    expect(document.querySelector('.hand')).toHaveClass('hand-sink-blocked');
+    const sunk = (id: number) => {
+      const card = document.querySelector(`.hand [data-card-id="${id}"]`) as HTMLElement;
+      return (card.closest('.hand-fan') as HTMLElement).style.getPropertyValue('--sunk');
+    };
     for (const id of [12, 52]) {
       expect(document.querySelector(`.hand [data-card-id="${id}"]`)).toHaveClass('card-disabled');
+      expect(sunk(id)).toBe('1');
     }
+    expect(sunk(0)).toBe('0');
 
     const tray = screen.getByRole('region', { name: 'Your discards' });
     fireEvent.click(document.querySelector('.hand [data-card-id="1"]') as Element);

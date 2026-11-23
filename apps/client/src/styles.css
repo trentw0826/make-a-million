@@ -1224,9 +1224,17 @@
 }
 /* The fan: each card leans by its distance from the middle (--d) and drops a little. Around
    a hovered card the others part (--part, set by Hand) and the card itself rises (--raise);
-   a card picked for the discard stays up (--picked). The stacking order never changes. */
+   a card picked for the discard stays up (--picked), and one that must be kept sinks (--sunk).
+   The stacking order never changes. */
 .hand-fan {
-  --lift: calc(var(--raise, 0) * var(--hover-lift) + var(--picked, 0) * var(--pick-lift));
+  --lift: calc(
+    var(--raise, 0) *
+    var(--hover-lift) +
+    var(--picked, 0) *
+    var(--pick-lift) -
+    var(--sunk, 0) *
+    var(--kept-sink)
+  );
 
   position: relative;
   pointer-events: auto;
@@ -1461,6 +1469,21 @@ button.card-selected:hover:not([aria-disabled="true"]) {
 }
 .card-disabled::before {
   opacity: var(--disabled-veil);
+}
+/* Discarding, a card that must be kept is solid grey instead (it sinks too; see .hand-fan):
+   a see-through veil let the cards beneath show through and made the fan hard to read. */
+.hand-sink-blocked .card {
+  transition:
+    transform var(--dur-fast),
+    box-shadow var(--dur-base),
+    filter var(--dur-base) var(--ease-out),
+    var(--press-transition);
+}
+.hand-sink-blocked .card-disabled {
+  filter: var(--kept-filter);
+}
+.hand-sink-blocked .card-disabled::before {
+  opacity: 0;
 }
 /* A trump card wears a thin gold edge. (A widow card's gold edge says something else, but
    the two never meet: trump is named after the discard.) */

@@ -214,6 +214,7 @@ export function Table({ room, view }: { room: RoomView; view: TableView }) {
               dealer={spotOf(view.dealer, me)}
               onHoverColor={naming ? setHandColor : undefined}
               litColor={naming ? tokenColor : null}
+              sinkBlocked={discarding}
               cardProps={(id) => {
                 if (naming) {
                   // The Tiger, Bull and Bear have no color to name; they fade back.

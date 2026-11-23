@@ -29,6 +29,11 @@ interface Props {
    * focus, or null.
    */
   readonly onHoverColor?: ((suit: Suit | null) => void) | undefined;
+  /**
+   * Discarding: the cards that can't be picked (greyed out) sink below the rest, solid and
+   * grey rather than veiled, so the choosable cards stand clear and each group stays in place.
+   */
+  readonly sinkBlocked?: boolean | undefined;
   /** Choosing trump: a color pointed at elsewhere (its token on the felt), raised as if hovered. */
   readonly litColor?: Suit | null | undefined;
 }
@@ -82,7 +87,15 @@ function Present({ children }: { children: ReactNode }) {
  * on the felt. Hovering or focusing a card you can click raises it and parts the cards around
  * it; a card you can't click stays still.
  */
-export function Hand({ ids, trump, dealer, cardProps, onHoverColor, litColor }: Props) {
+export function Hand({
+  ids,
+  trump,
+  dealer,
+  cardProps,
+  onHoverColor,
+  litColor,
+  sinkBlocked = false,
+}: Props) {
   const order = useMemo(() => displayOrder(ids, trump), [ids, trump]);
   // The first render is the deal; cards that mount after it are the widow. A card that left
   // and comes back (a discard put back) flies home on its own, so it isn't dealt in again.
@@ -119,7 +132,7 @@ export function Hand({ ids, trump, dealer, cardProps, onHoverColor, litColor }: 
 
   return (
     <section
-      className="hand"
+      className={sinkBlocked ? 'hand hand-sink-blocked' : 'hand'}
       aria-label="Your hand"
       style={{ '--n': order.length } as CSSProperties}
       onPointerLeave={() => setHovered(null)}
@@ -152,6 +165,7 @@ export function Hand({ ids, trump, dealer, cardProps, onHoverColor, litColor }: 
             '--part': part,
             '--raise': raise,
             '--picked': props.selected ? 1 : 0,
+            '--sunk': sinkBlocked && props.disabled ? 1 : 0,
           } as CSSProperties;
           return (
             <motion.div
