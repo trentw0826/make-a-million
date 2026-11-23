@@ -22,6 +22,8 @@ export interface BankEntry {
    * deciding never sees them). Lets a card play be scored against the true deal.
    */
   readonly hands?: readonly (readonly CardId[])[];
+  /** What the self-play bot chose there (data for models of the bots' own play). */
+  readonly action?: Action;
 }
 
 /**
@@ -41,7 +43,7 @@ export async function bankTask(input: PlayInput): Promise<BankEntry[]> {
     ...(input.scores ? { scores: input.scores } : {}),
     hands: input.hands ?? 1,
     ...(input.ruleset ? { ruleset: input.ruleset } : {}),
-    onDecision: ({ obs, state }) => {
+    onDecision: ({ obs, state, action }) => {
       const legal = obs.legal;
       const live = obs.handSizes.reduce((a, b) => a + b, 0) + (obs.currentTrick?.plays.length ?? 0);
       const count = legal.kind === 'play' ? legal.cardIds.length : 0;
@@ -55,6 +57,7 @@ export async function bankTask(input: PlayInput): Promise<BankEntry[]> {
         seed: `${input.seed}:bank:${n++}`,
         obs,
         ...(state.hand ? { hands: state.hand.hands } : {}),
+        action,
       });
     },
   });

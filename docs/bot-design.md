@@ -88,6 +88,7 @@ Simulations pass no deadline, so their results do not depend on the machine.
 | `auctionSigma` | 20k | Scale of the auction likelihood | 40k: H0 |
 | `ceilingShift`, `ceilingScale`, `partnerPassInformative` | 0, 1, true | Model of the other players' bidding | not yet tested (`bot-roadmap.md`) |
 | `inferencePool`, `auctionInference`, `throwOffs`, `specialsInference` | 6, false, false, true | Soft inference for card play | specials: +4.3k points per hand, promoted |
+| `policyInference`, `policyTemperature`, `policyMix` | false, 1.5, 0.8 | Policy‑based inference: weight worlds by every other player's past card plays under the card‑play model (`inference/policy.ts`, fitted by `scripts/policy-model.ts`), each play's likelihood mixed with uniform over the legal cards, then tempered | not yet tested |
 
 **Expert** (`EXPERT_DEFAULTS`) is Hard with `worlds` 60, `nodes` 8M, `exactTricks` 7, `worldNodes` 1.2M, `bidWorlds` 400, `screenWorlds` 80, `refineWorlds` 24, `refineTop` 5, `refineDepth` 2 and `refineNodes` 24M, sized for a 5 s reply time (4.8 s deadline; `bot-ladder.md`, Timing). These settings are frozen as the simulator spec `expert0` (Expert‑0, `packages/sim/src/registry.ts`), so that later changes to Expert can be measured against it. It is not offered at the table; see `bot-roadmap.md`.
 

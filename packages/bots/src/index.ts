@@ -31,6 +31,15 @@ export {
 } from './hard/index';
 export { ceilingForHand } from './heuristic/bidding';
 export { HeuristicBot } from './heuristic/index';
+export { POLICY_MODEL } from './inference/generated/policyModel';
+export {
+  makePolicyWeight,
+  PLAY_FEATURE_COUNT,
+  PLAY_FEATURES,
+  type PolicyModel,
+  playFeatures,
+  playProbabilities,
+} from './inference/policy';
 export {
   COARSE_CELLS,
   FINE_CELLS,

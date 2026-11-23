@@ -15,7 +15,9 @@ import {
   decideTrump,
 } from '../contract/index';
 import { HeuristicBot } from '../heuristic/index';
+import { POLICY_MODEL } from '../inference/generated/policyModel';
 import { makeWorldWeight } from '../inference/index';
+import { makePolicyWeight } from '../inference/policy';
 import { makeSpecialsWeight } from '../inference/specials';
 import type { BotStrategy, DecideContext } from '../strategy';
 import { PIMC_DEFAULTS, type PimcOptions, pimcValues } from './pimc';
@@ -52,6 +54,14 @@ export interface HardOptions extends PimcOptions, ContractOptions {
    * have played one and did not (inference/specials.ts).
    */
   readonly specialsInference: boolean;
+  /**
+   * With inference on, weight worlds by every other player's past card plays under the
+   * card-play policy model (inference/policy.ts): policy-based inference.
+   */
+  readonly policyInference: boolean;
+  /** Its tempering (> 1 flattens) and the model's share against uniform over legal cards. */
+  readonly policyTemperature: number;
+  readonly policyMix: number;
 }
 
 export const HARD_DEFAULTS: HardOptions = {
@@ -69,6 +79,9 @@ export const HARD_DEFAULTS: HardOptions = {
   auctionInference: false,
   throwOffs: false,
   specialsInference: true,
+  policyInference: false,
+  policyTemperature: 1.5,
+  policyMix: 0.8,
 };
 
 /**
@@ -177,6 +190,10 @@ export class HardBot implements BotStrategy {
     if (o.auctionInference) parts.push(makeWorldWeight(obs, { throwOffs: o.throwOffs }));
     const specials = o.specialsInference ? makeSpecialsWeight(obs) : undefined;
     if (specials) parts.push(specials);
+    const policy = o.policyInference
+      ? makePolicyWeight(obs, POLICY_MODEL, { temperature: o.policyTemperature, mix: o.policyMix })
+      : undefined;
+    if (policy) parts.push(policy);
     if (parts.length === 0) return undefined;
     if (parts.length === 1) return parts[0];
     return (world) => parts.reduce((w, f) => w * f(world), 1);
