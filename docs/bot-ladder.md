@@ -107,6 +107,8 @@ Inference quality on 1,883 banked plays of other hands (seed `timing-xb1`). The 
 
 The policy model moves the truth's probability ten times as far as the specials model, which gained +4.1k points per hand in play, most of all late in the hand. But on 4,123 banked plays Expert‑0's true‑deal regret with it was 0.19k [−0.21, 0.60] per decision *higher* (not significant; 81% of cards unchanged). That metric cannot resolve a gain the size of the specials' (about 0.1k per decision), so the screen is inconclusive, not a failure. Next: a duplicate SPRT.
 
+**More worlds for leads** (`leadWorlds`). Leads carry two thirds of the regret (Headroom, above), so their per‑card averages might be too noisy. On 1200 banked leads before the exact window (29–52 live cards), 180 worlds instead of 60 gave a true‑deal regret 0.77k [−1.25, 2.79] per lead *higher* than Expert‑0's (36.7k against 35.9k; 72% of cards unchanged), at 2.4× the time. **Rejected:** lead regret is not sampling noise.
+
 ## Calibration (`packages/sim/scripts/calibrate.ts`)
 
 Hard in all four seats, 300 hands (286 contracts), 2026‑11‑15:

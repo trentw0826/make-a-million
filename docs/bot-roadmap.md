@@ -13,7 +13,7 @@ Where the work on the strong bots stands, what was learned, what is left, and ho
   - `contractValue: 'model'`, a learned contract‑value model for bidding: waiting for its data (Hard self‑play: 4000 forced hands, seed `xb-cvm1`; 2000 natural, `xb-cvm2`), then `contract-model.ts`.
   - `ceilingModel: 'fitted'`, the other bidders as the bots really bid (also for card play's `auctionInference`): waiting for the natural data, then `auction-model.ts`.
   - `policyInference`, inference from every past card play: model fitted; belief metric clearly better, regret screen inconclusive; a fixed 1500‑board run (seed `xb3`) is queued after the hindsight bid oracle.
-  - `leadWorlds`, more worlds for leads: offline screen on 1200 banked leads running.
+  - `leadWorlds`, more worlds for leads: rejected offline (no better on 1200 banked leads).
 - **Current best Expert:** Expert‑0 (`EXPERT_DEFAULTS` = `expert0`).
 - **Next:** fit the contract‑value and auction models when their data lands, screen them offline, and duplicate‑test those that pass (bidding first); then the Phase 2 headroom table, re‑ranking the rest; replicate the final Expert against Hard and run the robustness gate (partnered with Normal and Easy, against a passive bidder, against Normal).
 - **How the runs are driven:** a job runner in the session scratchpad takes commands one at a time from a jobs file; each experiment runs from a frozen detached checkout of the branch, so edits cannot reach a running experiment. If the session is lost, rerun the queued experiments from the commands in this section and `bot-ladder.md`.
