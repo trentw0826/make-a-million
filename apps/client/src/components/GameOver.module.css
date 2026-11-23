@@ -1,0 +1,65 @@
+/* The win screen (GameOver.tsx): the headline, each side's final total on the race to the
+   target, the winner's panel edged in gold, and the buttons in the modal's footer. */
+.modal {
+  max-width: 560px;
+}
+.headline {
+  display: inline-block;
+}
+.won {
+  color: var(--good-ink);
+}
+.lost {
+  color: var(--danger);
+}
+.eyebrow {
+  margin: 0 0 var(--space-6);
+}
+.sides {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-5);
+}
+.side {
+  display: grid;
+  gap: var(--space-2);
+  border: 2px solid transparent;
+}
+.winner {
+  border-color: var(--accent);
+  box-shadow:
+    var(--shadow-1),
+    0 0 0 4px var(--glow-faint);
+}
+.name {
+  display: flex;
+  align-items: center;
+  font-weight: var(--weight-bold);
+}
+.chip {
+  margin-left: auto;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-pill);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-bold);
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  color: var(--on-accent);
+  background: var(--accent);
+}
+/* The bar sits on paper here, not the felt, so its empty track takes the paper's line. */
+.progress {
+  margin-top: var(--space-3);
+  background: var(--line);
+}
+.target {
+  margin: var(--space-4) 0 var(--space-6);
+  text-align: center;
+}
+/* Leave on the left, the way on to the right. */
+.foot > :first-child {
+  margin-left: 0;
+}
+.foot > :last-child {
+  margin-left: auto;
+}

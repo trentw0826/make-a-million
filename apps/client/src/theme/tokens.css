@@ -185,6 +185,8 @@
   /* The top bar, the connection banner, and the buttons that stay over the open drawer. */
   --z-sticky: 6;
   --z-modal: 10;
+  /* Confetti over the win screen: above the modal, below a toast. */
+  --z-confetti: 15;
   --z-toast: 20;
 
   /* Cards --------------------------------------------------------------- */
@@ -210,6 +212,10 @@
   --hover-lift: 12px;
   --hover-scale: 0.04;
   --pick-lift: 22px;
+  /* Discarding: a card that must be kept sinks this far below the others, solid and grey
+     (--kept-filter) rather than veiled, so the fan stays readable where cards overlap. */
+  --kept-sink: 20px;
+  --kept-filter: grayscale(1) brightness(0.8) contrast(0.85);
   --part-gap: calc(var(--card-w) * var(--hand-overlap) + 6px);
   /* How far the felt leans away from the player. */
   --felt-tilt: 10deg;

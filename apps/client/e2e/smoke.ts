@@ -352,17 +352,17 @@ async function act(page: Page, shoot: Shoot): Promise<boolean> {
         .catch(() => {});
       return true;
     }
-    // The tray on the felt counts the picks, "Discards (0/3)", above its Discard button.
-    const discard = page.getByRole('button', { name: 'Discard', exact: true });
-    if (await discard.isVisible()) {
+    // The tray on the felt: its button counts the picks still to make ("Discard 3 More").
+    const tray = page.getByRole('region', { name: 'Your discards' });
+    if (await tray.isVisible()) {
+      const discard = tray.locator('.discard-go');
       if (!discardChecked) {
-        const tray = page.getByRole('region', { name: 'Your discards' });
-        const label = await tray.locator('.discard-tray-label').textContent();
+        const label = await discard.textContent();
         check(
-          label === 'Discards (0/3)' &&
+          label === 'Discard 3 More' &&
             (await tray.getByRole('button', { name: 'Discard rules' }).isVisible()) &&
             (await discard.isDisabled()),
-          `the discard tray counts the picks, with its button and rules on the felt (label: ${label})`,
+          `the discard button counts the picks, with the rules on the felt (label: ${label})`,
         );
         discardChecked = true;
       }
@@ -405,6 +405,13 @@ async function act(page: Page, shoot: Shoot): Promise<boolean> {
         check(
           raised > 0 && raised === held && (await page.locator('.action-bar').count()) === 0,
           `pointing at a color raises its group and lights its token on the felt (${raised} raised, ${lit})`,
+        );
+        // And back: pointing at that token raises the same group in the hand.
+        await picker.locator('.trump-pick-lit').hover();
+        await sleep(350);
+        check(
+          (await page.locator('.hand-fan-hovered').count()) === held,
+          'pointing at a trump token raises its color in the hand',
         );
         trumpChecked = true;
         await shoot('4b-trump');
@@ -503,11 +510,12 @@ async function fullHand(browser: Browser, base: string): Promise<void> {
     await page.screenshot({ path: path.join(OUT, `${name}.png`) });
   };
 
-  // How to play, from the home screen.
+  // How to play, from the home screen's corner (the home screen has no top bar).
   await page.goto(base);
-  await page.getByRole('button', { name: 'How to play', exact: true }).click();
+  check((await page.locator('.topbar').count()) === 0, 'the home screen has no top bar');
+  await page.locator('.home-corner').getByRole('button', { name: 'How to play' }).click();
   const help = page.getByRole('dialog', { name: 'How to play' });
-  check(await help.isVisible(), 'How to play opens from the top bar');
+  check(await help.isVisible(), 'How to play opens from the corner of the home screen');
   await shoot('1-how-to-play');
   await checkNoScroll(page, 'How to play');
   await page.keyboard.press('Escape');

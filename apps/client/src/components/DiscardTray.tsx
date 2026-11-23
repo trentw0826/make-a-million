@@ -11,8 +11,9 @@ import { Button } from './ui/Button';
 const SLOTS = 3;
 
 /**
- * Where the bidder discards, in the middle of the felt: three slots, counted in the label,
- * and the Discard button below them. A card picked in the hand flies here (it shares its
+ * Where the bidder discards, in the middle of the felt: three slots and, below them, the
+ * Discard button, which counts down the picks still to make ("Discard 2 More") and can't be
+ * pressed until all three are in. A card picked in the hand flies here (it shares its
  * layout id with its place in the hand), and a click sends it back. The rules wait behind a
  * "?" at the last slot's corner.
  */
@@ -31,6 +32,7 @@ export function DiscardTray({
   const { act } = useGame();
   const numbers = ids.filter((id) => isNumberCard(cardById(id))).length;
   const ok = ids.length === SLOTS && numbers >= legal.requiredNumberCards;
+  const left = SLOTS - ids.length;
   const discard = () => {
     act({ type: 'discard', cardIds: [...ids] });
     onDone();
@@ -38,9 +40,6 @@ export function DiscardTray({
   useGameKeys(ok ? { Enter: discard } : {});
   return (
     <section className="discard-tray" aria-label="Your discards">
-      <p className="discard-tray-label">
-        Discards ({ids.length}/{SLOTS})
-      </p>
       <div className="discard-slots">
         {Array.from({ length: SLOTS }, (_, i) => {
           const id = ids[i];
@@ -68,7 +67,7 @@ export function DiscardTray({
         })}
       </div>
       <Button variant="primary" className="discard-go" disabled={!ok} onClick={discard}>
-        Discard
+        {left > 0 ? `Discard ${left} More` : 'Discard'}
       </Button>
     </section>
   );

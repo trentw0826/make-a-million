@@ -912,7 +912,6 @@
   justify-items: center;
   gap: var(--space-4);
 }
-.discard-tray-label,
 .felt-label {
   margin: 0;
   font-size: var(--text-sm);
@@ -938,7 +937,7 @@
   min-width: 120px;
 }
 /* Naming trump (TrumpPicker), in the middle of the felt: a token per color, lit while the
-   pointer is on that color in the hand. */
+   pointer is on that color in the hand (pointing at a token raises the color there too). */
 .trump-picker {
   grid-area: trick;
   place-self: center;
@@ -980,10 +979,6 @@
   font-weight: var(--weight-bold);
   font-size: var(--text-sm);
   color: var(--ink);
-}
-.trump-pick-count {
-  font-size: var(--text-xs);
-  color: var(--muted);
 }
 /* The playing surface leans away from you. Only this backdrop tilts: the cards stay flat, so
    Motion can measure them for the flight from your hand. */
@@ -1229,9 +1224,17 @@
 }
 /* The fan: each card leans by its distance from the middle (--d) and drops a little. Around
    a hovered card the others part (--part, set by Hand) and the card itself rises (--raise);
-   a card picked for the discard stays up (--picked). The stacking order never changes. */
+   a card picked for the discard stays up (--picked), and one that must be kept sinks (--sunk).
+   The stacking order never changes. */
 .hand-fan {
-  --lift: calc(var(--raise, 0) * var(--hover-lift) + var(--picked, 0) * var(--pick-lift));
+  --lift: calc(
+    var(--raise, 0) *
+    var(--hover-lift) +
+    var(--picked, 0) *
+    var(--pick-lift) -
+    var(--sunk, 0) *
+    var(--kept-sink)
+  );
 
   position: relative;
   pointer-events: auto;
@@ -1266,7 +1269,16 @@
 .table-corner > button {
   z-index: var(--z-sticky);
 }
+/* The home screen's corner: sound and How to play, placed as they are at the table. */
+.home-corner {
+  position: fixed;
+  right: var(--space-6);
+  bottom: var(--space-5);
+  display: flex;
+  gap: var(--space-3);
+}
 /* Solid, so they read over the open score sheet as well as over the felt. */
+.home-corner > button:not(:hover),
 .table-corner > button:not(:hover, [aria-expanded="true"]) {
   background: var(--felt-dark);
 }
@@ -1458,17 +1470,24 @@ button.card-selected:hover:not([aria-disabled="true"]) {
 .card-disabled::before {
   opacity: var(--disabled-veil);
 }
-.card-star {
-  position: absolute;
-  top: 2px;
-  right: 4px;
-  font-size: var(--text-xs);
-  color: var(--accent);
+/* Discarding, a card that must be kept is solid grey instead (it sinks too; see .hand-fan):
+   a see-through veil let the cards beneath show through and made the fan hard to read. */
+.hand-sink-blocked .card {
+  transition:
+    transform var(--dur-fast),
+    box-shadow var(--dur-base),
+    filter var(--dur-base) var(--ease-out),
+    var(--press-transition);
 }
-.card-small .card-star {
-  top: 1px;
-  right: 3px;
+.hand-sink-blocked .card-disabled {
+  filter: var(--kept-filter);
 }
+.hand-sink-blocked .card-disabled::before {
+  opacity: 0;
+}
+/* A trump card wears a thin gold edge. (A widow card's gold edge says something else, but
+   the two never meet: trump is named after the discard.) */
+.card-trump,
 .card-fresh {
   border-color: var(--accent);
 }
@@ -1706,12 +1725,6 @@ button.card-selected:hover:not([aria-disabled="true"]) {
 .result-modal {
   max-width: 640px;
 }
-.result-contract {
-  margin: 0 0 var(--space-4);
-}
-.suit-word {
-  font-weight: var(--weight-bold);
-}
 
 /* The hand on one bar (ScoreBar): your side's capture from the left, theirs from the right,
    the bid notched from the bidders' end; above each end, the hand's score and the total. */
@@ -1851,9 +1864,6 @@ button.card-selected:hover:not([aria-disabled="true"]) {
 .result-trick-cards .card-label {
   top: 2px;
   left: 3px;
-  font-size: var(--text-2xs);
-}
-.result-trick-cards .card-star {
   font-size: var(--text-2xs);
 }
 .result-trick-cards .card-art {

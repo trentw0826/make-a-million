@@ -1,0 +1,51 @@
+/* Confetti (Confetti.tsx): pieces fall from above the screen to below it, swaying aside and
+   tumbling as they go. Each piece sets --x, --wait, --speed, --drift and --spin. */
+.confetti {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-confetti);
+  overflow: hidden;
+  pointer-events: none;
+}
+.piece {
+  position: absolute;
+  top: 0;
+  left: var(--x);
+  width: 8px;
+  height: 14px;
+  border-radius: var(--radius-s);
+  background: var(--accent-light);
+  opacity: 0;
+  animation: fall calc(var(--dur-linger) * var(--speed)) linear
+    calc(var(--dur-slower) * var(--wait)) both;
+}
+.piece:nth-child(5n + 1) {
+  background: var(--red);
+}
+.piece:nth-child(5n + 2) {
+  background: var(--yellow);
+}
+.piece:nth-child(5n + 3) {
+  background: var(--green);
+}
+.piece:nth-child(5n + 4) {
+  background: var(--black);
+}
+.piece:nth-child(3n) {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+@keyframes fall {
+  from {
+    opacity: 1;
+    transform: translate3d(0, -5vh, 0) rotate(0) rotateY(0);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate3d(var(--drift), 105vh, 0) rotate(var(--spin))
+      rotateY(calc(var(--spin) * 2));
+  }
+}

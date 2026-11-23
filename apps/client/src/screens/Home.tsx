@@ -1,6 +1,7 @@
 import { motion } from 'motion/react';
 import { type CSSProperties, type FormEvent, useState } from 'react';
 import { CardFace } from '../components/CardFace';
+import { HelpButton, SoundToggle } from '../components/TopBar';
 import { Button } from '../components/ui/Button';
 import { Panel } from '../components/ui/Panel';
 import { Text } from '../components/ui/Text';
@@ -114,6 +115,11 @@ export function Home() {
           {busy && <span role="status"> Connecting…</span>}
         </Text>
       </Panel>
+      {/* Sound and How to play in the corner, where they sit at the table too. */}
+      <div className="home-corner">
+        <SoundToggle />
+        <HelpButton icon />
+      </div>
     </main>
   );
 }
