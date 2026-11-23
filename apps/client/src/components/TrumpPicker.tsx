@@ -53,9 +53,6 @@ export function TrumpPicker({
             >
               <SuitGlyph suit={suit} className="trump-pick-glyph" />
               <span className="trump-pick-name">{SUIT_NAMES[suit]}</span>
-              <span className="trump-pick-count" aria-hidden="true">
-                {n} held
-              </span>
               <MoveValue action={{ type: 'nameTrump', suit }} />
             </button>
           );
