@@ -3,7 +3,7 @@
  * effects by tasks.ts and the CLI, so worker threads see the same set.
  */
 import { EXPERT_DEFAULTS, HARD_DEFAULTS, HardBot, type HardOptions } from '@mam/bots';
-import { OracleBot, PeekBot } from './oracle';
+import { OracleBot, PEEK_GROUPS, PeekBot, type PeekGroup } from './oracle';
 import { registerStrategy } from './strategies';
 
 /**
@@ -77,25 +77,20 @@ registerStrategy('hybrid', (o) => {
   );
 });
 
-/** Cards a "peek" spec can reveal, by name ("cards=bull+bear+tiger"). */
-const PEEK_CARDS: Readonly<Record<string, number>> = { tiger: 52, bull: 53, bear: 54 };
-
 /**
- * Diagnostic: Hard whose sampled worlds must put the named cards where they really are, in
- * card play with `last` or fewer tricks left. "peek:cards=bull+bear+tiger" vs "hard" is the
- * most that inferring where the specials are could gain.
+ * Diagnostic: a Hard-family bot (`base`, default Hard) whose sampled worlds put the cards
+ * of the named groups (PEEK_GROUPS, joined by "+") where they really are, in card play with
+ * `last` or fewer tricks left. "peek:cards=bull+bear+tiger" vs "hard" is the most that
+ * inferring where the specials are could gain; "peek:cards=all" plays the true deal.
  */
 registerStrategy('peek', (o) => {
-  const { cards = 'bull+bear+tiger', last, pool, ...hard } = o;
-  const ids = cards.split('+').map((name) => {
-    const id = PEEK_CARDS[name];
-    if (id === undefined) throw new Error(`unknown peek card "${name}"`);
-    return id;
+  const { cards = 'bull+bear+tiger', last, base, ...rest } = o;
+  const groups = cards.split('+').map((name) => {
+    if (!(PEEK_GROUPS as readonly string[]).includes(name)) {
+      throw new Error(`unknown peek group "${name}"`);
+    }
+    return name as PeekGroup;
   });
-  return new PeekBot(
-    ids,
-    new HardBot(parseOptions<HardOptions>(HARD_DEFAULTS, hard)),
-    Number(last ?? 13),
-    Number(pool ?? 40),
-  );
+  return new PeekBot(groups, hardFamily(base, rest), Number(last ?? 13));
 });
+

@@ -106,4 +106,43 @@ describe('buildBelief', () => {
     }
     throw new Error('no small endgame found');
   });
+
+  it('pins put cards where they are and condition the rest exactly (diagnostics)', () => {
+    const rng = Rng.fromSeed('pins');
+    let checked = 0;
+    for (let g = 0; g < 60 && checked < 40; g++) {
+      for (const { state } of decisionPoints(`pins-${g}`)) {
+        const hand = state.hand;
+        if (hand?.phase !== 'playing') continue;
+        const obs = observe(state, 0);
+        // Pin the true holder of every unseen money card and of seat 1's whole hand.
+        const pins = new Map<number, Seat | 'pile'>();
+        for (const s of [1, 2, 3] as Seat[]) {
+          for (const c of hand.hands[s]) {
+            if (s === 1 || cardById(c).kind !== 'suit' || [4, 8, 10, 11, 12].includes(c % 13)) {
+              pins.set(c, s);
+            }
+          }
+        }
+        const belief = buildBelief(obs, pins);
+        for (let k = 0; k < 4; k++) {
+          const w = belief.sample(rng);
+          for (const [c, s] of pins) expect(w.hands[s as Seat]).toContain(c);
+        }
+        const all = buildBelief(obs).enumerate(400);
+        if (all) {
+          const keep = all.filter((w) =>
+            [...pins].every(([c, s]) => (w.hands[s as Seat] ?? []).includes(c)),
+          );
+          const pinned = belief.enumerate(400) ?? [];
+          expect(new Set(pinned.map((w) => JSON.stringify(w)))).toEqual(
+            new Set(keep.map((w) => JSON.stringify(w))),
+          );
+        }
+        checked += 1;
+        if (checked >= 40) break;
+      }
+    }
+    expect(checked).toBe(40);
+  });
 });
