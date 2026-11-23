@@ -640,7 +640,7 @@ describe('table status', () => {
     expect(document.querySelector('.me-name')).not.toHaveTextContent('bidder');
   });
 
-  it('counts the discards on the felt, with the button below and the rules behind a ?', () => {
+  it('counts down the discards on the button below the slots, with the rules behind a ?', () => {
     const legal = { kind: 'discard', requiredNumberCards: 0, forbiddenIds: [] } as const;
     const tray = (ids: readonly number[]) => (
       <GameProvider url={URL}>
@@ -649,15 +649,13 @@ describe('table status', () => {
     );
     const { rerender } = render(tray([]));
     const region = screen.getByRole('region', { name: 'Your discards' });
-    expect(region.querySelector('.discard-tray-label')).toHaveTextContent('Discards (0/3)');
-    expect(screen.getByRole('button', { name: 'Discard' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Discard 3 More' })).toBeDisabled();
     // The ? sits on the last slot.
     const tip = screen.getByRole('button', { name: 'Discard rules' });
     expect(tip.closest('.discard-slot')).toBe(region.querySelectorAll('.discard-slot')[2]);
     expect(tip).toHaveAccessibleDescription(/Number cards must go before Money/);
     rerender(tray([1, 2]));
-    expect(region.querySelector('.discard-tray-label')).toHaveTextContent('Discards (2/3)');
-    expect(screen.getByRole('button', { name: 'Discard' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Discard 1 More' })).toBeDisabled();
     rerender(tray([1, 2, 3]));
     expect(screen.getByRole('button', { name: 'Discard' })).toBeEnabled();
   });
@@ -695,13 +693,12 @@ describe('table status', () => {
     fireEvent.click(document.querySelector('.hand [data-card-id="1"]') as Element);
     // It flies to the tray (in jsdom the hand's copy lingers, as its exit never runs).
     await waitFor(() => expect(tray.querySelector('[data-card-id="1"]')).not.toBeNull());
-    expect(tray).toHaveTextContent('Discards (1/3)');
+    expect(within(tray).getByRole('button', { name: 'Discard 2 More' })).toBeDisabled();
 
     fireEvent.click(tray.querySelector('[data-card-id="1"]') as Element);
     expect(tray.querySelector('[data-card-id="1"]')).toBeNull();
     expect(handIds()).toContain(1);
-    expect(tray).toHaveTextContent('Discards (0/3)');
-    expect(within(tray).getByRole('button', { name: 'Discard' })).toBeDisabled();
+    expect(within(tray).getByRole('button', { name: 'Discard 3 More' })).toBeDisabled();
     // The bar below your hand has nothing to add.
     expect(document.querySelector('.me .action-bar')).toBeNull();
   });

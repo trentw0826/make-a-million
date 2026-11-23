@@ -912,7 +912,6 @@
   justify-items: center;
   gap: var(--space-4);
 }
-.discard-tray-label,
 .felt-label {
   margin: 0;
   font-size: var(--text-sm);
