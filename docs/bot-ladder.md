@@ -107,6 +107,7 @@ By trick, per team‑hand: 32.9k (trick 1), 28.8k, 23.8k, 21.2k, 16.7k, 14.7k (t
 | Decision | Candidates | ΔME (95% CI) | Δ points ($, 95% CI) | Contracts made (oracle / Expert‑0) |
 |---|---|---|---|---|
 | bid and misdeal | the bot's own, pass, the minimum bid, misdeal | +27.9% [24.7, 31.1] | +163k [148k, 178k] | 203 of 213 (95%) / 76 of 187 (41%) |
+| trump | every suit, after the bot's own discard | +6.0% [3.9, 8.1] | +31.3k [21.1k, 41.4k] | 170 of 200 (85%) / 154 of 200 (77%), the same contracts |
 
 On bidding, most of the margin is knowledge no bot can have. The oracle declares only contracts it will make, and it pushes the opponents into contracts it knows they will fail: Expert‑0 made 41% of its contracts here, against 73% in ordinary play (Expert‑0 against Hard, `xb1`). The bound is of the same order as the all‑seeing card‑play oracle's against Hard (+21.9%, Results), and the bidding ideas are cheap to test, so bidding stays first in the plan.
 
