@@ -70,10 +70,13 @@ export function Table({ room, view }: { room: RoomView; view: TableView }) {
   }, [view.legal.kind]);
 
   // Choosing trump: the color the pointer is on, in the hand or in the picker on the felt;
-  // each lights it in the other.
+  // each lights it in the other. Kept apart, so the hand letting go of a color (reported a
+  // render late) can't put out the token the pointer has just moved onto.
   const naming = view.legal.kind === 'trump';
   const nameable = new Set<Suit>(view.legal.kind === 'trump' ? view.legal.suits : []);
-  const [trumpPreview, setTrumpPreview] = useState<Suit | null>(null);
+  const [handColor, setHandColor] = useState<Suit | null>(null);
+  const [tokenColor, setTokenColor] = useState<Suit | null>(null);
+  const trumpPreview = handColor ?? tokenColor;
   const legalPlays = view.legal.kind === 'play' ? new Set(view.legal.cardIds) : null;
   const discarding = view.legal.kind === 'discard';
   const forbidden =
@@ -176,7 +179,7 @@ export function Table({ room, view }: { room: RoomView; view: TableView }) {
               legal={view.legal}
               hand={view.hand}
               preview={trumpPreview}
-              onPreview={setTrumpPreview}
+              onPreview={setTokenColor}
             />
           )}
           {view.legal.kind === 'discard' && (
@@ -207,8 +210,8 @@ export function Table({ room, view }: { room: RoomView; view: TableView }) {
               ids={handIds}
               trump={view.trump}
               dealer={spotOf(view.dealer, me)}
-              onHoverColor={naming ? setTrumpPreview : undefined}
-              litColor={naming ? trumpPreview : null}
+              onHoverColor={naming ? setHandColor : undefined}
+              litColor={naming ? tokenColor : null}
               cardProps={(id) => {
                 if (naming) {
                   // The Tiger, Bull and Bear have no color to name; they fade back.

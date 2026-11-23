@@ -623,9 +623,12 @@ describe('table status', () => {
     expect(picker.querySelector('.trump-pick-lit')).toHaveAccessibleName('Red, 2 in your hand');
 
     // And the other way round: pointing at a token raises its color in the hand.
-    fireEvent.pointerLeave(document.querySelector('.hand') as Element);
+    // (Straight from the hand to the token, in one move, as a real pointer goes.)
     const green = within(picker).getByRole('button', { name: /^Green/ });
-    fireEvent.pointerEnter(green, { pointerType: 'mouse' });
+    act(() => {
+      fireEvent.pointerLeave(document.querySelector('.hand') as Element);
+      fireEvent.pointerEnter(green, { pointerType: 'mouse' });
+    });
     expect(fan(39).style.getPropertyValue('--raise')).toBe('1');
     expect(fan(0).style.getPropertyValue('--raise')).toBe('0');
     expect(green).toHaveClass('trump-pick-lit');
