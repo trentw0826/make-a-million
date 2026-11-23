@@ -25,6 +25,7 @@ Every bot change is measured before it is kept. This page records the results, i
 | 2026‑11‑15 | peek at the specials in the last 7 tricks only | hard | 421 | +1.40% [0.33, 2.48] | +8.5k [3.2, 13.9] | most of the specials' value is in the first 6 tricks. (The bidding default changed during this run, for both sides alike) |
 | 2026‑11‑15 | expert (≈3× Hard's budget, more worlds) | hard (both still raising partner) | 1200 | +1.12% [−0.20, 2.44] | **+8.4k [1.5, 15.2]** | SPRT continue (LLR 1.37). 777 / 209 ms mean, max 28 s. A: 1172 contracts, 77.5% made; B: 1228, 75.2% |
 | 2026‑11‑15 | hard (current defaults: no partner raises, calibrated bidding), **first‑lead rule** (the player to the bidder's left leads) | normal | 200 | +15.02% [11.43, 18.62] | +73.1k [54.0, 92.1] | SPRT H1 (seed `exp20`). Hard won 264 of 400 contracts and made 89.4%; Normal won 136 and made 71.3%. Mean decision 327 ms, max 4.0 s on a loaded machine (the simulator sets no deadline) |
+| 2026‑11‑23 | **expert0** (Expert‑0: Expert fitted to its 5 s reply time), **fixed 1500 fresh boards** (`SPRT=0`, seed `xb1`) | hard | 1500 | **+1.35% [0.05, 2.65]** | **+9.8k [2.6, 17.1]** | Expert‑0 is stronger than the current Hard; to be replicated on fresh boards before Expert is offered. A won 1432 of 3000 contracts and made 73.4%; B won 1568 and made 71.0%; mean bids $210k and $212k. Mean decision 688 / 170 ms on a busy machine (no deadline in the simulator; 61 minutes on 22 workers) |
 | 2026‑11‑16 | hard (current defaults, now with specials inference), first‑lead rule, **fixed 800 fresh boards** (`SPRT=0`, seed `exp23`) | normal | 800 | **+12.70% [11.03, 14.37]** | **+65.9k [56.8, 75.1]** | the current measure of Hard against Normal. Lower than the 200‑board SPRT run above, whose estimate is biased upward by its stop (note 9); the two intervals overlap. Hard won 1000 of 1600 contracts and made 90.9%; Normal won 600 and made 75.3%. Mean decision 295 ms, max 3.8 s on a loaded machine (no deadline in the simulator) |
 
 ### Tuning experiments (A against the Hard defaults unless stated; SPRT δ = 1%)
@@ -70,6 +71,23 @@ Notes:
 8. The bidding's playout estimate badly understates weak hands (see Calibration: an estimate of $80k averages $181k in real play), so uncalibrated Hard passes hands it would make. With the calibration it bids far more often and still makes more of its contracts. Refitting on 300 hands of calibrated self‑play gives nearly the same fit (a = 132k, b = 0.46, SD 56k), so the parameters are close to their fixed point.
 9. The SPRT stops when its evidence crosses a boundary, so the estimate at the stop is biased toward the verdict: up after an H1, down after an H0. The two specials runs differ by about three standard errors, partly for that reason. Before promoting a small effect, measure it on a fixed number of boards (`SPRT=0`).
 10. Specials inference on its fixed, unselected runs (1500 boards each), pooled by inverse variance. Under the current first‑lead rule with the refitted model (`exp21`, `exp22`): ΔME +0.53% [−0.12, 1.17], Δpoints **+4.1k [0.7, 7.6]** per hand. With the old‑rule fixed run as well: ΔME +0.63% [0.12, 1.15], Δpoints +4.3k [1.6, 7.1]. All three point estimates are positive (+0.82%, +0.44%, +0.61%). It costs about 3% more decision time (about 267 against 258 ms on average; the same maximum). **Promoted** (2026‑11‑16) on the standard of note 5: a clear points gain on unselected boards, a positive equity gain, and a small cost.
+
+## Offline screens (the Expert work)
+
+Cheap checks run before a duplicate test (`bot-roadmap.md`, Scripts).
+
+**Policy‑based inference** (`policyInference`, `inference/policy.ts`). The card‑play model is a conditional logit with 30 hand‑crafted features, fitted on 16,495 Hard self‑play plays (seed `xb-policy1`). On held‑out hands its log‑likelihood is −1.137 per play, against −1.397 for uniform play over the legal cards; it picks the bot's card 54.4% of the time (24 features gave −1.175).
+
+Inference quality on 1,883 banked plays of other hands (seed `timing-xb1`). The figure is the mean log‑probability that a 360‑world pool, weighted by each scheme, gives each unseen card's true holder (higher is better; the 24‑feature model):
+
+| Weighting | all | money | specials | tricks 2–5 | 6–9 | 10–13 | ESS |
+|---|---|---|---|---|---|---|---|
+| uniform | −1.134 | −1.014 | −1.095 | −1.187 | −1.112 | −0.949 | 360 |
+| specials (Hard today) | −1.133 | −1.014 | −1.069 | −1.186 | −1.110 | −0.943 | 342 |
+| policy | −1.114 | −0.993 | −1.077 | −1.177 | −1.085 | −0.896 | 224 |
+| both | −1.114 | −0.994 | −1.065 | −1.177 | −1.085 | −0.896 | 211 |
+
+The policy model moves the truth's probability ten times as far as the specials model, which gained +4.1k points per hand in play, most of all late in the hand. But on 4,123 banked plays Expert‑0's true‑deal regret with it was 0.19k [−0.21, 0.60] per decision *higher* (not significant; 81% of cards unchanged). That metric cannot resolve a gain the size of the specials' (about 0.1k per decision), so the screen is inconclusive, not a failure. Next: a duplicate SPRT.
 
 ## Calibration (`packages/sim/scripts/calibrate.ts`)
 

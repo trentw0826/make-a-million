@@ -6,7 +6,7 @@ Where the work on the strong bots stands, what was learned, what is left, and ho
 
 **The Expert work is under way** (branch `expert-bot`; the brief is `.claude/prompts/expert-bot-research.md`). Where it stands:
 
-- **Phase 0, a baseline Expert that fits its time: done.** Expert‑0 (`expert0`) has every decision kind's p99 at 3.0 s or less. Its fixed‑board test against Hard is **running**: 1500 boards, seed `xb1` (`SPRT=0`).
+- **Phase 0, a baseline Expert that fits its time: done.** Expert‑0 (`expert0`) has every decision kind's p99 at 3.0 s or less, and beats the current Hard by **+1.35% [0.05, 2.65]** equity and **+9.8k [2.6, 17.1]** points per hand over 1500 fixed fresh boards (seed `xb1`). Not yet replicated.
 - **Phase 1, the literature review: done** (`bot-research.md`). The gains over PIMC in comparable games came from better inputs to it: learned contract values and policy‑based inference. Search fixes for strategy fusion changed about 1% of deals in bridge.
 - **Phase 2, measuring the headroom: queued** behind the Expert‑0 run, all on the same 200 fresh boards (seed `xb2`) so the margins compare: hindsight bid, trump and discard oracles; the oracle playing every trick and the last 4; the rollout bot (PIMC's own flaws, last 4 tricks); `peek` at everything, the specials, the money, partner's hand, the left‑hand opponent's hand. Before them: `regret.ts expert0` (seed `xb-regret1`) and contract data for the value model (Hard self‑play: 4000 forced hands, seed `xb-cvm1`; 2000 natural, `xb-cvm2`).
 - **Phase 3, built and waiting for data:** `contractValue: 'model'` (a learned contract‑value model in bidding) and `policyInference` (policy‑based inference from every past card play). Both are options, off by default; Hard is unchanged (golden test).

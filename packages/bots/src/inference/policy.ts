@@ -50,6 +50,12 @@ export const PLAY_FEATURES = [
   'bear × trick money',
   'boss',
   'ruff',
+  'cheapest winner',
+  'not winning × money',
+  'second × wins',
+  'third × wins',
+  'lead × singleton',
+  'cheapest card',
 ] as const;
 
 export const PLAY_FEATURE_COUNT = PLAY_FEATURES.length;
@@ -117,6 +123,25 @@ export function playFeatures(
     if (!lowest.has(s) || c < (lowest.get(s) as number)) lowest.set(s, c);
     if (!highest.has(s) || c > (highest.get(s) as number)) highest.set(s, c);
   }
+  // The cheapest card to give up (as the greedy playout ranks them) and the cheapest winner.
+  const cost = (c: CardId) =>
+    c === TIGER_ID
+      ? 1000
+      : c >= 52
+        ? 500
+        : moneyOf(c) * 4 + (c % 13) + (((c / 13) | 0) === t ? 30 : 0);
+  let cheapest = legal[0] as CardId;
+  for (const c of legal) if (cost(c) < cost(cheapest)) cheapest = c;
+  let cheapestWin = -1;
+  let cheapestWinStrength = Number.POSITIVE_INFINITY;
+  for (const c of legal) {
+    if (lead || c === BULL_ID || c === BEAR_ID) continue;
+    const st = strength(c, prefix.suit ?? effectiveSuit(cardById(c), trump), trump);
+    if (st > winStrength && st < cheapestWinStrength) {
+      cheapestWinStrength = st;
+      cheapestWin = c;
+    }
+  }
   return legal.map((c) => {
     const x = new Float64Array(PLAY_FEATURE_COUNT);
     const isSuit = c < 52;
@@ -163,6 +188,12 @@ export function playFeatures(
     x[20] = c === BULL_ID ? money : 0;
     x[21] = c === BEAR_ID ? money : 0;
     x[22] = boss ? 1 : 0;
+    x[24] = c === cheapestWin ? 1 : 0;
+    x[25] = !lead && !wins ? m : 0;
+    x[26] = pos === 1 && wins ? 1 : 0;
+    x[27] = pos === 2 && wins ? 1 : 0;
+    x[28] = lead && isSuit && s !== t && length[s] === 1 ? 1 : 0;
+    x[29] = c === cheapest ? 1 : 0;
     x[23] =
       !lead && prefix.suit !== null && prefix.suit !== trump && (trumpCard || c === TIGER_ID)
         ? 1
