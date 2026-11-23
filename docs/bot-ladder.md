@@ -137,6 +137,8 @@ On a held‑out fifth of the forced contracts it gives r 0.716 against 0.562. Th
 
 **More worlds for leads** (`leadWorlds`). Leads carry two thirds of the regret (Headroom, above), so their per‑card averages might be too noisy. On 1200 banked leads before the exact window (29–52 live cards), 180 worlds instead of 60 gave a true‑deal regret 0.77k [−1.25, 2.79] per lead *higher* than Expert‑0's (36.7k against 35.9k; 72% of cards unchanged), at 2.4× the time. **Rejected:** lead regret is not sampling noise.
 
+**Bids valued by the rest of the auction** (`bidOutcome: 'auction'`). Bidding valued the minimum bid as if it won the contract at that price. With this option an opponent whose modelled ceiling reaches the next price overcalls instead, so the bid can push them to a dearer contract; the hindsight oracle won much of its margin that way (Headroom). On every third of the 3101 banked bid turns (1034, `timing-xb1`), both with the contract‑value model, it changes 10.0% of decisions: 93 passes become bids and 10 bids become passes. Bids take no longer (p99 236 ms against 229 ms). Screened by SPRT against the contract‑value model (`xb8`).
+
 ## Calibration (`packages/sim/scripts/calibrate.ts`)
 
 Hard in all four seats, 300 hands (286 contracts), 2026‑11‑15:

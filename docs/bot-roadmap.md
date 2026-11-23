@@ -13,6 +13,7 @@ Where the work on the strong bots stands, what was learned, what is left, and ho
   - `contractValue: 'model'`, a learned contract‑value model for bidding: fitted; r 0.72 against 0.55 for the calibrated playout on held‑out natural contracts. **SPRT H1** against Expert‑0: +2.03% [0.63, 3.44], +12.5k [4.7, 20.4] at 845 boards (`xb4`). Confirmation on a fixed 1500 fresh boards (`xb7`) running.
   - `ceilingModel: 'fitted'`, the other bidders as the bots really bid (also for card play's `auctionInference`): fitted; log loss 0.57 against 2.31 for the heuristic ceilings. SPRT queued on top of `contractValue: 'model'` (`xb5`; a first start against plain Expert‑0 was stopped after two minutes, unread, and `xb6` was dropped, once the contract‑value model passed).
   - `policyInference`, inference from every past card play: model fitted; belief metric clearly better, regret screen inconclusive; a fixed 1500‑board run (seed `xb3`) is queued after the hindsight bid oracle.
+  - `bidOutcome: 'auction'`, a bid valued by the rest of the auction (an opponent who would pay more overcalls): changes 10% of banked bid turns, mostly passes to bids. SPRT against the contract‑value model queued (`xb8`).
   - `leadWorlds`, more worlds for leads: rejected offline (no better on 1200 banked leads).
 - **Current best Expert:** Expert‑0 (`EXPERT_DEFAULTS` = `expert0`).
 - **Next:** fit the contract‑value and auction models when their data lands, screen them offline, and duplicate‑test those that pass (bidding first); then the Phase 2 headroom table, re‑ranking the rest; replicate the final Expert against Hard and run the robustness gate (partnered with Normal and Easy, against a passive bidder, against Normal).
@@ -150,7 +151,7 @@ In rough order of expected value:
 - experiment boards: `exp` and `exp1`–`exp23`;
 - calibration: `calibrate`, `calibrate2`, `calibrate4`, `calibrate5`;
 - other: `specials`, `bid-rollouts`, `bid-diagnostic`, `timing`, `timing-x`, `timing-hard`, `timing-lead`, `me-table-noise`;
-- the Expert work (family `xb`): timing `timing-xb0`, `timing-xb1` (the decision bank), `timing-xb2`; Expert‑0 vs Hard `xb1`; the Phase 2 headroom boards `xb2`; Phase 3 screens `xb3` (policy inference), `xb4` (contract‑value model), `xb5` (auction model, on top of the contract‑value model), `xb6` (unused), `xb7` (the contract‑value model's fixed confirmation); regret `xb-regret1`; contract data `xb-cvm1`, `xb-cvm2`; play data `xb-policy1`; smoke tests `cvm-smoke`.
+- the Expert work (family `xb`): timing `timing-xb0`, `timing-xb1` (the decision bank), `timing-xb2`; Expert‑0 vs Hard `xb1`; the Phase 2 headroom boards `xb2`; Phase 3 screens `xb3` (policy inference), `xb4` (contract‑value model), `xb5` (auction model, on top of the contract‑value model), `xb6` (unused), `xb7` (the contract‑value model's fixed confirmation), `xb8` (`bidOutcome`, on top of the contract‑value model); regret `xb-regret1`; contract data `xb-cvm1`, `xb-cvm2`; play data `xb-policy1`; smoke tests `cvm-smoke`.
 
 **Run times** (24 cores):
 - Hard vs Hard over 1200 boards: about 45–60 minutes on all cores.
