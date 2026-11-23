@@ -1,0 +1,364 @@
+golden-0 0 bid: bid 175000
+golden-0 1 bid: bid 185000
+golden-0 2 bid: pass
+golden-0 3 bid: bid 195000
+golden-0 4 bid: pass
+golden-0 5 discard: discard 0,1,28
+golden-0 6 trump: trump red
+golden-0 9 play: play 36
+golden-0 12 play: play 5
+golden-0 15 play: play 17
+golden-0 18 play: play 50
+golden-0 21 play: play 20
+golden-0 24 play: play 1
+golden-0 27 play: play 38
+golden-0 30 play: play 33
+golden-0 33 play: play 47
+golden-0 36 play: play 13
+golden-0 39 play: play 26
+golden-0 42 play: play 8
+golden-0 48 play: play 10
+golden-0 54 play: play 3
+golden-1 0 bid: bid 175000
+golden-1 1 bid: bid 185000
+golden-1 2 bid: pass
+golden-1 3 bid: bid 195000
+golden-1 4 bid: bid 205000
+golden-1 5 bid: bid 205000
+golden-1 6 bid: pass
+golden-1 7 discard: discard 1,7,19
+golden-1 8 trump: trump black
+golden-1 9 play: play 12
+golden-1 15 play: play 21
+golden-1 18 play: play 45
+golden-1 21 play: play 49
+golden-1 24 play: play 24
+golden-1 27 play: play 20
+golden-1 33 play: play 52
+golden-1 45 play: play 47
+golden-1 48 play: play 48
+golden-2 0 bid: bid 175000
+golden-2 1 bid: bid 185000
+golden-2 2 bid: pass
+golden-2 3 bid: bid 195000
+golden-2 4 bid: pass
+golden-2 5 discard: discard 15,19,22
+golden-2 6 trump: trump black
+golden-2 9 play: play 47
+golden-2 12 play: play 0
+golden-2 15 play: play 35
+golden-2 21 play: play 5
+golden-2 27 play: play 26
+golden-2 30 play: play 24
+golden-2 36 play: play 26
+golden-2 39 play: play 33
+golden-2 42 play: play 18
+golden-2 48 play: play 17
+golden-2 51 play: play 35
+golden-3 0 bid: bid 175000
+golden-3 1 bid: bid 185000
+golden-3 2 bid: pass
+golden-3 3 bid: bid 185000
+golden-3 4 discard: discard 1,5,27
+golden-3 5 trump: trump yellow
+golden-3 6 play: play 40
+golden-3 9 play: play 39
+golden-3 12 play: play 14
+golden-3 15 play: play 18
+golden-3 18 play: play 50
+golden-3 21 play: play 45
+golden-3 24 play: play 6
+golden-3 27 play: play 43
+golden-3 30 play: play 13
+golden-3 33 play: play 29
+golden-3 36 play: play 0
+golden-3 42 play: play 15
+golden-3 45 play: play 29
+golden-3 48 play: play 34
+golden-4 0 bid: bid 175000
+golden-4 1 bid: bid 185000
+golden-4 2 bid: pass
+golden-4 3 bid: bid 185000
+golden-4 4 bid: bid 195000
+golden-4 5 discard: discard 0,3,5
+golden-4 6 trump: trump black
+golden-4 9 play: play 8
+golden-4 12 play: play 20
+golden-4 15 play: play 23
+golden-4 18 play: play 16
+golden-4 21 play: play 48
+golden-4 24 play: play 46
+golden-4 27 play: play 11
+golden-4 33 play: play 52
+golden-4 39 play: play 4
+golden-4 45 play: play 31
+golden-4 48 play: play 43
+golden-4 51 play: play 28
+golden-4 54 play: play 34
+golden-5 0 bid: bid 175000
+golden-5 1 bid: bid 185000
+golden-5 2 bid: bid 195000
+golden-5 3 bid: pass
+golden-5 4 bid: bid 195000
+golden-5 5 bid: bid 205000
+golden-5 6 discard: discard 0,19,31
+golden-5 7 trump: trump green
+golden-5 9 play: play 28
+golden-5 12 play: play 5
+golden-5 15 play: play 25
+golden-5 18 play: play 15
+golden-5 21 play: play 21
+golden-5 24 play: play 30
+golden-5 27 play: play 12
+golden-5 30 play: play 17
+golden-5 36 play: play 48
+golden-5 39 play: play 49
+golden-5 42 play: play 5
+golden-5 48 play: play 17
+golden-5 51 play: play 30
+golden-6 0 bid/misdeal: bid 175000
+golden-6 1 bid: bid 175000
+golden-6 2 bid: bid 185000
+golden-6 3 bid: pass
+golden-6 4 bid: bid 195000
+golden-6 5 bid: bid 205000
+golden-6 6 bid: pass
+golden-6 7 bid: pass
+golden-6 8 bid: pass
+golden-6 9 discard: discard 13,19,44
+golden-6 10 trump: trump red
+golden-6 12 play: play 49
+golden-6 15 play: play 27
+golden-6 18 play: play 18
+golden-6 21 play: play 34
+golden-6 24 play: play 12
+golden-6 27 play: play 4
+golden-6 30 play: play 28
+golden-6 36 play: play 11
+golden-6 39 play: play 17
+golden-6 42 play: play 35
+golden-6 48 play: play 41
+golden-6 51 play: play 10
+golden-6 54 play: play 0
+golden-7 0 bid: bid 175000
+golden-7 1 bid: bid 185000
+golden-7 2 bid: pass
+golden-7 3 bid: bid 195000
+golden-7 4 bid: pass
+golden-7 5 discard: discard 14,33,39
+golden-7 6 trump: trump yellow
+golden-7 9 play: play 32
+golden-7 12 play: play 6
+golden-7 15 play: play 4
+golden-7 18 play: play 45
+golden-7 21 play: play 3
+golden-7 24 play: play 37
+golden-7 27 play: play 52
+golden-7 30 play: play 34
+golden-7 33 play: play 52
+golden-7 36 play: play 50
+golden-7 39 play: play 50
+golden-7 42 play: play 46
+golden-7 45 play: play 24
+golden-7 48 play: play 23
+golden-contract-0 0 bid: bid 175000
+golden-contract-0 1 bid: bid 185000
+golden-contract-0 2 bid: pass
+golden-contract-0 3 bid: bid 195000
+golden-contract-0 4 bid: pass
+golden-contract-0 5 bid: pass
+golden-contract-0 6 bid: pass
+golden-contract-0 7 discard: discard 15,31,32
+golden-contract-0 8 trump: trump green
+golden-contract-1 0 bid: bid 175000
+golden-contract-1 1 bid: bid 185000
+golden-contract-1 2 bid: pass
+golden-contract-1 3 bid: pass
+golden-contract-1 4 bid: bid 195000
+golden-contract-1 5 bid: pass
+golden-contract-1 6 bid: pass
+golden-contract-1 7 bid: pass
+golden-contract-1 8 bid: pass
+golden-contract-1 9 bid: pass
+golden-contract-1 10 discard: discard 2,6,28
+golden-contract-1 11 trump: trump yellow
+golden-contract-2 0 bid: bid 175000
+golden-contract-2 1 bid: bid 185000
+golden-contract-2 2 bid: pass
+golden-contract-2 3 bid: bid 195000
+golden-contract-2 4 bid: bid 205000
+golden-contract-2 5 bid: bid 205000
+golden-contract-2 6 bid: bid 215000
+golden-contract-2 7 bid: bid 225000
+golden-contract-2 8 bid: pass
+golden-contract-2 9 bid: pass
+golden-contract-2 10 discard: discard 31,33,39
+golden-contract-2 11 trump: trump yellow
+golden-contract-3 0 bid: bid 175000
+golden-contract-3 1 bid: bid 185000
+golden-contract-3 2 bid: pass
+golden-contract-3 3 bid: bid 195000
+golden-contract-3 4 bid: bid 205000
+golden-contract-3 5 bid: bid 205000
+golden-contract-3 6 bid: bid 215000
+golden-contract-3 7 discard: discard 13,15,19
+golden-contract-3 8 trump: trump red
+golden-contract-4 0 bid: bid 175000
+golden-contract-4 1 bid/misdeal: callMisdeal
+golden-contract-4 2 bid: bid 175000
+golden-contract-4 3 bid: pass
+golden-contract-4 4 bid: pass
+golden-contract-4 5 bid: pass
+golden-contract-4 6 bid: pass
+golden-contract-4 7 bid: pass
+golden-contract-4 8 bid: pass
+golden-contract-4 9 bid: pass
+golden-contract-4 10 discard: discard 41,42,44
+golden-contract-4 11 trump: trump yellow
+golden-contract-5 0 bid: bid 175000
+golden-contract-5 1 bid: pass
+golden-contract-5 2 bid: pass
+golden-contract-5 3 bid: pass
+golden-contract-5 4 bid: bid 195000
+golden-contract-5 5 discard: discard 1,7,15
+golden-contract-5 6 trump: trump black
+golden-contract-6 0 bid: bid 175000
+golden-contract-6 1 bid: bid 185000
+golden-contract-6 2 bid: pass
+golden-contract-6 3 bid: bid 195000
+golden-contract-6 4 bid: pass
+golden-contract-6 5 discard: discard 13,20,33
+golden-contract-6 6 trump: trump red
+golden-contract-7 0 bid: bid 175000
+golden-contract-7 1 bid: bid 185000
+golden-contract-7 2 bid: pass
+golden-contract-7 3 bid: bid 195000
+golden-contract-7 4 bid: bid 205000
+golden-contract-7 5 bid: bid 205000
+golden-contract-7 6 bid: bid 215000
+golden-contract-7 7 discard: discard 6,22,28
+golden-contract-7 8 trump: trump black
+golden-contract-8 0 bid: bid 175000
+golden-contract-8 1 bid: bid 185000
+golden-contract-8 2 bid: pass
+golden-contract-8 3 bid: pass
+golden-contract-8 4 bid: bid 195000
+golden-contract-8 5 discard: discard 27,32,46
+golden-contract-8 6 trump: trump red
+golden-contract-9 0 bid: bid 175000
+golden-contract-9 1 bid: bid 185000
+golden-contract-9 2 bid: bid 195000
+golden-contract-9 3 bid: pass
+golden-contract-9 4 bid: pass
+golden-contract-9 5 bid: bid 205000
+golden-contract-9 6 bid: pass
+golden-contract-9 7 bid: bid 225000
+golden-contract-9 8 discard: discard 2,3,15
+golden-contract-9 9 trump: trump red
+golden-contract-10 0 bid: bid 175000
+golden-contract-10 1 bid: bid 185000
+golden-contract-10 2 bid: pass
+golden-contract-10 3 bid: pass
+golden-contract-10 4 bid: pass
+golden-contract-10 5 bid: pass
+golden-contract-10 6 discard: discard 22,26,41
+golden-contract-10 7 trump: trump red
+golden-contract-11 0 bid: bid 175000
+golden-contract-11 1 bid: bid 185000
+golden-contract-11 2 bid: bid 195000
+golden-contract-11 3 bid: pass
+golden-contract-11 4 bid: bid 195000
+golden-contract-11 5 discard: discard 7,31,39
+golden-contract-11 6 trump: trump yellow
+golden-contract-12 0 bid: bid 175000
+golden-contract-12 1 bid: bid 185000
+golden-contract-12 2 bid: bid 195000
+golden-contract-12 3 bid: pass
+golden-contract-12 4 bid: bid 195000
+golden-contract-12 5 discard: discard 15,27,33
+golden-contract-12 6 trump: trump green
+golden-contract-13 0 bid: bid 175000
+golden-contract-13 1 bid: pass
+golden-contract-13 2 bid: pass
+golden-contract-13 3 bid: pass
+golden-contract-13 4 discard: discard 3,18,42
+golden-contract-13 5 trump: trump black
+golden-contract-14 0 bid: bid 175000
+golden-contract-14 1 bid: pass
+golden-contract-14 2 bid: pass
+golden-contract-14 3 bid: pass
+golden-contract-14 4 bid: pass
+golden-contract-14 5 discard: discard 9,16,26
+golden-contract-14 6 trump: trump red
+golden-contract-15 0 bid: bid 175000
+golden-contract-15 1 bid: bid 185000
+golden-contract-15 2 bid: bid 195000
+golden-contract-15 3 bid: bid 205000
+golden-contract-15 4 bid: pass
+golden-contract-15 5 bid: pass
+golden-contract-15 6 bid: pass
+golden-contract-15 7 bid: pass
+golden-contract-15 8 bid: pass
+golden-contract-15 9 discard: discard 3,6,29
+golden-contract-15 10 trump: trump yellow
+golden-contract-16 0 bid: bid 175000
+golden-contract-16 1 bid: bid 185000
+golden-contract-16 2 bid: pass
+golden-contract-16 3 bid: bid 185000
+golden-contract-16 4 discard: discard 14,16,45
+golden-contract-16 5 trump: trump red
+golden-contract-17 0 bid: bid 175000
+golden-contract-17 1 bid/misdeal: bid 185000
+golden-contract-17 2 bid: bid 175000
+golden-contract-17 3 bid: bid 185000
+golden-contract-17 4 bid: pass
+golden-contract-17 5 bid: bid 185000
+golden-contract-17 6 discard: discard 5,19,22
+golden-contract-17 7 trump: trump green
+golden-contract-18 0 bid: bid 175000
+golden-contract-18 1 bid: bid 185000
+golden-contract-18 2 bid: bid 195000
+golden-contract-18 3 bid: pass
+golden-contract-18 4 bid: bid 195000
+golden-contract-18 5 discard: discard 27,28,29
+golden-contract-18 6 trump: trump green
+golden-contract-19 0 bid: bid 175000
+golden-contract-19 1 bid: bid 185000
+golden-contract-19 2 bid: bid 195000
+golden-contract-19 3 bid: pass
+golden-contract-19 4 bid: pass
+golden-contract-19 5 bid: pass
+golden-contract-19 6 bid: pass
+golden-contract-19 7 discard: discard 13,20,42
+golden-contract-19 8 trump: trump black
+golden-contract-20 0 bid: bid 175000
+golden-contract-20 1 bid: bid 185000
+golden-contract-20 2 bid: pass
+golden-contract-20 3 bid: bid 185000
+golden-contract-20 4 bid: bid 195000
+golden-contract-20 5 discard: discard 0,3,26
+golden-contract-20 6 trump: trump red
+golden-contract-21 0 bid: bid 175000
+golden-contract-21 1 bid: bid 185000
+golden-contract-21 2 bid: pass
+golden-contract-21 3 bid: bid 195000
+golden-contract-21 4 bid: bid 205000
+golden-contract-21 5 bid: bid 205000
+golden-contract-21 6 discard: discard 9,31,45
+golden-contract-21 7 trump: trump yellow
+golden-contract-22 0 bid: bid 175000
+golden-contract-22 1 bid: pass
+golden-contract-22 2 bid: pass
+golden-contract-22 3 bid: pass
+golden-contract-22 4 bid: pass
+golden-contract-22 5 bid: pass
+golden-contract-22 6 discard: discard 18,41,42
+golden-contract-22 7 trump: trump black
+golden-contract-23 0 bid: bid 175000
+golden-contract-23 1 bid: pass
+golden-contract-23 2 bid: pass
+golden-contract-23 3 bid: pass
+golden-contract-23 4 bid: pass
+golden-contract-23 5 bid: pass
+golden-contract-23 6 discard: discard 22,27,35
+golden-contract-23 7 trump: trump red
