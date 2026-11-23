@@ -137,6 +137,17 @@ describe('How to play', () => {
 });
 
 describe('top bar', () => {
+  it('stays off the home screen, where sound and How to play sit in the corner', () => {
+    renderWith();
+    expect(document.querySelector('.topbar')).toBeNull();
+    const corner = document.querySelector('.home-corner') as HTMLElement;
+    expect(
+      within(corner)
+        .getAllByRole('button')
+        .map((b) => b.getAttribute('aria-label')),
+    ).toEqual(['Mute sounds', 'How to play']);
+  });
+
   it('mutes and unmutes sound, remembering the choice', () => {
     window.localStorage.removeItem('mam.muted');
     renderWith();

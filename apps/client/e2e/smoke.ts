@@ -510,11 +510,12 @@ async function fullHand(browser: Browser, base: string): Promise<void> {
     await page.screenshot({ path: path.join(OUT, `${name}.png`) });
   };
 
-  // How to play, from the home screen.
+  // How to play, from the home screen's corner (the home screen has no top bar).
   await page.goto(base);
-  await page.getByRole('button', { name: 'How to play', exact: true }).click();
+  check((await page.locator('.topbar').count()) === 0, 'the home screen has no top bar');
+  await page.locator('.home-corner').getByRole('button', { name: 'How to play' }).click();
   const help = page.getByRole('dialog', { name: 'How to play' });
-  check(await help.isVisible(), 'How to play opens from the top bar');
+  check(await help.isVisible(), 'How to play opens from the corner of the home screen');
   await shoot('1-how-to-play');
   await checkNoScroll(page, 'How to play');
   await page.keyboard.press('Escape');

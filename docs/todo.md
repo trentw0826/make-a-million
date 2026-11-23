@@ -6,7 +6,6 @@ A scratchpad for future fixes, features, and updates
 - [ ] The bottom right button panel should go analysis, undo, redo, score sheet, sound, how to play
 - [ ] Reimagine win screen
   - [ ] Include a game review feature similar to chess.com
-- [ ] On landing page, move sound + how to play buttons to bottom right (just like they are in the gameplay page) and delete the top navigator bar element
 - [ ] The discarding UI feels awkward; the transparency overlap between cards creates a very busy, distracting and hard-to-reason-over experience. A decent option was to move unchoosable cards to the side temporarily, but this cannot be the case because colored groups still need to show up together visually in order for the user to be able to make clearer decisions about their discards. Reimagine the approach to the hand UI during the discard phase in a way that addresses these issues
 
 ## Later
