@@ -90,6 +90,14 @@ Notes:
 
 By trick, per team‑hand: 32.9k (trick 1), 28.8k, 23.8k, 21.2k, 16.7k, 14.7k (trick 6), then 9.1k, 9.1k, 8.4k, 6.8k, 4.4k, 3.0k once solving is exact (tricks 7–12). **Leads carry two thirds of the regret, defenders' leads the most** (wrong half the time, 26k a decision). The early tricks dominate. That is where hidden cards matter most and where search is depth‑limited, so this table alone cannot say how much is avoidable; the oracle, rollout and peek runs below split it.
 
+**Bounds on the contract decisions** (hindsight oracles, `hindsight:kinds=…,base=expert0` against Expert‑0, `SPRT=0`, 200 boards, seed `xb2`). At each decision of the chosen kind the oracle applies every candidate to the true deal and plays the rest of the hand out with the table's own bots and the simulator's own random streams, so it knows each candidate's result exactly, and plays the best. Its margin over Expert‑0 bounds what better decisions of that kind could gain. The bound is loose: the oracle also knows how the rest of the hand will be played.
+
+| Decision | Candidates | ΔME (95% CI) | Δ points ($, 95% CI) | Contracts made (oracle / Expert‑0) |
+|---|---|---|---|---|
+| bid and misdeal | the bot's own, pass, the minimum bid, misdeal | +27.9% [24.7, 31.1] | +163k [148k, 178k] | 203 of 213 (95%) / 76 of 187 (41%) |
+
+On bidding, most of the margin is knowledge no bot can have. The oracle declares only contracts it will make, and it pushes the opponents into contracts it knows they will fail: Expert‑0 made 41% of its contracts here, against 73% in ordinary play (Expert‑0 against Hard, `xb1`). The bound is of the same order as the all‑seeing card‑play oracle's against Hard (+21.9%, Results), and the bidding ideas are cheap to test, so bidding stays first in the plan.
+
 ## Offline screens (the Expert work)
 
 Cheap checks run before a duplicate test (`bot-roadmap.md`, Scripts).
