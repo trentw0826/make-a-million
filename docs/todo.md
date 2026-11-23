@@ -18,8 +18,6 @@ A scratchpad for future fixes, features, and updates
 - [ ] Test UI across different browsers and screen sizes
 - [ ] Create a phone-friendly UI
 - [] Strong bots: fit Expert to its reply time and offer it; load-test Hard rooms. Details in `docs/bot-roadmap.md`
-- [ ] Solo mode
-  - [ ] Includes undo/redo
 - [ ] 'play along mode' that accompanies a real-life game; You play along with the events of a real game and the board offers you analyses of the current game, including your best moves
 - [ ] User move scoring
 - [ ] Game review using scoring
