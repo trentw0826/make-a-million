@@ -167,7 +167,7 @@ In rough order of expected value:
 
 | Script | What it does |
 |---|---|
-| `experiments.ts` | Duplicate A/B runs with SPRT (or fixed with `SPRT=0`); appends JSON lines |
+| `experiments.ts` | Duplicate A/B runs with SPRT (or fixed with `SPRT=0`); appends JSON lines. `"A&P|B&Q"` seats A with partner P against B with partner Q (the robustness gate: a strong bot partnered with Normal or Easy) |
 | `timing.ts` | Decision‑time percentiles by decision kind and cards left; size budgets against the reply time |
 | `timing-bank.ts` | A decision bank: `collect` stores the observations (and, for diagnostics, the true hands) of self‑play hands; `time` runs any spec on them, kind by kind, with percentiles, the slowest positions, and with `REGRET=1` each card's regret against the true deal solved exactly. Gives the rare decisions (discard, trump) enough samples for a real p99 |
 | `contract-data.ts` | Plays self‑play hands and writes each contract with its whole deal, auction, choices and capture as JSON lines; `FORCED=1` scripts the auction so that a random seat declares, so the data covers every kind of hand, not only auction winners |
