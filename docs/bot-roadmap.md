@@ -155,6 +155,8 @@ In rough order of expected value:
 |---|---|
 | `experiments.ts` | Duplicate A/B runs with SPRT (or fixed with `SPRT=0`); appends JSON lines |
 | `timing.ts` | Decision‑time percentiles by decision kind and cards left; size budgets against the reply time |
+| `timing-bank.ts` | A decision bank: `collect` stores the observations (and, for diagnostics, the true hands) of self‑play hands; `time` runs any spec on them, kind by kind, with percentiles, the slowest positions, and with `REGRET=1` each card's regret against the true deal solved exactly. Gives the rare decisions (discard, trump) enough samples for a real p99 |
+| `compare-bank.ts` | Pairs two `timing-bank.ts time` results on one bank: how often the choices agree, the time of each, and the mean regret difference with a 95% interval (a cheap offline screen before a duplicate run) |
 | `calibrate.ts` | Bidding estimate vs actual capture, by bid, margin and auction shape; prints the calibration fit |
 | `specials-model.ts` | Fits the specials inference model and writes `inference/generated/specialsModel.ts` |
 | `bid-diagnostic.ts` | Bid rate and the bot's own evaluation, by hand strength (auctions only, fast) |

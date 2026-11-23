@@ -45,6 +45,8 @@ export interface PlayGameOptions {
 
 export interface DecisionInfo {
   readonly seat: Seat;
+  /** The true state before the action (simulator diagnostics only; bots never see it). */
+  readonly state: GameState;
   readonly obs: Observation;
   readonly action: Action;
   readonly ms: number;
@@ -83,7 +85,7 @@ export async function playGame(options: PlayGameOptions): Promise<GameOutcome> {
     const action = isOracle(strategy)
       ? await strategy.decideWithState(state, seat, obs, rng)
       : await strategy.decide(obs, rng);
-    options.onDecision?.({ seat, obs, action, ms: performance.now() - started });
+    options.onDecision?.({ seat, state, obs, action, ms: performance.now() - started });
     const result = applyAction(state, seat, action);
     if (!result.ok) throw new IllegalBotAction(strategy.id, seat, action, result.error.code, obs);
     recorder.record(seat, action);
