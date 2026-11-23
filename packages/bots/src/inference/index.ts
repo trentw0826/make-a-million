@@ -9,7 +9,7 @@ import {
   type Trick,
 } from '@mam/engine';
 import type { World } from '@mam/search';
-import { auctionLikelihood, type Deal } from '../contract/simulate';
+import { auctionLikelihood, type Deal, HEURISTIC_CEILINGS } from '../contract/simulate';
 import { expectedCapture } from '../heuristic/evaluate';
 
 export interface InferenceOptions {
@@ -19,12 +19,15 @@ export interface InferenceOptions {
   readonly throwOffs: boolean;
   /** Likelihood factor when a cheaper card was available but not thrown. */
   readonly throwOffMiss: number;
+  /** The model of the other players' bidding (ContractOptions.ceilingModel). */
+  readonly ceilingModel: 'heuristic' | 'fitted';
 }
 
 export const INFERENCE_DEFAULTS: InferenceOptions = {
   temperature: 1.5,
   throwOffs: false,
   throwOffMiss: 0.35,
+  ceilingModel: 'heuristic',
 };
 
 /** How "cheap" a card is to throw away: low number cards first, keep Money and trumps. */
@@ -112,7 +115,13 @@ export function makeWorldWeight(
       s === obs.seat ? obs.hand : [...(world.hands[s] ?? []), ...(played.get(s as Seat) ?? [])],
     );
     const deal: Deal = { hands, widow: world.pile };
-    let w = auctionLikelihood(deal, obs, step);
+    let w =
+      o.ceilingModel === 'fitted'
+        ? auctionLikelihood(deal, obs, step, undefined, {
+            ...HEURISTIC_CEILINGS,
+            ceilingModel: 'fitted',
+          })
+        : auctionLikelihood(deal, obs, step);
     if (trumpEvidence) {
       // The bidder named the suit their final 13 cards valued most.
       const cards = (hands[bidder] ?? []).map(cardById);

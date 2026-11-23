@@ -187,7 +187,9 @@ export class HardBot implements BotStrategy {
     const o = this.options;
     if (o.inferencePool <= 0) return undefined;
     const parts: ((world: World) => number)[] = [];
-    if (o.auctionInference) parts.push(makeWorldWeight(obs, { throwOffs: o.throwOffs }));
+    if (o.auctionInference) {
+      parts.push(makeWorldWeight(obs, { throwOffs: o.throwOffs, ceilingModel: o.ceilingModel }));
+    }
     const specials = o.specialsInference ? makeSpecialsWeight(obs) : undefined;
     if (specials) parts.push(specials);
     const policy = o.policyInference
