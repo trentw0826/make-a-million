@@ -22,6 +22,7 @@ import {
   type UtilityMode,
   type World,
 } from '@mam/search';
+import { CONTRACT_MODEL } from './generated/contractModel';
 import {
   auctionLikelihood,
   type Deal,
@@ -31,6 +32,7 @@ import {
   playoutWith,
   utilityFor,
 } from './simulate';
+import { type ContractModel, contractFeatures, predictCapture } from './value';
 
 export interface ContractOptions {
   /** Deals sampled for bidding and misdeal decisions. */
@@ -76,6 +78,12 @@ export interface ContractOptions {
   readonly calibA: number;
   readonly calibB: number;
   readonly calibSd: number;
+  /**
+   * How bidding and misdeal calls value a declarer's contract in a sampled deal: 'playout',
+   * the calibrated greedy playout; 'model', the learned contract-value model
+   * (contract/value.ts, generated/contractModel.ts), Normal(mean, sd²) around its prediction.
+   */
+  readonly contractValue: 'playout' | 'model';
   /** Also calibrate the playouts that screen discard and trump candidates. */
   readonly calibScreen: boolean;
 }
@@ -98,6 +106,7 @@ export const CONTRACT_DEFAULTS: ContractOptions = {
   calibB: 0.5,
   calibSd: 58,
   calibScreen: false,
+  contractValue: 'playout',
 };
 
 /**
@@ -132,6 +141,37 @@ export function calibrated(
     }
     return total / NORMAL_POINTS.length;
   };
+}
+
+/**
+ * The observer's utility `u` of `declarer` declaring `deal` (a sampled world): the calibrated
+ * greedy playout, or the contract-value model's prediction (opts.contractValue).
+ */
+function declareValue(
+  deal: Deal,
+  declarer: Seat,
+  u: (capK: readonly [number, number]) => number,
+  opts: ContractOptions,
+): number {
+  if (opts.contractValue === 'model') return modelValue(deal, declarer, u, CONTRACT_MODEL);
+  return calibrated(u, teamOf(declarer), opts)(playoutDeclare(deal, declarer));
+}
+
+/**
+ * The utility `u` of `declarer` declaring `deal` under a contract-value model: the declaring
+ * team's capture is Normal(model mean, model sd²), and the money it gains or loses against
+ * the greedy playout comes from or goes to the other team (as in `calibrated`).
+ */
+export function modelValue(
+  deal: Deal,
+  declarer: Seat,
+  u: (capK: readonly [number, number]) => number,
+  model: ContractModel,
+): number {
+  const playout: [number, number] = [0, 0];
+  const x = contractFeatures(deal, declarer, undefined, playout);
+  const mean = predictCapture(model, x);
+  return calibrated(u, teamOf(declarer), { calibA: mean, calibB: 0, calibSd: model.sd })(playout);
 }
 
 function toDeal(obs: Observation, world: World): Deal {
@@ -198,11 +238,12 @@ export function evaluateBid(
     const deal = toDeal(obs, belief.sample(rng));
     const w = auctionLikelihood(deal, obs, step, opts.auctionSigma, opts);
     if (w < 1e-9) continue;
-    const mine = calibrated(
+    const mine = declareValue(
+      deal,
+      obs.seat,
       utilityFor(obs, obs.seat, legal.minBid, opts.utility),
-      teamOf(obs.seat),
       opts,
-    )(playoutDeclare(deal, obs.seat));
+    );
     // If we pass: the others (still in) finish the auction by the model.
     const ceilings = new Map<Seat, number>();
     for (const s of [0, 1, 2, 3] as Seat[]) {
@@ -218,11 +259,12 @@ export function evaluateBid(
       seat: obs.seat,
       price: legal.minBid,
     };
-    const theirs = calibrated(
+    const theirs = declareValue(
+      deal,
+      outcome.seat,
       utilityFor(obs, outcome.seat, outcome.price, opts.utility),
-      teamOf(outcome.seat),
       opts,
-    )(playoutDeclare(deal, outcome.seat));
+    );
     wSum += w;
     declare += w * mine;
     pass += w * theirs;

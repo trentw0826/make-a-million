@@ -83,6 +83,7 @@ Simulations pass no deadline, so their results do not depend on the machine.
 | `raisePartner` | false | May raise over partner's standing bid | +5.7k points per hand, promoted |
 | `calibA`, `calibB`, `calibSd` | 130, 0.5, 58 | Calibration of the playout estimate | +5.7% equity per board, promoted |
 | `calibScreen` | false | Also calibrate the discard/trump screen | H0 |
+| `contractValue` | `playout` | How bids value a contract in a sampled deal: the calibrated playout, or `model`, the learned contract‑value model (`contract/value.ts`, fitted by `scripts/contract-model.ts`) | not yet tested |
 | `bidMargin` | 0 | Required edge before bidding | 0.01: H0 on replication |
 | `auctionSigma` | 20k | Scale of the auction likelihood | 40k: H0 |
 | `ceilingShift`, `ceilingScale`, `partnerPassInformative` | 0, 1, true | Model of the other players' bidding | not yet tested (`bot-roadmap.md`) |

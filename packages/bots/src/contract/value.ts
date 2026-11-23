@@ -53,17 +53,26 @@ function suitCounts(cards: readonly CardId[]): number[] {
   return n;
 }
 
-/** Fills `out` with the features of `declarer` declaring `deal`; returns it. */
+/**
+ * Fills `out` with the features of `declarer` declaring `deal`; returns it. `playout`, if
+ * given, receives the greedy playout's capture by team 0 and team 1 ($1000s).
+ */
 export function contractFeatures(
   deal: Deal,
   declarer: Seat,
   out: Float64Array = new Float64Array(CONTRACT_FEATURE_COUNT),
+  playout?: [number, number],
 ): Float64Array {
   const cards16 = [...(deal.hands[declarer] ?? []), ...deal.widow];
   const { keep, trump } = heuristicContract(cards16);
   const t = SUITS.indexOf(trump);
   const team = declarer % 2;
-  const est = playoutWith(deal.hands, declarer, keep, trump)[team] as number;
+  const pair = playoutWith(deal.hands, declarer, keep, trump);
+  if (playout) {
+    playout[0] = pair[0];
+    playout[1] = pair[1];
+  }
+  const est = pair[team] as number;
   const partner = partnerOf(declarer);
   const left = ((declarer + 1) % 4) as Seat;
   const right = ((declarer + 3) % 4) as Seat;
