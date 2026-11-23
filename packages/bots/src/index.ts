@@ -10,6 +10,13 @@ export {
   evaluateBid,
 } from './contract/index';
 export { type Deal, discardCandidates, playoutDeclare, playoutWith } from './contract/simulate';
+export {
+  CONTRACT_FEATURE_COUNT,
+  CONTRACT_FEATURES,
+  type ContractModel,
+  contractFeatures,
+  predictCapture,
+} from './contract/value';
 export { fallbackAction } from './fallback';
 export {
   EXPERT_DEFAULTS,

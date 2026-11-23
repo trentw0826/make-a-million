@@ -159,6 +159,8 @@ In rough order of expected value:
 | `experiments.ts` | Duplicate A/B runs with SPRT (or fixed with `SPRT=0`); appends JSON lines |
 | `timing.ts` | Decision‑time percentiles by decision kind and cards left; size budgets against the reply time |
 | `timing-bank.ts` | A decision bank: `collect` stores the observations (and, for diagnostics, the true hands) of self‑play hands; `time` runs any spec on them, kind by kind, with percentiles, the slowest positions, and with `REGRET=1` each card's regret against the true deal solved exactly. Gives the rare decisions (discard, trump) enough samples for a real p99 |
+| `contract-data.ts` | Plays self‑play hands and writes each contract with its whole deal, auction, choices and capture as JSON lines; `FORCED=1` scripts the auction so that a random seat declares, so the data covers every kind of hand, not only auction winners |
+| `contract-model.ts` | Fits the linear contract‑value model (`contract/value.ts` features) on that data and compares it, on held‑out contracts, with the calibrated playout: correlation, RMSE, make/set log loss; `WRITE=1` writes `contract/generated/contractModel.ts` |
 | `regret.ts` | Where card play loses against the all‑seeing solver: each chosen card's regret against the best card in the true deal, by trick, position in the trick and side (declaring or defending) |
 | `compare-bank.ts` | Pairs two `timing-bank.ts time` results on one bank: how often the choices agree, the time of each, and the mean regret difference with a 95% interval (a cheap offline screen before a duplicate run) |
 | `calibrate.ts` | Bidding estimate vs actual capture, by bid, margin and auction shape; prints the calibration fit |

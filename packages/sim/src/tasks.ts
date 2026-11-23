@@ -13,6 +13,7 @@ import {
 } from '@mam/engine';
 import { bankTask, decideTask } from './bank';
 import { bidRolloutTask } from './bidRollout';
+import { contractDataTask } from './contractData';
 import { regretTask } from './regret';
 import './registry';
 import { playGame } from './runner';
@@ -260,6 +261,7 @@ export const TASKS = {
   bank: bankTask,
   decide: decideTask,
   regret: regretTask,
+  contractData: contractDataTask,
 } as const;
 
 export type TaskName = keyof typeof TASKS;
