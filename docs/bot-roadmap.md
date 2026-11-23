@@ -2,7 +2,18 @@
 
 Where the work on the strong bots stands, what was learned, what is left, and how to pick it up. How the bots work is in `bot-design.md`; every measured result is in `bot-ladder.md`.
 
-## Status (2026‑11‑16)
+## Status (2026‑11‑23)
+
+**The Expert work is under way** (branch `expert-bot`; the brief is `.claude/prompts/expert-bot-research.md`). Where it stands:
+
+- **Phase 0, a baseline Expert that fits its time: done.** Expert‑0 (`expert0`) has every decision kind's p99 at 3.0 s or less. Its fixed‑board test against Hard is **running**: 1500 boards, seed `xb1` (`SPRT=0`).
+- **Phase 1, the literature review: done** (`bot-research.md`). The gains over PIMC in comparable games came from better inputs to it: learned contract values and policy‑based inference. Search fixes for strategy fusion changed about 1% of deals in bridge.
+- **Phase 2, measuring the headroom: queued** behind the Expert‑0 run, all on the same 200 fresh boards (seed `xb2`) so the margins compare: hindsight bid, trump and discard oracles; the oracle playing every trick and the last 4; the rollout bot (PIMC's own flaws, last 4 tricks); `peek` at everything, the specials, the money, partner's hand, the left‑hand opponent's hand. Before them: `regret.ts expert0` (seed `xb-regret1`) and contract data for the value model (Hard self‑play: 4000 forced hands, seed `xb-cvm1`; 2000 natural, `xb-cvm2`).
+- **Phase 3, built and waiting for data:** `contractValue: 'model'` (a learned contract‑value model in bidding) and `policyInference` (policy‑based inference from every past card play). Both are options, off by default; Hard is unchanged (golden test).
+- **Current best Expert:** Expert‑0 (`EXPERT_DEFAULTS` = `expert0`).
+- **Next:** read the Expert‑0 result and the headroom table, fit the two models, screen them offline (`contract-model.ts`, `inference-eval.ts`, bank regret), then duplicate‑test whichever pass, bidding first.
+
+## Status of the strong bots before the Expert work (2026‑11‑16)
 
 - **Hard is offered at the table** next to Easy and Normal. Its first version beat Normal by +8.6% match equity per board (+54k points per hand). It has since gained three promoted improvements:
   - it never raises over its partner's bid;
@@ -134,7 +145,7 @@ In rough order of expected value:
 - experiment boards: `exp` and `exp1`–`exp23`;
 - calibration: `calibrate`, `calibrate2`, `calibrate4`, `calibrate5`;
 - other: `specials`, `bid-rollouts`, `bid-diagnostic`, `timing`, `timing-x`, `timing-hard`, `timing-lead`, `me-table-noise`;
-- the Expert work (family `xb`): timing `timing-xb0`, `timing-xb1` (the decision bank), `timing-xb2`.
+- the Expert work (family `xb`): timing `timing-xb0`, `timing-xb1` (the decision bank), `timing-xb2`; Expert‑0 vs Hard `xb1`; the Phase 2 headroom boards `xb2`; regret `xb-regret1`; contract data `xb-cvm1`, `xb-cvm2`; play data `xb-policy1`; smoke tests `cvm-smoke`.
 
 **Run times** (24 cores):
 - Hard vs Hard over 1200 boards: about 45–60 minutes on all cores.
@@ -161,6 +172,8 @@ In rough order of expected value:
 | `timing-bank.ts` | A decision bank: `collect` stores the observations (and, for diagnostics, the true hands) of self‑play hands; `time` runs any spec on them, kind by kind, with percentiles, the slowest positions, and with `REGRET=1` each card's regret against the true deal solved exactly. Gives the rare decisions (discard, trump) enough samples for a real p99 |
 | `contract-data.ts` | Plays self‑play hands and writes each contract with its whole deal, auction, choices and capture as JSON lines; `FORCED=1` scripts the auction so that a random seat declares, so the data covers every kind of hand, not only auction winners |
 | `contract-model.ts` | Fits the linear contract‑value model (`contract/value.ts` features) on that data and compares it, on held‑out contracts, with the calibrated playout: correlation, RMSE, make/set log loss; `WRITE=1` writes `contract/generated/contractModel.ts` |
+| `policy-model.ts` | Fits the card‑play policy model for policy‑based inference from a bank collected with actions; held‑out log‑likelihood per play against uniform, top‑1 accuracy; `WRITE=1` writes `inference/generated/policyModel.ts` |
+| `inference-eval.ts` | How well world weighting finds the true holdings, on banked plays: the weighted pool's log‑probability of each unseen card's true holder (overall, money, specials, by stage) and the effective sample size, for uniform, specials, policy and both |
 | `regret.ts` | Where card play loses against the all‑seeing solver: each chosen card's regret against the best card in the true deal, by trick, position in the trick and side (declaring or defending) |
 | `compare-bank.ts` | Pairs two `timing-bank.ts time` results on one bank: how often the choices agree, the time of each, and the mean regret difference with a 95% interval (a cheap offline screen before a duplicate run) |
 | `calibrate.ts` | Bidding estimate vs actual capture, by bid, margin and auction shape; prints the calibration fit |
