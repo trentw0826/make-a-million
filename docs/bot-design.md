@@ -85,8 +85,8 @@ Simulations pass no deadline, so their results do not depend on the machine.
 | `calibScreen` | false | Also calibrate the discard/trump screen | H0 |
 | `screenValue` | `playout` | How the discard/trump screen values a candidate in a sampled deal: the greedy playout, or `model`, the contract‑value model with that keep and trump | not yet tested |
 | `ceilingModel` | `heuristic` | The other players' bidding, for predicting the rest of the auction and weighting deals: the heuristic's ceilings, or `fitted`, a logistic model of how the bots really bid (`contract/auction.ts`, fitted by `scripts/auction-model.ts`) | not yet tested |
-| `contractValue` | `playout` | How bids value a contract in a sampled deal: the calibrated playout, or `model`, the learned contract‑value model (`contract/value.ts`, fitted by `scripts/contract-model.ts`) | SPRT H1 against Expert‑0 (+2.0%); confirming |
-| `bidOutcome` | `win` | What bidding the minimum is worth in a sampled deal: declaring at that price, or `auction`, the rest of the auction by the bidding model (an opponent whose ceiling reaches the next price overcalls, we drop out, and the others finish it) | not yet tested |
+| `contractValue` | `playout` | How bids value a contract in a sampled deal: the calibrated playout, or `model`, the learned contract‑value model (`contract/value.ts`, fitted by `scripts/contract-model.ts`) | SPRT H1 against Expert‑0 (+2.0%), not confirmed on fixed boards (+0.4%); a second fixed run pending |
+| `bidOutcome` | `win` | What bidding the minimum is worth in a sampled deal: declaring at that price, or `auction`, the rest of the auction by the bidding model (an opponent whose ceiling reaches the next price overcalls, we drop out, and the others finish it) | rejected: +0.2%, −2.4k points per hand against the contract‑value model |
 | `bidMargin` | 0 | Required edge before bidding | 0.01: H0 on replication |
 | `auctionSigma` | 20k | Scale of the auction likelihood | 40k: H0 |
 | `ceilingShift`, `ceilingScale`, `partnerPassInformative` | 0, 1, true | Model of the other players' bidding | not yet tested (`bot-roadmap.md`) |
