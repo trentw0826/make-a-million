@@ -62,6 +62,8 @@ export interface HardOptions extends PimcOptions, ContractOptions {
   /** Its tempering (> 1 flattens) and the model's share against uniform over legal cards. */
   readonly policyTemperature: number;
   readonly policyMix: number;
+  /** Worlds for a lead before the exact window, nodes scaled to match (≤ worlds: off). */
+  readonly leadWorlds: number;
 }
 
 export const HARD_DEFAULTS: HardOptions = {
@@ -82,6 +84,7 @@ export const HARD_DEFAULTS: HardOptions = {
   policyInference: false,
   policyTemperature: 1.5,
   policyMix: 0.8,
+  leadWorlds: 0,
 };
 
 /**
@@ -161,7 +164,7 @@ export class HardBot implements BotStrategy {
     if (legal.cardIds.length === 1) return { type: 'playCard', cardId: legal.cardIds[0] as number };
     const weight = this.worldWeight(obs);
     const utility = this.playLeafUtility(obs);
-    const result = pimcValues(obs, rng, this.options, {
+    const result = pimcValues(obs, rng, this.leadBudget(obs), {
       ...(utility ? { utility } : {}),
       ...(weight ? { weight } : {}),
       utilityAt: this.options.fastUtility ? 'root' : 'leaf',
@@ -180,6 +183,20 @@ export class HardBot implements BotStrategy {
       return { type: 'playCard', cardId: preferredCard };
     }
     return { type: 'playCard', cardId: result.moves[best] as number };
+  }
+
+  /**
+   * The card-play budget: `leadWorlds` (when set) gives a lead before the exact window that
+   * many worlds, with the node budgets scaled to match. Leads have the most legal cards and
+   * carry most of the regret against the oracle (docs/bot-ladder.md, Headroom).
+   */
+  private leadBudget(obs: Observation): HardOptions {
+    const o = this.options;
+    if (o.leadWorlds <= o.worlds || (obs.currentTrick?.plays.length ?? 0) > 0) return o;
+    const live = obs.handSizes.reduce((a, b) => a + b, 0);
+    if (live <= o.exactTricks * 4) return o;
+    const scale = o.leadWorlds / o.worlds;
+    return { ...o, worlds: o.leadWorlds, nodes: o.nodes * scale, worldNodes: o.worldNodes };
   }
 
   /** Soft-inference weight of a sampled world (undefined: all worlds equally likely). */

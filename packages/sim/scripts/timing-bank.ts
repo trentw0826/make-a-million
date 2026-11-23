@@ -4,7 +4,8 @@
 // Usage:
 //   tsx scripts/timing-bank.ts collect <bank.jsonl> [hands=200] [spec=hard]   (env SEED, WORKERS)
 //   tsx scripts/timing-bank.ts time <bank.jsonl> <spec> [kinds=all]           (env WORKERS=4,
-//       LIVE=lo-hi to keep plays with that many live cards, EVERY=n to keep every nth entry,
+//       LIVE=lo-hi to keep plays with that many live cards, LEAD=1 for leads only, EVERY=n to keep
+//       every nth entry,
 //       DEADLINE_MS to pass a deadline that far from each decision's start, OUT=results.jsonl,
 //       REGRET=1 to score card plays against the true deal: exact with REGRET_EXACT (7) or fewer
 //       tricks left, else REGRET_DEPTH (3) tricks deep; needs a bank collected with true hands)
@@ -64,6 +65,9 @@ if (mode === 'collect') {
     .map((l) => JSON.parse(l) as BankEntry)
     .filter((e) => !kinds || kinds.has(e.kind))
     .filter((e) => e.kind !== 'play' || (e.live >= lo && e.live <= hi))
+    .filter(
+      (e) => process.env.LEAD !== '1' || (e.kind === 'play' && !e.obs.currentTrick?.plays.length),
+    )
     .filter((_, i) => i % every === 0);
   const deadlineMs = process.env.DEADLINE_MS ? Number(process.env.DEADLINE_MS) : undefined;
   const regret =
