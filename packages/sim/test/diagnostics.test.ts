@@ -16,6 +16,7 @@ import {
 import { buildBelief } from '@mam/search';
 import { describe, expect, it } from 'vitest';
 import { peekPins } from '../src/oracle';
+import { regretTask } from '../src/regret';
 import '../src/registry';
 import { makeStrategy } from '../src/strategies';
 
@@ -83,6 +84,31 @@ describe('peek pins', () => {
   });
 });
 
+describe('regret against the oracle', () => {
+  it('is zero for the oracle itself and non-negative for a real bot', async () => {
+    const oracle = await regretTask({
+      seed: 'regret-test',
+      dealer: 0,
+      specs: ['oracle', 'oracle', 'oracle', 'oracle'],
+    });
+    expect(oracle.length).toBeGreaterThan(10);
+    expect(oracle.every((l) => l.regretK === 0)).toBe(true);
+    const hard = await regretTask({
+      seed: 'regret-test',
+      dealer: 0,
+      specs: [`hard:${SMALL}`, 'normal', `hard:${SMALL}`, 'normal'],
+      seats: [0, 2],
+    });
+    expect(hard.length).toBeGreaterThan(10);
+    for (const l of hard) {
+      expect(l.regretK).toBeGreaterThanOrEqual(0);
+      expect(l.trick).toBeGreaterThanOrEqual(0);
+      expect(l.trick).toBeLessThan(13);
+      expect(l.pos).toBeLessThan(4);
+    }
+  }, 120_000);
+});
+
 describe('hindsight contract decisions', () => {
   it('never does worse than its base on the decision it takes over', async () => {
     const { playGame } = await import('../src/runner');
@@ -116,4 +142,22 @@ describe('hindsight contract decisions', () => {
     expect(differed).toBeGreaterThan(0);
     expect(() => makeStrategy('hindsight:kinds=play')).toThrow(/unknown hindsight kind/);
   }, 300_000);
+});
+
+describe('rollout card play (PIMC-flaw diagnostic)', () => {
+  it('keeps every seat consistent in each sampled world and plays legal cards', async () => {
+    const { stateForWorld } = await import('../src/rollout');
+    const state = midHand('rollout-world', 38);
+    const seat = state.hand?.turn as Seat;
+    const obs = observe(state, seat);
+    const world = buildBelief(obs).sample(Rng.fromSeed('w'));
+    const ws = stateForWorld(state, seat, world);
+    // The deciding seat sees exactly the same; every other seat's view is a consistent one.
+    expect(observe(ws, seat)).toEqual(obs);
+    for (const s of SEATS) expect(() => buildBelief(observe(ws, s))).not.toThrow();
+    const bot = makeStrategy(`rollout:last=4,worlds=3,${SMALL}`);
+    if (!('decideWithState' in bot)) throw new Error('rollout must be an oracle strategy');
+    const action = await bot.decideWithState(state, seat, obs, Rng.fromSeed('r'));
+    expect(applyAction(state, seat, action).ok).toBe(true);
+  }, 120_000);
 });

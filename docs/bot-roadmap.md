@@ -149,6 +149,7 @@ In rough order of expected value:
 - Any Hard option, for example `hard:worlds=20,raisePartner=1`. The diagnostics below take `base=hard|expert|expert0` (default `hard`) for the bot they modify.
 - `hybrid:last=N`: Hard, with the oracle playing the last N tricks.
 - `hindsight:kinds=bid+discard+trump`: the base, except that those contract decisions are made in hindsight. Each candidate (pass or the minimum bid, a misdeal; the best few discards by a greedy playout of the true deal; each trump) is applied to the true state and the hand is played out by the bots at the table with the simulator's own random streams, so its realised equity is known exactly. Its margin over its base bounds what better decisions of that kind could gain.
+- `rollout:last=N,worlds=W`: the base, except that with N (default 3) or fewer tricks left it values each card by playing the hand out with the base in all four seats over W (default 16) worlds sampled as the base samples them, instead of solving each world with all hands open. Same information, a realistic model of the play to come: its margin over the base is what better search could gain there, against `hybrid:last=N` for the whole gap.
 - `peek:cards=bull+bear+tiger,last=N`: Hard whose worlds put those cards where they really are. Groups (joined by `+`): `tiger`, `bull`, `bear`, `money`, `trumps`, `partner`, `lho`, `rho` (a whole hand), `pile` (the discards) and `all` (the true deal). Worlds are sampled exactly, conditioned on the revealed placements (`buildBelief` pins, simulator only), and keep the base's specials weighting.
 
 **Scripts** (`packages/sim/scripts/`, run with `pnpm --dir packages/sim exec tsx scripts/<name>.ts`):
@@ -158,6 +159,7 @@ In rough order of expected value:
 | `experiments.ts` | Duplicate A/B runs with SPRT (or fixed with `SPRT=0`); appends JSON lines |
 | `timing.ts` | Decision‑time percentiles by decision kind and cards left; size budgets against the reply time |
 | `timing-bank.ts` | A decision bank: `collect` stores the observations (and, for diagnostics, the true hands) of self‑play hands; `time` runs any spec on them, kind by kind, with percentiles, the slowest positions, and with `REGRET=1` each card's regret against the true deal solved exactly. Gives the rare decisions (discard, trump) enough samples for a real p99 |
+| `regret.ts` | Where card play loses against the all‑seeing solver: each chosen card's regret against the best card in the true deal, by trick, position in the trick and side (declaring or defending) |
 | `compare-bank.ts` | Pairs two `timing-bank.ts time` results on one bank: how often the choices agree, the time of each, and the mean regret difference with a 95% interval (a cheap offline screen before a duplicate run) |
 | `calibrate.ts` | Bidding estimate vs actual capture, by bid, margin and auction shape; prints the calibration fit |
 | `specials-model.ts` | Fits the specials inference model and writes `inference/generated/specialsModel.ts` |

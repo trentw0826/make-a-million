@@ -5,6 +5,7 @@
 import { EXPERT_DEFAULTS, HARD_DEFAULTS, HardBot, type HardOptions } from '@mam/bots';
 import { HindsightBot, type HindsightKind } from './hindsight';
 import { OracleBot, PEEK_GROUPS, PeekBot, type PeekGroup } from './oracle';
+import { RolloutBot } from './rollout';
 import { registerStrategy } from './strategies';
 
 /**
@@ -112,4 +113,14 @@ registerStrategy('hindsight', (o) => {
     }),
   );
   return new HindsightBot(set, hardFamily(base, rest), Number(top ?? 6));
+});
+
+/**
+ * Diagnostic for PIMC's own flaws: a Hard-family bot (`base`) that, with `last` (default 3)
+ * or fewer tricks left, values each card by playing the hand out with its base in all four
+ * seats over `worlds` (default 16) sampled worlds (rollout.ts).
+ */
+registerStrategy('rollout', (o) => {
+  const { last, worlds, base, ...rest } = o;
+  return new RolloutBot(hardFamily(base, rest), Number(last ?? 3), Number(worlds ?? 16));
 });
