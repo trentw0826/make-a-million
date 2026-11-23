@@ -29,6 +29,8 @@ interface Props {
    * focus, or null.
    */
   readonly onHoverColor?: ((suit: Suit | null) => void) | undefined;
+  /** Choosing trump: a color pointed at elsewhere (its token on the felt), raised as if hovered. */
+  readonly litColor?: Suit | null | undefined;
 }
 
 /** Offsets from the hand to each dealer's seat, roughly, for the deal to start from. */
@@ -80,7 +82,7 @@ function Present({ children }: { children: ReactNode }) {
  * on the felt. Hovering or focusing a card you can click raises it and parts the cards around
  * it; a card you can't click stays still.
  */
-export function Hand({ ids, trump, dealer, cardProps, onHoverColor }: Props) {
+export function Hand({ ids, trump, dealer, cardProps, onHoverColor, litColor }: Props) {
   const order = useMemo(() => displayOrder(ids, trump), [ids, trump]);
   // The first render is the deal; cards that mount after it are the widow. A card that left
   // and comes back (a discard put back) flies home on its own, so it isn't dealt in again.
@@ -108,10 +110,12 @@ export function Hand({ ids, trump, dealer, cardProps, onHoverColor }: Props) {
   );
   const hoveredGroup = hovered === null ? null : displayGroup(hovered, trump);
   const hoveredColor = byColor && hoveredGroup !== 'special' ? hoveredGroup : null;
-  const atGroup = hoveredColor === null ? -1 : groups.indexOf(hoveredColor);
   useEffect(() => {
     onHoverColor?.(hoveredColor);
   }, [onHoverColor, hoveredColor]);
+  // The color shown raised: the one under the pointer here, else one pointed at on the felt.
+  const raisedColor = byColor ? (hoveredColor ?? litColor ?? null) : null;
+  const atGroup = raisedColor === null ? -1 : groups.indexOf(raisedColor);
 
   return (
     <section
@@ -136,7 +140,7 @@ export function Hand({ ids, trump, dealer, cardProps, onHoverColor }: Props) {
           // turn, or any card while you wait) stays still, and so does the hand around it.
           const live = props.onClick !== undefined && !props.disabled;
           const raise = byColor
-            ? group === hoveredColor
+            ? group === raisedColor
               ? 1
               : 0
             : i === at && !props.selected

@@ -601,7 +601,7 @@ describe('table status', () => {
     const picker = screen.getByRole('region', { name: 'Choose trump' });
     expect(picker.closest('.me')).toBeNull();
     expect(document.querySelector('.action-bar')).toBeNull();
-    // Every color has a token, with how many of it the hand holds, none lit yet.
+    // Every color has a token, named with how many of it the hand holds, none lit yet.
     const tokens = within(picker).getAllByRole('button');
     expect(tokens.map((b) => b.getAttribute('aria-label'))).toEqual([
       'Red, 2 in your hand',
@@ -621,6 +621,18 @@ describe('table status', () => {
     expect(fan(39).style.getPropertyValue('--raise')).toBe('0');
     expect(Number(fan(39).style.getPropertyValue('--part'))).toBeGreaterThan(0);
     expect(picker.querySelector('.trump-pick-lit')).toHaveAccessibleName('Red, 2 in your hand');
+
+    // And the other way round: pointing at a token raises its color in the hand.
+    fireEvent.pointerLeave(document.querySelector('.hand') as Element);
+    const green = within(picker).getByRole('button', { name: /^Green/ });
+    fireEvent.pointerEnter(green, { pointerType: 'mouse' });
+    expect(fan(39).style.getPropertyValue('--raise')).toBe('1');
+    expect(fan(0).style.getPropertyValue('--raise')).toBe('0');
+    expect(green).toHaveClass('trump-pick-lit');
+    fireEvent.pointerLeave(green);
+    expect(fan(39).style.getPropertyValue('--raise')).toBe('0');
+    // The count is for screen readers only: the token shows just the color.
+    expect(green).toHaveTextContent(/^Green$/);
 
     // The Tiger has no color: it fades back and can't be chosen.
     expect(document.querySelector('[data-card-id="52"]')).toHaveClass('card-disabled');

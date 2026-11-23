@@ -937,7 +937,7 @@
   min-width: 120px;
 }
 /* Naming trump (TrumpPicker), in the middle of the felt: a token per color, lit while the
-   pointer is on that color in the hand. */
+   pointer is on that color in the hand (pointing at a token raises the color there too). */
 .trump-picker {
   grid-area: trick;
   place-self: center;
@@ -979,10 +979,6 @@
   font-weight: var(--weight-bold);
   font-size: var(--text-sm);
   color: var(--ink);
-}
-.trump-pick-count {
-  font-size: var(--text-xs);
-  color: var(--muted);
 }
 /* The playing surface leans away from you. Only this backdrop tilts: the cards stay flat, so
    Motion can measure them for the flight from your hand. */

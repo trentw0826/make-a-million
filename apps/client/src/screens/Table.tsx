@@ -69,7 +69,8 @@ export function Table({ room, view }: { room: RoomView; view: TableView }) {
     if (view.legal.kind !== 'discard') setSelected(new Set());
   }, [view.legal.kind]);
 
-  // Choosing trump: the color the pointer is on in the hand, lit in the picker on the felt.
+  // Choosing trump: the color the pointer is on, in the hand or in the picker on the felt;
+  // each lights it in the other.
   const naming = view.legal.kind === 'trump';
   const nameable = new Set<Suit>(view.legal.kind === 'trump' ? view.legal.suits : []);
   const [trumpPreview, setTrumpPreview] = useState<Suit | null>(null);
@@ -171,7 +172,12 @@ export function Table({ room, view }: { room: RoomView; view: TableView }) {
             completed={completed}
           />
           {view.legal.kind === 'trump' && (
-            <TrumpPicker legal={view.legal} hand={view.hand} preview={trumpPreview} />
+            <TrumpPicker
+              legal={view.legal}
+              hand={view.hand}
+              preview={trumpPreview}
+              onPreview={setTrumpPreview}
+            />
           )}
           {view.legal.kind === 'discard' && (
             <DiscardTray
@@ -202,6 +208,7 @@ export function Table({ room, view }: { room: RoomView; view: TableView }) {
               trump={view.trump}
               dealer={spotOf(view.dealer, me)}
               onHoverColor={naming ? setTrumpPreview : undefined}
+              litColor={naming ? trumpPreview : null}
               cardProps={(id) => {
                 if (naming) {
                   // The Tiger, Bull and Bear have no color to name; they fade back.

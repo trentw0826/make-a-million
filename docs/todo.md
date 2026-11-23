@@ -4,8 +4,6 @@ A scratchpad for future fixes, features, and updates
 
 ## Immediate + Simple
 - [ ] The bottom right button panel should go analysis, undo, redo, score sheet, sound, how to play
-- [ ] Remove the 'x held' text under the choosing trump UI
-- [ ] When hovering over the color group to be chosen as trump, the corresponding color box on the table hovers as if about to be chosen; this should also be true in reverse but isn't
 - [ ] Reimagine win screen
   - [ ] Elements should be more harmonious with the design system. Include a simple confetti animation + sound when winning. 
   - [ ] Include a game review feature similar to chess.com

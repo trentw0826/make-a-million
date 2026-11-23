@@ -406,6 +406,13 @@ async function act(page: Page, shoot: Shoot): Promise<boolean> {
           raised > 0 && raised === held && (await page.locator('.action-bar').count()) === 0,
           `pointing at a color raises its group and lights its token on the felt (${raised} raised, ${lit})`,
         );
+        // And back: pointing at that token raises the same group in the hand.
+        await picker.locator('.trump-pick-lit').hover();
+        await sleep(350);
+        check(
+          (await page.locator('.hand-fan-hovered').count()) === held,
+          'pointing at a trump token raises its color in the hand',
+        );
         trumpChecked = true;
         await shoot('4b-trump');
       }
