@@ -9,7 +9,7 @@ export {
   type ContractOptions,
   evaluateBid,
 } from './contract/index';
-export { type Deal, playoutDeclare, playoutWith } from './contract/simulate';
+export { type Deal, discardCandidates, playoutDeclare, playoutWith } from './contract/simulate';
 export { fallbackAction } from './fallback';
 export {
   EXPERT_DEFAULTS,

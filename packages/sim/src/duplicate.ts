@@ -44,7 +44,7 @@ export function makeBoards(count: number, seed: string, pool: readonly HandStart
 
 /** Equity for `team` once a hand has been scored. */
 export function equityAfter(
-  line: HandLine,
+  line: Pick<HandLine, 'scoresAfter' | 'bidder' | 'dealer'>,
   team: Team,
   table: MatchEquityTable,
   target = DEFAULT_RULESET.targetScore,

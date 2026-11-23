@@ -82,3 +82,38 @@ describe('peek pins', () => {
     expect(() => makeStrategy('hybrid:base=nope')).toThrow(/unknown base/);
   });
 });
+
+describe('hindsight contract decisions', () => {
+  it('never does worse than its base on the decision it takes over', async () => {
+    const { playGame } = await import('../src/runner');
+    const { equityAfter } = await import('../src/duplicate');
+    const { ME_TABLE } = await import('@mam/search');
+    let differed = 0;
+    for (let i = 0; i < 6; i++) {
+      const play = (spec: string) =>
+        playGame({
+          seed: `hindsight-${i}`,
+          dealer: (i % 4) as Seat,
+          hands: 1,
+          strategies: [
+            makeStrategy(spec),
+            makeStrategy(`hard:${SMALL}`),
+            makeStrategy(spec),
+            makeStrategy(`hard:${SMALL}`),
+          ],
+        });
+      const base = await play(`hard:${SMALL}`);
+      const oracle = await play(`hindsight:kinds=trump,${SMALL}`);
+      const rb = base.state.handHistory[0];
+      const ro = oracle.state.handHistory[0];
+      if (!rb || !ro) throw new Error('no hand');
+      const eb = equityAfter(rb, 0, ME_TABLE);
+      const eo = equityAfter(ro, 0, ME_TABLE);
+      expect(eo).toBeGreaterThanOrEqual(eb - 1e-12);
+      if (eo > eb) differed += 1;
+    }
+    // Deterministic: on these deals hindsight finds a better trump at least once.
+    expect(differed).toBeGreaterThan(0);
+    expect(() => makeStrategy('hindsight:kinds=play')).toThrow(/unknown hindsight kind/);
+  }, 300_000);
+});

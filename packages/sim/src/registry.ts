@@ -3,6 +3,7 @@
  * effects by tasks.ts and the CLI, so worker threads see the same set.
  */
 import { EXPERT_DEFAULTS, HARD_DEFAULTS, HardBot, type HardOptions } from '@mam/bots';
+import { HindsightBot, type HindsightKind } from './hindsight';
 import { OracleBot, PEEK_GROUPS, PeekBot, type PeekGroup } from './oracle';
 import { registerStrategy } from './strategies';
 
@@ -94,3 +95,21 @@ registerStrategy('peek', (o) => {
   return new PeekBot(groups, hardFamily(base, rest), Number(last ?? 13));
 });
 
+/**
+ * Diagnostic: a Hard-family bot (`base`, default Hard) whose contract decisions of the named
+ * kinds ("kinds=bid+discard+trump") are made in hindsight, by playing out each candidate
+ * with the table's bots (hindsight.ts). Its margin over its base bounds what better
+ * decisions of those kinds could gain. `top`: discards tried (default 6).
+ */
+registerStrategy('hindsight', (o) => {
+  const { kinds = 'bid+discard+trump', top, base, ...rest } = o;
+  const set = new Set(
+    kinds.split('+').map((k) => {
+      if (k !== 'bid' && k !== 'discard' && k !== 'trump') {
+        throw new Error(`unknown hindsight kind "${k}"`);
+      }
+      return k as HindsightKind;
+    }),
+  );
+  return new HindsightBot(set, hardFamily(base, rest), Number(top ?? 6));
+});

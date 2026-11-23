@@ -148,6 +148,7 @@ In rough order of expected value:
 - `hard`, `expert`, `expert0` (Expert‑0, frozen), `normal`, `easy`, `oracle`.
 - Any Hard option, for example `hard:worlds=20,raisePartner=1`. The diagnostics below take `base=hard|expert|expert0` (default `hard`) for the bot they modify.
 - `hybrid:last=N`: Hard, with the oracle playing the last N tricks.
+- `hindsight:kinds=bid+discard+trump`: the base, except that those contract decisions are made in hindsight. Each candidate (pass or the minimum bid, a misdeal; the best few discards by a greedy playout of the true deal; each trump) is applied to the true state and the hand is played out by the bots at the table with the simulator's own random streams, so its realised equity is known exactly. Its margin over its base bounds what better decisions of that kind could gain.
 - `peek:cards=bull+bear+tiger,last=N`: Hard whose worlds put those cards where they really are. Groups (joined by `+`): `tiger`, `bull`, `bear`, `money`, `trumps`, `partner`, `lho`, `rho` (a whole hand), `pile` (the discards) and `all` (the true deal). Worlds are sampled exactly, conditioned on the revealed placements (`buildBelief` pins, simulator only), and keep the base's specials weighting.
 
 **Scripts** (`packages/sim/scripts/`, run with `pnpm --dir packages/sim exec tsx scripts/<name>.ts`):
