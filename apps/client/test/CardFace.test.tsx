@@ -52,8 +52,9 @@ describe('CardFace', () => {
     render(<CardFace id={TIGER_ID} trump fresh />);
     const card = screen.getByLabelText('Tiger top trump, trump, from the widow');
     expect(card).toHaveAttribute('data-trump');
-    expect(card).toHaveTextContent('★');
-    // Outlined in gold, with no tag over it.
+    // Each is outlined in gold, with no star or tag over it.
+    expect(card).toHaveClass('card-trump');
+    expect(card).not.toHaveTextContent('★');
     expect(card).toHaveClass('card-fresh');
     expect(card).not.toHaveTextContent(/new/i);
   });

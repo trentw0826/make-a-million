@@ -4,7 +4,14 @@
  * `src/sound/files/`, import them here and set `src`; the recipe is then unused.
  */
 
-export type SoundName = 'deal' | 'play' | 'trickWon' | 'yourTurn' | 'handWon' | 'handLost';
+export type SoundName =
+  | 'deal'
+  | 'play'
+  | 'trickWon'
+  | 'yourTurn'
+  | 'handWon'
+  | 'handLost'
+  | 'gameWon';
 
 /** One oscillator note. Times are seconds from the start of the sound. */
 export interface Tone {
@@ -69,6 +76,20 @@ export const SOUNDS: Readonly<Record<SoundName, SoundEntry>> = {
   },
   yourTurn: { src: null, volume: 0.45, synth: { tones: chime([660, 880], 0.11, 0.18) } },
   handWon: { src: null, volume: 0.5, synth: { tones: chime([523, 659, 784, 1047], 0.1, 0.18) } },
+  // A rising fanfare that lands on a held chord: the game is won.
+  gameWon: {
+    src: null,
+    volume: 0.55,
+    synth: {
+      tones: [
+        ...chime([392, 523, 659, 784], 0.09, 0.16),
+        ...[1047, 784, 659].map(
+          (freq, i): Tone => ({ type: 'sine', freq, start: 0.38, dur: 1.1, gain: i ? 0.1 : 0.16 }),
+        ),
+      ],
+      noise: [0.38, 0.5, 0.62].map((t) => ({ start: t, dur: 0.08, gain: 0.12, band: 6000 })),
+    },
+  },
   handLost: {
     src: null,
     volume: 0.5,

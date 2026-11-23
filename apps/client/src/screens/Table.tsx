@@ -60,27 +60,33 @@ export function Table({ room, view }: { room: RoomView; view: TableView }) {
     return () => clearTimeout(timer);
   }, [completed, dispatch]);
 
-  // The hand review waits until the last trick has been gathered, then a moment more.
+  // The hand review, or at the end of the game the win screen, waits until the last trick
+  // has been gathered, then a moment more.
   const handOver = view.phase === 'hand-complete';
+  const gameOver = view.phase === 'game-over';
   const [reviewOpen, setReviewOpen] = useState(false);
   useEffect(() => {
-    if (!handOver || completed) {
+    if (!(handOver || gameOver) || completed) {
       setReviewOpen(false);
       return;
     }
     const timer = setTimeout(() => setReviewOpen(true), RESULT_PAUSE_MS);
     return () => clearTimeout(timer);
-  }, [handOver, completed]);
+  }, [handOver, gameOver, completed]);
 
   // Selection only matters while discarding.
   useEffect(() => {
     if (view.legal.kind !== 'discard') setSelected(new Set());
   }, [view.legal.kind]);
 
-  // Choosing trump: the color the pointer is on in the hand, lit in the picker on the felt.
+  // Choosing trump: the color the pointer is on, in the hand or in the picker on the felt;
+  // each lights it in the other. Kept apart, so the hand letting go of a color (reported a
+  // render late) can't put out the token the pointer has just moved onto.
   const naming = view.legal.kind === 'trump';
   const nameable = new Set<Suit>(view.legal.kind === 'trump' ? view.legal.suits : []);
-  const [trumpPreview, setTrumpPreview] = useState<Suit | null>(null);
+  const [handColor, setHandColor] = useState<Suit | null>(null);
+  const [tokenColor, setTokenColor] = useState<Suit | null>(null);
+  const trumpPreview = handColor ?? tokenColor;
   const legalPlays = view.legal.kind === 'play' ? new Set(view.legal.cardIds) : null;
   const discarding = view.legal.kind === 'discard';
   const forbidden =
@@ -183,7 +189,12 @@ export function Table({ room, view }: { room: RoomView; view: TableView }) {
             completed={completed}
           />
           {view.legal.kind === 'trump' && (
-            <TrumpPicker legal={view.legal} hand={view.hand} preview={trumpPreview} />
+            <TrumpPicker
+              legal={view.legal}
+              hand={view.hand}
+              preview={trumpPreview}
+              onPreview={setTokenColor}
+            />
           )}
           {view.legal.kind === 'discard' && (
             <DiscardTray
@@ -217,12 +228,14 @@ export function Table({ room, view }: { room: RoomView; view: TableView }) {
               ids={handIds}
               trump={view.trump}
               dealer={spotOf(view.dealer, me)}
-              onHoverColor={naming ? setTrumpPreview : undefined}
+              onHoverColor={naming ? setHandColor : undefined}
               annotation={(id) =>
                 legalPlays?.has(id) ? (
                   <MoveValue onCard action={{ type: 'playCard', cardId: id }} />
                 ) : null
               }
+              litColor={naming ? tokenColor : null}
+              sinkBlocked={discarding}
               cardProps={(id) => {
                 if (naming) {
                   // The Tiger, Bull and Bear have no color to name; they fade back.
@@ -269,7 +282,7 @@ export function Table({ room, view }: { room: RoomView; view: TableView }) {
           pending={view.continuePending}
         />
       )}
-      {view.phase === 'game-over' && <GameOver view={view} room={room} />}
+      {gameOver && reviewOpen && <GameOver view={view} room={room} />}
     </main>
   );
 }
