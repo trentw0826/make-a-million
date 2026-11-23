@@ -221,3 +221,86 @@ describe('discard and trump screened by the contract-value model', () => {
     expect(checked).toBeGreaterThanOrEqual(10);
   });
 });
+
+describe('bidding valued by the rest of the auction (bidOutcome: auction)', () => {
+  it('predicts an overcall only from an opponent who would pay the next price', async () => {
+    const { afterOurBid } = await import('../src/contract/index');
+    // Seat 0 bids 150k; raises are 10k. Seat 2 is the partner.
+    const c = (entries: [Seat, number][]) => new Map<Seat, number>(entries);
+    expect(
+      afterOurBid(
+        c([
+          [1, 150_000],
+          [2, 400_000],
+          [3, 100_000],
+        ]),
+        0,
+        150_000,
+        10_000,
+        5_000,
+      ),
+    ).toBeNull();
+    expect(
+      afterOurBid(
+        c([
+          [1, 200_000],
+          [3, 100_000],
+        ]),
+        0,
+        150_000,
+        10_000,
+        5_000,
+      ),
+    ).toEqual({
+      seat: 1,
+      price: 160_000,
+    });
+    // The partner outbids the overcalling opponent.
+    expect(
+      afterOurBid(
+        c([
+          [1, 200_000],
+          [2, 300_000],
+        ]),
+        0,
+        150_000,
+        10_000,
+        5_000,
+      ),
+    ).toEqual({
+      seat: 2,
+      price: 210_000,
+    });
+  });
+
+  it('changes only the value of bidding, and decides from the observation alone', async () => {
+    const { evaluateBid, CONTRACT_DEFAULTS } = await import('../src/contract/index');
+    const { observe, Rng } = await import('@mam/engine');
+    const win = { ...CONTRACT_DEFAULTS, bidWorlds: 24, contractValue: 'model' as const };
+    const auction = { ...win, bidOutcome: 'auction' as const };
+    let changed = 0;
+    for (let i = 0; i < 6; i++) {
+      const state = createGame({ seed: `outcome-leak-${i}` });
+      const hand = state.hand;
+      if (!hand) throw new Error('no hand');
+      const seat = hand.auction.turn;
+      const others = ([0, 1, 2, 3] as Seat[]).filter((s) => s !== seat);
+      const pool = [...others.flatMap((s) => hand.hands[s]), ...hand.widow].reverse();
+      const moved = [...hand.hands] as number[][];
+      others.forEach((s, k) => {
+        moved[s] = pool.slice(13 * k, 13 * k + 13);
+      });
+      const swapped = {
+        ...state,
+        hand: { ...hand, hands: moved as unknown as typeof hand.hands, widow: pool.slice(39) },
+      };
+      const o1 = observe(state, seat);
+      const a = evaluateBid(o1, Rng.fromSeed('o'), auction);
+      expect(evaluateBid(observe(swapped, seat), Rng.fromSeed('o'), auction)).toEqual(a);
+      const w = evaluateBid(o1, Rng.fromSeed('o'), win);
+      expect(a?.pass).toBe(w?.pass);
+      if (a?.declare !== w?.declare) changed++;
+    }
+    expect(changed).toBeGreaterThan(0);
+  });
+});

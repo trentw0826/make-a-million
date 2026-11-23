@@ -102,6 +102,13 @@ export interface ContractOptions {
    * greedy playout; 'model', the contract-value model with that keep and trump.
    */
   readonly screenValue: 'playout' | 'model';
+  /**
+   * What bidding the minimum is worth in a sampled deal. 'win': declaring at that price.
+   * 'auction': the rest of the auction by the bidding model. If an opponent's ceiling reaches
+   * the next price they overcall, we drop out, and the players still in finish the auction
+   * (partner may then outbid them); otherwise we declare at the minimum.
+   */
+  readonly bidOutcome: 'win' | 'auction';
 }
 
 export const CONTRACT_DEFAULTS: ContractOptions = {
@@ -125,6 +132,7 @@ export const CONTRACT_DEFAULTS: ContractOptions = {
   calibScreen: false,
   contractValue: 'playout',
   screenValue: 'playout',
+  bidOutcome: 'win',
 };
 
 /**
@@ -215,6 +223,25 @@ function predictAuction(
   return { seat: top[0], price };
 }
 
+/**
+ * The model's auction after we bid `bid`: null if no opponent's ceiling reaches the next
+ * price (we declare at `bid`), else the winner and price once we drop out and the others
+ * finish it (the partner may outbid the opponents).
+ */
+export function afterOurBid(
+  ceilings: ReadonlyMap<Seat, number>,
+  seat: Seat,
+  bid: number,
+  raise: number,
+  step: number,
+): { seat: Seat; price: number } | null {
+  const next = bid + raise;
+  let overcall = false;
+  for (const [s, c] of ceilings) if (teamOf(s) !== teamOf(seat) && c >= next) overcall = true;
+  if (!overcall) return null;
+  return predictAuction(ceilings, { seat, amount: bid }, next, raise, step);
+}
+
 /** Fewest sampled deals a contract decision uses, even past its deadline. */
 const MIN_WORLDS = 16;
 
@@ -256,13 +283,7 @@ export function evaluateBid(
     const deal = toDeal(obs, belief.sample(rng));
     const w = auctionLikelihood(deal, obs, step, opts.auctionSigma, opts);
     if (w < 1e-9) continue;
-    const mine = declareValue(
-      deal,
-      obs.seat,
-      utilityFor(obs, obs.seat, legal.minBid, opts.utility),
-      opts,
-    );
-    // If we pass: the others (still in) finish the auction by the model.
+    // The others still in, with their ceilings by the model.
     const ceilings = new Map<Seat, number>();
     for (const s of [0, 1, 2, 3] as Seat[]) {
       if (s === obs.seat || passed.has(s)) continue;
@@ -273,6 +294,16 @@ export function evaluateBid(
           : modelCeiling(deal, s, obs, step, opts),
       );
     }
+    // If we bid the minimum: we declare at it, or (bidOutcome 'auction') an opponent who would
+    // pay the next price overcalls, we drop out and the others finish the auction.
+    const after =
+      opts.bidOutcome === 'auction'
+        ? afterOurBid(ceilings, obs.seat, legal.minBid, raise, step)
+        : null;
+    const mine = after
+      ? declareValue(deal, after.seat, utilityFor(obs, after.seat, after.price, opts.utility), opts)
+      : declareValue(deal, obs.seat, utilityFor(obs, obs.seat, legal.minBid, opts.utility), opts);
+    // If we pass: the others finish the auction by the model.
     const outcome = predictAuction(ceilings, high, legal.minBid, raise, step) ?? {
       seat: obs.seat,
       price: legal.minBid,
