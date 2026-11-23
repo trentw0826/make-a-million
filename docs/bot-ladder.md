@@ -72,6 +72,24 @@ Notes:
 9. The SPRT stops when its evidence crosses a boundary, so the estimate at the stop is biased toward the verdict: up after an H1, down after an H0. The two specials runs differ by about three standard errors, partly for that reason. Before promoting a small effect, measure it on a fixed number of boards (`SPRT=0`).
 10. Specials inference on its fixed, unselected runs (1500 boards each), pooled by inverse variance. Under the current first‑lead rule with the refitted model (`exp21`, `exp22`): ΔME +0.53% [−0.12, 1.17], Δpoints **+4.1k [0.7, 7.6]** per hand. With the old‑rule fixed run as well: ΔME +0.63% [0.12, 1.15], Δpoints +4.3k [1.6, 7.1]. All three point estimates are positive (+0.82%, +0.44%, +0.61%). It costs about 3% more decision time (about 267 against 258 ms on average; the same maximum). **Promoted** (2026‑11‑16) on the standard of note 5: a clear points gain on unselected boards, a positive equity gain, and a small cost.
 
+## Headroom (Phase 2 of the Expert work)
+
+**Where Expert‑0's card play loses** (`scripts/regret.ts expert0 300`, seed `xb-regret1`, 2026‑11‑23). Expert‑0 in all four seats, 300 hands, 12,416 card plays with a choice. Each chosen card is scored against the best card in the true deal, solved with all hands open: exactly with 7 or fewer tricks left, otherwise 3 tricks deep plus the greedy playout. Regret is in $1000s of margin between the teams; it mixes what no player can know with what a better bot could avoid.
+
+| Decisions | n | Mean regret ($k, ±95%) | Wrong card | Per team‑hand ($k) |
+|---|---|---|---|---|
+| all | 12416 | 8.65 ± 0.43 | 26.2% | 179.0 |
+| declaring | 6298 | 7.66 ± 0.51 | 26.2% | 80.4 |
+| defending | 6118 | 9.66 ± 0.70 | 26.2% | 98.5 |
+| lead | 3551 | 19.38 ± 1.28 | 43.5% | 114.7 |
+| follow, 2nd / 3rd / 4th | 2899 / 3024 / 2942 | 5.01 / 5.00 / 3.03 | 22% / 22% / 14% | 24.2 / 25.2 / 14.9 |
+| declaring, lead | 2001 | 14.10 ± 1.29 | 38.8% | 47.0 |
+| defending, lead | 1550 | 26.20 ± 2.36 | 49.7% | 67.7 |
+| declaring, follow | 4297 | 4.66 ± 0.41 | 20.3% | 33.4 |
+| defending, follow | 4568 | 4.05 ± 0.36 | 18.3% | 30.9 |
+
+By trick, per team‑hand: 32.9k (trick 1), 28.8k, 23.8k, 21.2k, 16.7k, 14.7k (trick 6), then 9.1k, 9.1k, 8.4k, 6.8k, 4.4k, 3.0k once solving is exact (tricks 7–12). **Leads carry two thirds of the regret, defenders' leads the most** (wrong half the time, 26k a decision). The early tricks dominate. That is where hidden cards matter most and where search is depth‑limited, so this table alone cannot say how much is avoidable; the oracle, rollout and peek runs below split it.
+
 ## Offline screens (the Expert work)
 
 Cheap checks run before a duplicate test (`bot-roadmap.md`, Scripts).
