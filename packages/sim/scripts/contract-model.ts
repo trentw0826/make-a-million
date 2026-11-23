@@ -144,9 +144,9 @@ for (const [name, rows] of [
   report(`all features (sd ${sdAll.toFixed(1)})`, rows, lin(wAll, allCols), sdAll);
 }
 console.log('weights:');
-CONTRACT_FEATURES.forEach((f, i) =>
-  console.log(`  ${f.padEnd(26)} ${(wAll[i] as number).toFixed(3)}`),
-);
+CONTRACT_FEATURES.forEach((f, i) => {
+  console.log(`  ${f.padEnd(26)} ${(wAll[i] as number).toFixed(3)}`);
+});
 
 if (process.env.WRITE === '1') {
   const w = fit(all, allCols);
