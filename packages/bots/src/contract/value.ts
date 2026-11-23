@@ -1,4 +1,4 @@
-import { type CardId, partnerOf, type Seat, SUITS } from '@mam/engine';
+import { type CardId, partnerOf, type Seat, SUITS, type Suit } from '@mam/engine';
 import { type Deal, heuristicContract, playoutWith } from './simulate';
 
 /**
@@ -65,6 +65,22 @@ export function contractFeatures(
 ): Float64Array {
   const cards16 = [...(deal.hands[declarer] ?? []), ...deal.widow];
   const { keep, trump } = heuristicContract(cards16);
+  return contractFeaturesWith(deal.hands, declarer, keep, trump, out, playout);
+}
+
+/**
+ * The same features for a contract whose keep (the declarer's final 13 cards) and trump are
+ * given, as when choosing the discard and trump; `hands` are the other seats' cards.
+ */
+export function contractFeaturesWith(
+  hands: readonly (readonly CardId[])[],
+  declarer: Seat,
+  keep: readonly CardId[],
+  trump: Suit,
+  out: Float64Array = new Float64Array(CONTRACT_FEATURE_COUNT),
+  playout?: [number, number],
+): Float64Array {
+  const deal = { hands };
   const t = SUITS.indexOf(trump);
   const team = declarer % 2;
   const pair = playoutWith(deal.hands, declarer, keep, trump);

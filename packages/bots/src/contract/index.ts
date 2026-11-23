@@ -32,7 +32,12 @@ import {
   playoutWith,
   utilityFor,
 } from './simulate';
-import { type ContractModel, contractFeatures, predictCapture } from './value';
+import {
+  type ContractModel,
+  contractFeatures,
+  contractFeaturesWith,
+  predictCapture,
+} from './value';
 
 export interface ContractOptions {
   /** Deals sampled for bidding and misdeal decisions. */
@@ -92,6 +97,11 @@ export interface ContractOptions {
   readonly contractValue: 'playout' | 'model';
   /** Also calibrate the playouts that screen discard and trump candidates. */
   readonly calibScreen: boolean;
+  /**
+   * How the screen values a discard-and-trump candidate in a sampled deal: 'playout', the
+   * greedy playout; 'model', the contract-value model with that keep and trump.
+   */
+  readonly screenValue: 'playout' | 'model';
 }
 
 export const CONTRACT_DEFAULTS: ContractOptions = {
@@ -114,6 +124,7 @@ export const CONTRACT_DEFAULTS: ContractOptions = {
   calibSd: 58,
   calibScreen: false,
   contractValue: 'playout',
+  screenValue: 'playout',
 };
 
 /**
@@ -359,11 +370,22 @@ function bestCandidate(
   const raw = utilityFor(obs, contract.bidder, contract.amount, opts.utility);
   const u = opts.calibScreen ? calibrated(raw, teamOf(contract.bidder), opts) : raw;
   const screenDeals = Array.from({ length: opts.screenWorlds }, () => belief.sample(rng));
+  const team = teamOf(obs.seat);
   const screened = candidates.map((c) => {
     let total = 0;
     for (const world of screenDeals) {
       const hands = [0, 1, 2, 3].map((s) => (s === obs.seat ? c.keep : (world.hands[s] ?? [])));
-      total += u(playoutWith(hands, obs.seat, c.keep, c.trump));
+      if (opts.screenValue === 'model') {
+        // The contract-value model's capture, Normal around its prediction (as in bidding).
+        const playout: [number, number] = [0, 0];
+        const x = contractFeaturesWith(hands, obs.seat, c.keep, c.trump, undefined, playout);
+        const mean = predictCapture(CONTRACT_MODEL, x);
+        total += calibrated(raw, team, { calibA: mean, calibB: 0, calibSd: CONTRACT_MODEL.sd })(
+          playout,
+        );
+      } else {
+        total += u(playoutWith(hands, obs.seat, c.keep, c.trump));
+      }
     }
     return { c, value: total / screenDeals.length };
   });
@@ -371,7 +393,6 @@ function bestCandidate(
   const top = screened.slice(0, opts.refineTop);
   if (opts.refineWorlds <= 0 || top.length <= 1) return (top[0] as (typeof top)[0]).c;
 
-  const team = teamOf(obs.seat);
   const u0 = captureUtility(
     {
       ruleset: obs.ruleset,

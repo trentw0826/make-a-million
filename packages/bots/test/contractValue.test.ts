@@ -157,3 +157,67 @@ describe('the fitted model of the other bidders', () => {
     }
   });
 });
+
+describe('discard and trump screened by the contract-value model', () => {
+  it('uses the same features as bidding when given the heuristic keep and trump', async () => {
+    const { contractFeaturesWith } = await import('../src/contract/value');
+    for (let i = 0; i < 10; i++) {
+      const hand = createGame({ seed: `with-${i}` }).hand;
+      if (!hand) throw new Error('no hand');
+      const declarer = (i % 4) as Seat;
+      const { keep, trump } = heuristicContract([...hand.hands[declarer], ...hand.widow]);
+      const a = contractFeatures({ hands: hand.hands, widow: hand.widow }, declarer);
+      expect(contractFeaturesWith(hand.hands, declarer, keep, trump)).toEqual(a);
+    }
+  });
+
+  it('discards and names trump legally, from the observation alone', async () => {
+    const { applyActionOrThrow, legalMoves, observe, Rng, SEATS } = await import('@mam/engine');
+    const { HardBot, HARD_DEFAULTS } = await import('../src/hard/index');
+    const { HeuristicBot } = await import('../src/heuristic/index');
+    const bot = new HardBot({
+      ...HARD_DEFAULTS,
+      screenValue: 'model',
+      screenWorlds: 8,
+      refineWorlds: 2,
+    });
+    const normal = new HeuristicBot();
+    let checked = 0;
+    for (let i = 0; i < 6; i++) {
+      let state = createGame({ seed: `screen-model-${i}` });
+      const rng = Rng.fromSeed(`screen-model-${i}`);
+      while (
+        state.hand?.phase === 'bidding' ||
+        state.hand?.phase === 'discarding' ||
+        state.hand?.phase === 'naming-trump'
+      ) {
+        const seat = SEATS.find((s) => legalMoves(state, s).kind !== 'none') as Seat;
+        const obs = observe(state, seat);
+        const kind = obs.legal.kind;
+        const action =
+          kind === 'discard' || kind === 'trump'
+            ? bot.decide(obs, Rng.fromSeed('m'))
+            : normal.decide(obs, rng);
+        if (kind === 'discard' || kind === 'trump') {
+          // Another arrangement of the other hands: the bidder sees exactly the same.
+          const hand = state.hand;
+          const others = ([0, 1, 2, 3] as Seat[]).filter((s) => s !== seat);
+          const pool = others.flatMap((s) => hand.hands[s]).reverse();
+          const moved = [...hand.hands] as number[][];
+          others.forEach((s, k) => {
+            moved[s] = pool.slice(13 * k, 13 * k + 13);
+          });
+          const other = {
+            ...state,
+            hand: { ...hand, hands: moved as unknown as typeof hand.hands },
+          };
+          expect(observe(other, seat)).toEqual(obs);
+          expect(bot.decide(observe(other, seat), Rng.fromSeed('m'))).toEqual(action);
+          checked += 1;
+        }
+        state = applyActionOrThrow(state, seat, action).state;
+      }
+    }
+    expect(checked).toBeGreaterThanOrEqual(10);
+  });
+});
