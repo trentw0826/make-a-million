@@ -21,6 +21,8 @@ import {
 import { ceilingForHand } from '../heuristic/bidding';
 import { chooseDiscards } from '../heuristic/discard';
 import { bestTrump } from '../heuristic/evaluate';
+import { fittedCeiling, fittedSigma } from './auction';
+import { AUCTION_MODEL } from './generated/auctionModel';
 
 /** A complete deal: 13 cards per seat plus the 3-card widow. */
 export interface Deal {
@@ -101,6 +103,9 @@ export function modelCeiling(
   model: CeilingModel = HEURISTIC_CEILINGS,
 ): number {
   const partnerBid = obs.auction.some((e) => e.kind === 'bid' && e.seat === partnerOf(seat));
+  if (model.ceilingModel === 'fitted') {
+    return fittedCeiling(AUCTION_MODEL, deal.hands[seat] ?? [], partnerBid, step);
+  }
   const c = ceilingForHand(deal.hands[seat] ?? [], partnerBid, step);
   if (model.ceilingShift === 0 && model.ceilingScale === 1) return c;
   return Math.floor((model.ceilingShift + model.ceilingScale * c) / step) * step;
@@ -118,6 +123,11 @@ export interface CeilingModel {
    * players who never raise over their partner, like the bots).
    */
   readonly partnerPassInformative: boolean;
+  /**
+   * 'heuristic': the ceilings above. 'fitted': ceilings and scale from the model of how the
+   * bots really bid (contract/auction.ts); a pass with partner high then says nothing.
+   */
+  readonly ceilingModel?: 'heuristic' | 'fitted';
 }
 
 export const HEURISTIC_CEILINGS: CeilingModel = {
@@ -134,6 +144,9 @@ export function auctionLikelihood(
   sigma = 20_000,
   model: CeilingModel = HEURISTIC_CEILINGS,
 ): number {
+  const fitted = model.ceilingModel === 'fitted';
+  const scale = fitted ? fittedSigma(AUCTION_MODEL) : sigma;
+  const passInformative = fitted ? false : model.partnerPassInformative;
   let w = 1;
   let high = 0;
   let highSeat: Seat | null = null;
@@ -146,13 +159,9 @@ export function auctionLikelihood(
       if (e.kind === 'bid') {
         // Forced opening bids carry no information.
         if (!(high === 0 && obs.ruleset.bidding.openerMustBid))
-          w *= logistic((c - e.amount) / sigma);
-      } else if (
-        model.partnerPassInformative ||
-        highSeat === null ||
-        teamOf(highSeat) !== teamOf(e.seat)
-      ) {
-        w *= logistic((needed - c) / sigma);
+          w *= logistic((c - e.amount) / scale);
+      } else if (passInformative || highSeat === null || teamOf(highSeat) !== teamOf(e.seat)) {
+        w *= logistic((needed - c) / scale);
       }
     }
     if (e.kind === 'bid') {

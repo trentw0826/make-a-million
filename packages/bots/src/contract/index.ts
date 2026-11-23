@@ -68,6 +68,12 @@ export interface ContractOptions {
   /** Whether a pass while partner holds the high bid counts as showing a weak hand. */
   readonly partnerPassInformative: boolean;
   /**
+   * The other players' bidding: 'heuristic' (the ceilings above) or 'fitted', the model of
+   * how the bots really bid (contract/auction.ts), for both the rest of the auction and the
+   * weighting of deals.
+   */
+  readonly ceilingModel: 'heuristic' | 'fitted';
+  /**
    * Calibration of the playout estimate in bidding and misdeal calls ($1000s): the
    * declaring team's capture is taken as Normal(calibA + calibB × estimate, calibSd²) and
    * the utility averaged over it; (0, 1, 0) uses the estimate as it is. Fit with
@@ -102,6 +108,7 @@ export const CONTRACT_DEFAULTS: ContractOptions = {
   ceilingShift: 0,
   ceilingScale: 1,
   partnerPassInformative: true,
+  ceilingModel: 'heuristic',
   calibA: 130,
   calibB: 0.5,
   calibSd: 58,

@@ -110,3 +110,50 @@ describe('bidding with the contract-value model', () => {
     expect(checked).toBe(8);
   });
 });
+
+describe('the fitted model of the other bidders', () => {
+  it('with the placeholder model, gives the heuristic ceilings and scale', async () => {
+    const { fittedCeiling, fittedSigma } = await import('../src/contract/auction');
+    const { AUCTION_MODEL } = await import('../src/contract/generated/auctionModel');
+    const { ceilingForHand } = await import('../src/heuristic/bidding');
+    if (!AUCTION_MODEL.source.startsWith('placeholder')) return;
+    for (let i = 0; i < 40; i++) {
+      const hand = createGame({ seed: `auction-model-${i}` }).hand;
+      if (!hand) throw new Error('no hand');
+      for (const partnerBid of [false, true]) {
+        const h = hand.hands[(i % 4) as Seat];
+        expect(fittedCeiling(AUCTION_MODEL, h, partnerBid, 5000)).toBe(
+          ceilingForHand(h, partnerBid, 5000),
+        );
+      }
+    }
+    expect(fittedSigma(AUCTION_MODEL)).toBeCloseTo(20_000, 6);
+  });
+
+  it('decides from the observation alone', async () => {
+    const { evaluateBid, CONTRACT_DEFAULTS } = await import('../src/contract/index');
+    const { observe, Rng } = await import('@mam/engine');
+    const opts = { ...CONTRACT_DEFAULTS, bidWorlds: 24, ceilingModel: 'fitted' as const };
+    for (let i = 0; i < 6; i++) {
+      const state = createGame({ seed: `auction-leak-${i}` });
+      const hand = state.hand;
+      if (!hand) throw new Error('no hand');
+      const seat = hand.auction.turn;
+      const others = ([0, 1, 2, 3] as Seat[]).filter((s) => s !== seat);
+      const pool = [...others.flatMap((s) => hand.hands[s]), ...hand.widow].reverse();
+      const moved = [...hand.hands] as number[][];
+      others.forEach((s, k) => {
+        moved[s] = pool.slice(13 * k, 13 * k + 13);
+      });
+      const swapped = {
+        ...state,
+        hand: { ...hand, hands: moved as unknown as typeof hand.hands, widow: pool.slice(39) },
+      };
+      const o1 = observe(state, seat);
+      expect(observe(swapped, seat)).toEqual(o1);
+      expect(evaluateBid(observe(swapped, seat), Rng.fromSeed('l'), opts)).toEqual(
+        evaluateBid(o1, Rng.fromSeed('l'), opts),
+      );
+    }
+  });
+});

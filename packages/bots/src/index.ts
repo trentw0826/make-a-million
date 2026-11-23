@@ -4,6 +4,13 @@ import { RandomBot } from './random';
 import type { BotStrategy, Difficulty } from './strategy';
 
 export {
+  AUCTION_FEATURE_COUNT,
+  AUCTION_FEATURES,
+  type AuctionModel,
+  auctionFeatures,
+  fittedCeiling,
+} from './contract/auction';
+export {
   type BidEvaluation,
   CONTRACT_DEFAULTS,
   type ContractOptions,
