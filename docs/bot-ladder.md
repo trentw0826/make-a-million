@@ -72,6 +72,14 @@ Notes:
 9. The SPRT stops when its evidence crosses a boundary, so the estimate at the stop is biased toward the verdict: up after an H1, down after an H0. The two specials runs differ by about three standard errors, partly for that reason. Before promoting a small effect, measure it on a fixed number of boards (`SPRT=0`).
 10. Specials inference on its fixed, unselected runs (1500 boards each), pooled by inverse variance. Under the current first‑lead rule with the refitted model (`exp21`, `exp22`): ΔME +0.53% [−0.12, 1.17], Δpoints **+4.1k [0.7, 7.6]** per hand. With the old‑rule fixed run as well: ΔME +0.63% [0.12, 1.15], Δpoints +4.3k [1.6, 7.1]. All three point estimates are positive (+0.82%, +0.44%, +0.61%). It costs about 3% more decision time (about 267 against 258 ms on average; the same maximum). **Promoted** (2026‑11‑16) on the standard of note 5: a clear points gain on unselected boards, a positive equity gain, and a small cost.
 
+### Expert experiments (A against Expert‑0 unless stated; SPRT δ = 1%, at least 200 boards)
+
+Each option is screened by SPRT, then confirmed on a fixed 1500 fresh boards before it is promoted (an SPRT estimate is biased toward its verdict, note 9). Seeds are listed in `bot-roadmap.md`.
+
+| Date | Change in A | Seed | Boards | ΔME per board (95% CI) | Δpoints per hand (95% CI) | Mean decision time A / B | Verdict |
+|---|---|---|---|---|---|---|---|
+| 2026‑11‑23 | `contractValue=model` (bid on the contract‑value model's estimate, not the calibrated playout) | `xb4` | 845 | **+2.03% [0.63, 3.44]** | **+12.5k [4.7, 20.4]** | 618 / 606 ms (busy machine) | **H1**. A won 848 of 1690 contracts and made 77.9%, mean bid $213k; B won 842, made 75.2%, $208k. Confirming on fixed fresh boards (`xb7`) |
+
 ## Headroom (Phase 2 of the Expert work)
 
 **Where Expert‑0's card play loses** (`scripts/regret.ts expert0 300`, seed `xb-regret1`, 2026‑11‑23). Expert‑0 in all four seats, 300 hands, 12,416 card plays with a choice. Each chosen card is scored against the best card in the true deal, solved with all hands open: exactly with 7 or fewer tricks left, otherwise 3 tricks deep plus the greedy playout. Regret is in $1000s of margin between the teams; it mixes what no player can know with what a better bot could avoid.
