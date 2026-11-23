@@ -7,7 +7,6 @@ A scratchpad for future fixes, features, and updates
 - [ ] Reimagine win screen
   - [ ] Elements should be more harmonious with the design system. Include a simple confetti animation + sound when winning. 
   - [ ] Include a game review feature similar to chess.com
-- [ ] Trump cards have a thin gold outline rather than a gold star
 
 ## Later
 - [ ] Create a design system so that styles and animations are standardized across the entire project (avoid manually copying/individually deciding on fonts, animations, text size, colors, etc for each element)
