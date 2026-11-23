@@ -107,6 +107,18 @@ Inference quality on 1,883 banked plays of other hands (seed `timing-xb1`). The 
 
 The policy model moves the truth's probability ten times as far as the specials model, which gained +4.1k points per hand in play, most of all late in the hand. But on 4,123 banked plays Expert‑0's true‑deal regret with it was 0.19k [−0.21, 0.60] per decision *higher* (not significant; 81% of cards unchanged). That metric cannot resolve a gain the size of the specials' (about 0.1k per decision), so the screen is inconclusive, not a failure. Next: a duplicate SPRT.
 
+**Contract‑value model** (`contractValue: 'model'`, `contract/value.ts`). A linear model of the declaring team's capture from 23 features of the deal: the playout estimate, money, trump lengths, specials, top trumps, side aces, voids. Data: Hard self‑play, 4000 hands with the auction scripted so that a random seat declares (seed `xb-cvm1`, so weak hands are covered) and 2000 natural hands (`xb-cvm2`). Trained on the forced contracts and tested on the natural ones:
+
+| Estimate of the capture | r | RMSE | make/set log loss |
+|---|---|---|---|
+| calibrated playout (130k + 0.5 × estimate; today) | 0.552 | 56.0k | 0.490 |
+| playout refitted | 0.552 | 55.7k | 0.488 |
+| model | **0.721** | **46.3k** | **0.414** |
+
+On a held‑out fifth of the forced contracts it gives r 0.716 against 0.562. The generated model is fitted on all 6000 (residual SD 45.9k). On 3101 banked bid turns it bids 54.9% of the time against Expert‑0's 61.8% (87% of decisions unchanged), and it calls a misdeal on all 22 eligible hands where Expert‑0 calls 9: weak hands look weaker without the calibration's lift.
+
+**Auction model** (`ceilingModel: 'fitted'`, `contract/auction.ts`). A logistic model of P(bid | the seat's 13 cards, price) on 11,462 turns of the natural auctions (forced openings and turns with partner high left out). Held‑out log loss **0.567**, against 0.647 for a constant bid rate and **2.31** for the heuristic ceilings that Hard uses today. The bots bid 65% of the time, nearly regardless of the hand: the ceiling is about $205k for a typical hand and moves mostly with the longest suit, with a scale σ of 65k (the heuristic model assumed 20k). On the banked bid turns: bids 58.5% (86% unchanged); with the contract‑value model too, 48.6% (80% unchanged).
+
 **More worlds for leads** (`leadWorlds`). Leads carry two thirds of the regret (Headroom, above), so their per‑card averages might be too noisy. On 1200 banked leads before the exact window (29–52 live cards), 180 worlds instead of 60 gave a true‑deal regret 0.77k [−1.25, 2.79] per lead *higher* than Expert‑0's (36.7k against 35.9k; 72% of cards unchanged), at 2.4× the time. **Rejected:** lead regret is not sampling noise.
 
 ## Calibration (`packages/sim/scripts/calibrate.ts`)
