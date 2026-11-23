@@ -15,6 +15,7 @@ Where the work on the strong bots stands, what was learned, what is left, and ho
   - `policyInference`, inference from every past card play: model fitted; belief metric clearly better, regret screen inconclusive; a fixed 1500‑board run (seed `xb3`) is queued after the hindsight bid oracle.
   - `bidOutcome: 'auction'`, a bid valued by the rest of the auction (an opponent who would pay more overcalls): changes 10% of banked bid turns, mostly passes to bids. On top of the contract‑value model: +0.23% [−0.76, 1.21], −2.4k [−7.9, 3.1] over 1500 boards (`xb8`), winning 61% of the contracts. **Rejected.**
   - `leadWorlds`, more worlds for leads: rejected offline (no better on 1200 banked leads).
+  - `screenValue: 'model'`, the discard and trump screen by the contract‑value model: changes 37% of banked discards (1% of trump choices) but their open‑hand value on the true deal only by +0.7k [−2.4, 3.8] per discard. Rejected offline.
 - **Current best Expert:** Expert‑0 (`EXPERT_DEFAULTS` = `expert0`).
 - **Next:** fit the contract‑value and auction models when their data lands, screen them offline, and duplicate‑test those that pass (bidding first); then the Phase 2 headroom table, re‑ranking the rest; replicate the final Expert against Hard and run the robustness gate (partnered with Normal and Easy, against a passive bidder, against Normal).
 - **How the runs are driven:** a job runner in the session scratchpad takes commands one at a time from a jobs file; each experiment runs from a frozen detached checkout of the branch, so edits cannot reach a running experiment. If the session is lost, rerun the queued experiments from the commands in this section and `bot-ladder.md`.
@@ -183,6 +184,7 @@ In rough order of expected value:
 | `inference-eval.ts` | How well world weighting finds the true holdings, on banked plays: the weighted pool's log‑probability of each unseen card's true holder (overall, money, specials, by stage) and the effective sample size, for uniform, specials, policy and both |
 | `regret.ts` | Where card play loses against the all‑seeing solver: each chosen card's regret against the best card in the true deal, by trick, position in the trick and side (declaring or defending) |
 | `compare-bank.ts` | Pairs two `timing-bank.ts time` results on one bank: how often the choices agree, the time of each, and the mean regret difference with a 95% interval (a cheap offline screen before a duplicate run) |
+| `discard-dd.ts` | Pairs two specs' discards on a bank with true hands (`timing-bank.ts time … discard` results): each discard's best‑trump open‑hand value on the true deal, searched `DEPTH` tricks deep plus the greedy playout; the mean difference with a 95% interval |
 | `calibrate.ts` | Bidding estimate vs actual capture, by bid, margin and auction shape; prints the calibration fit |
 | `specials-model.ts` | Fits the specials inference model and writes `inference/generated/specialsModel.ts` |
 | `bid-diagnostic.ts` | Bid rate and the bot's own evaluation, by hand strength (auctions only, fast) |
