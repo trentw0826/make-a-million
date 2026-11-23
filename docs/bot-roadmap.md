@@ -10,8 +10,8 @@ Where the work on the strong bots stands, what was learned, what is left, and ho
 - **Phase 1, the literature review: done** (`bot-research.md`). The gains over PIMC in comparable games came from better inputs to it: learned contract values and policy‑based inference. Search fixes for strategy fusion changed about 1% of deals in bridge.
 - **Phase 2, measuring the headroom: under way.** Done: where Expert‑0's card play loses (`bot-ladder.md`, Headroom): two thirds of the open‑hand regret is in leads, mostly defenders' leads, and it is concentrated in the first six tricks. Queued (job runner, below), all on the same 200 fresh boards (seed `xb2`) so the margins compare: hindsight bid, trump and discard oracles; the oracle playing every trick and the last 4; the rollout bot (PIMC's own flaws in the last 4 tricks); `peek` at everything, the specials, the money, partner's hand, the left‑hand opponent's hand.
 - **Phase 3, candidates built** (all options, off by default; Hard unchanged by the golden test):
-  - `contractValue: 'model'`, a learned contract‑value model for bidding: waiting for its data (Hard self‑play: 4000 forced hands, seed `xb-cvm1`; 2000 natural, `xb-cvm2`), then `contract-model.ts`.
-  - `ceilingModel: 'fitted'`, the other bidders as the bots really bid (also for card play's `auctionInference`): waiting for the natural data, then `auction-model.ts`.
+  - `contractValue: 'model'`, a learned contract‑value model for bidding: fitted; r 0.72 against 0.55 for the calibrated playout on held‑out natural contracts. SPRT against Expert‑0 queued (seed `xb4`).
+  - `ceilingModel: 'fitted'`, the other bidders as the bots really bid (also for card play's `auctionInference`): fitted; log loss 0.57 against 2.31 for the heuristic ceilings. SPRT queued (`xb5`), and both models together (`xb6`).
   - `policyInference`, inference from every past card play: model fitted; belief metric clearly better, regret screen inconclusive; a fixed 1500‑board run (seed `xb3`) is queued after the hindsight bid oracle.
   - `leadWorlds`, more worlds for leads: rejected offline (no better on 1200 banked leads).
 - **Current best Expert:** Expert‑0 (`EXPERT_DEFAULTS` = `expert0`).
@@ -150,7 +150,7 @@ In rough order of expected value:
 - experiment boards: `exp` and `exp1`–`exp23`;
 - calibration: `calibrate`, `calibrate2`, `calibrate4`, `calibrate5`;
 - other: `specials`, `bid-rollouts`, `bid-diagnostic`, `timing`, `timing-x`, `timing-hard`, `timing-lead`, `me-table-noise`;
-- the Expert work (family `xb`): timing `timing-xb0`, `timing-xb1` (the decision bank), `timing-xb2`; Expert‑0 vs Hard `xb1`; the Phase 2 headroom boards `xb2`; regret `xb-regret1`; contract data `xb-cvm1`, `xb-cvm2`; play data `xb-policy1`; smoke tests `cvm-smoke`.
+- the Expert work (family `xb`): timing `timing-xb0`, `timing-xb1` (the decision bank), `timing-xb2`; Expert‑0 vs Hard `xb1`; the Phase 2 headroom boards `xb2`; Phase 3 screens `xb3` (policy inference), `xb4` (contract‑value model), `xb5` (auction model), `xb6` (both); regret `xb-regret1`; contract data `xb-cvm1`, `xb-cvm2`; play data `xb-policy1`; smoke tests `cvm-smoke`.
 
 **Run times** (24 cores):
 - Hard vs Hard over 1200 boards: about 45–60 minutes on all cores.
