@@ -129,6 +129,37 @@ With specials inference on (the same `timing-lead` hands, 4 workers, idle machin
 
 Expert on a loaded machine (24 hands, 3 workers, while other experiments ran): p99 7.5 s overall; discard 3.3 s mean, 9.6 s max; trump up to 7.5 s; play with 21–28 cards left p99 10.6 s.
 
+**Expert fitted to its 5 s reply time (Expert‑0), 2026‑11‑22/23.** Idle machine apart from the desktop, 4 workers. The dev machine's i7‑14650HX has 8 performance and 8 efficiency cores; a decision that lands on an efficiency core takes up to about twice as long, so budgets are sized for that.
+
+- The old Expert budget on the idle machine (32 hands, seed `timing-xb0`): p99 2.7 s, max 3.2 s. The loaded‑machine figures above were mostly load. But a decision bank (`scripts/timing-bank.ts`, 400 Hard self‑play hands, seed `timing-xb1`) showed rare tails: discard p99 3.6 s, max 4.2 s; one trump 7.3 s; card play with 25–28 cards left up to 5.0 s.
+- **Card play.** The slow plays are the first exact solves, 7 tricks out: they used the whole 12M‑node budget after 10–47 of the 60 worlds (about 5.6M nodes/s alone on a fast core). On all 1348 banked positions with 25–28 live cards, each card was scored against the true deal solved exactly (`REGRET=1`, paired by `scripts/compare-bank.ts`; regret in $1000s of margin per decision):
+
+  | Expert variant vs | Same card | Regret A − B (95% CI) |
+  |---|---|---|
+  | exact from 7 tricks, 12M nodes vs exact from 6 | 72% | −0.40 [−1.00, 0.21] |
+  | 12M vs 8M nodes | 94% | +0.35 [0.00, 0.70] |
+  | 8M nodes, `worldNodes` 400k vs 8M, 1.2M | 79% | +0.61 [0.01, 1.20] |
+  | Expert (12M) vs Hard | 67% | −0.81 [−1.52, −0.09] |
+
+  Exact solving from 7 tricks helps a little; 8M nodes chose no worse than 12M; dropping to depth 2 sooner (`worldNodes` 400k) chose worse. Hence `nodes` 8M, the rest unchanged.
+- **Discard and trump.** The re‑check had no node cap. With `refineNodes` 24M, 99.9% of the 800 banked discards and trumps are unchanged (12M changed 6% of discards) and the slowest takes 3.0 s.
+
+Expert‑0 timing, 120 hands of self‑play (seed `timing-xb2`), plus the bank's rare decisions:
+
+| Decision | n | mean | p50 | p90 | p99 | max (ms) |
+|---|---|---|---|---|---|---|
+| all | 7422 | 221 | 58 | 758 | 1889 | 2988 |
+| bid | 942 | 46 | 60 | 66 | 78 | 118 |
+| discard | 120 | 1109 | 982 | 2019 | 2951 | 2951 |
+| trump | 120 | 1114 | 937 | 2081 | 2801 | 2988 |
+| play, more than one legal card | 4962 | 268 | 84 | 776 | 1884 | 2113 |
+| play, 21–28 cards left | 796 | 864 | 654 | 1849 | 1966 | 2113 |
+| bank: discard | 400 | 1104 | 1021 | 1825 | 2763 | 3025 |
+| bank: trump | 400 | 1088 | 902 | 1885 | 2635 | 2868 |
+| bank: play, 21–28 live | 1348 | 785 | 610 | 1657 | 1748 | 1828 |
+
+Every kind's p99 is at most 3.0 s against the 4.5 s target and the 4.8 s deadline.
+
 ## Settings
 
 The `hard` defaults live in `packages/bots/src/hard/index.ts` (`HARD_DEFAULTS`). Individual options can be overridden in a spec, for example `hard:worlds=20,searchBid=0`.

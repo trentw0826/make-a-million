@@ -12,9 +12,9 @@ Where the work on the strong bots stands, what was learned, what is left, and ho
   Under the current rules (the player to the bidder's left leads the first trick) and defaults, it beats Normal by +12.7% [11.0, 14.4] match equity per board and +66k points per hand, over 800 fixed boards (`bot-ladder.md`). An earlier 200‑board SPRT run had shown +15.0%, an estimate biased upward by the early stop.
 
   It runs on server worker threads with a 1.5 s reply time. Its card‑play budget (2.5M nodes) keeps decisions under the 1.3 s deadline on the dev machine (p99 0.7–0.8 s; the slowest of about 7,800 took 1.1–1.3 s), at no measurable cost in strength.
-- **Expert is simulator‑only.** It is Hard with about three times the budget. Two things keep it from the table:
-  - its slowest decisions take far longer than its 5 s reply time;
-  - it has not been measured against the current Hard. Against the earlier Hard it gained +8.4k points per hand (its equity gain was not significant).
+- **Expert is simulator‑only.** It is Hard with a bigger budget.
+  - **It now fits its 5 s reply time** (2026‑11‑23): `nodes` 8M and `refineNodes` 24M bring every decision kind's p99 to 3.0 s or less on the dev machine with 4 workers (`bot-ladder.md`, Timing). These settings are frozen as the spec `expert0` (Expert‑0).
+  - It has not yet been measured against the current Hard. Against the earlier Hard it gained +8.4k points per hand (its equity gain was not significant).
 - **Open‑ended tuning is paused.** The items below are what remains.
 
 ## The original plan, and how far it got
@@ -133,7 +133,8 @@ In rough order of expected value:
 **Seeds already used.** Use new ones, so that no change is selected and confirmed on the same boards:
 - experiment boards: `exp` and `exp1`–`exp23`;
 - calibration: `calibrate`, `calibrate2`, `calibrate4`, `calibrate5`;
-- other: `specials`, `bid-rollouts`, `bid-diagnostic`, `timing`, `timing-x`, `timing-hard`, `timing-lead`, `me-table-noise`.
+- other: `specials`, `bid-rollouts`, `bid-diagnostic`, `timing`, `timing-x`, `timing-hard`, `timing-lead`, `me-table-noise`;
+- the Expert work (family `xb`): timing `timing-xb0`, `timing-xb1` (the decision bank), `timing-xb2`.
 
 **Run times** (24 cores):
 - Hard vs Hard over 1200 boards: about 45–60 minutes on all cores.
@@ -144,8 +145,8 @@ In rough order of expected value:
 - The match‑equity table (20,000 Normal games): about 2.5 minutes on all cores.
 
 **Simulator specs.**
-- `hard`, `expert`, `normal`, `easy`, `oracle`.
-- Any Hard option, for example `hard:worlds=20,raisePartner=1`.
+- `hard`, `expert`, `expert0` (Expert‑0, frozen), `normal`, `easy`, `oracle`.
+- Any Hard option, for example `hard:worlds=20,raisePartner=1`. The diagnostics below take `base=hard|expert|expert0` (default `hard`) for the bot they modify.
 - `hybrid:last=N`: Hard, with the oracle playing the last N tricks.
 - `peek:cards=bull+bear+tiger,last=N`: Hard whose worlds put those cards where they really are.
 

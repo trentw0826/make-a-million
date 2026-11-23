@@ -72,14 +72,17 @@ export const HARD_DEFAULTS: HardOptions = {
 };
 
 /**
- * Expert: the same algorithms with about three times Hard's budget. Card play spends it on
- * more worlds and exact solving from seven tricks out, not on depth: searching three tricks
- * deep instead of two cost 2.3× the time for no measurable gain (docs/bot-ladder.md).
+ * Expert: the same algorithms with a bigger budget, sized for a 5 s reply time (4.8 s
+ * deadline). Card play spends it on more worlds and exact solving from seven tricks out, not
+ * on depth: searching three tricks deep instead of two cost 2.3× the time for no measurable
+ * gain. 8M nodes caps the first exact solves (12M chose no better on 1348 banked positions),
+ * and 24M re-check nodes cap the discard and trump decisions (99.9% of choices unchanged).
+ * See docs/bot-ladder.md (Timing).
  */
 export const EXPERT_DEFAULTS: HardOptions = {
   ...HARD_DEFAULTS,
   worlds: 60,
-  nodes: 12_000_000,
+  nodes: 8_000_000,
   depth: 2,
   exactTricks: 7,
   worldNodes: 1_200_000,
@@ -88,6 +91,7 @@ export const EXPERT_DEFAULTS: HardOptions = {
   refineWorlds: 24,
   refineTop: 5,
   refineDepth: 2,
+  refineNodes: 24_000_000,
 };
 
 /**

@@ -78,7 +78,7 @@ Simulations pass no deadline, so their results do not depend on the machine.
 | `playUtility` | `linear` | What card play maximises | `equity`, `margin`: rejected |
 | `bidWorlds` | 160 | Deals for bid and misdeal decisions | — |
 | `screenWorlds`, `refineTop`, `refineWorlds`, `refineDepth` | 40, 4, 12, 1 | Discard/trump screening and re‑check | — |
-| `refineNodes` | ∞ | Node budget for the re‑check | added to bound Expert's time |
+| `refineNodes` | ∞ | Node budget for the re‑check | Expert 24M: bounds its slowest discards and trumps to about 3 s, with 99.9% of choices unchanged |
 | `utility` | `equity` | What contract decisions maximise | — |
 | `raisePartner` | false | May raise over partner's standing bid | +5.7k points per hand, promoted |
 | `calibA`, `calibB`, `calibSd` | 130, 0.5, 58 | Calibration of the playout estimate | +5.7% equity per board, promoted |
@@ -88,7 +88,7 @@ Simulations pass no deadline, so their results do not depend on the machine.
 | `ceilingShift`, `ceilingScale`, `partnerPassInformative` | 0, 1, true | Model of the other players' bidding | not yet tested (`bot-roadmap.md`) |
 | `inferencePool`, `auctionInference`, `throwOffs`, `specialsInference` | 6, false, false, true | Soft inference for card play | specials: +4.3k points per hand, promoted |
 
-**Expert** (`EXPERT_DEFAULTS`) is Hard with `worlds` 60, `nodes` 12M, `exactTricks` 7, `worldNodes` 1.2M, `bidWorlds` 400, `screenWorlds` 80, `refineWorlds` 24, `refineTop` 5 and `refineDepth` 2. It is not offered at the table; see `bot-roadmap.md`.
+**Expert** (`EXPERT_DEFAULTS`) is Hard with `worlds` 60, `nodes` 8M, `exactTricks` 7, `worldNodes` 1.2M, `bidWorlds` 400, `screenWorlds` 80, `refineWorlds` 24, `refineTop` 5, `refineDepth` 2 and `refineNodes` 24M, sized for a 5 s reply time (4.8 s deadline; `bot-ladder.md`, Timing). These settings are frozen as the simulator spec `expert0` (Expert‑0, `packages/sim/src/registry.ts`), so that later changes to Expert can be measured against it. It is not offered at the table; see `bot-roadmap.md`.
 
 ## Where the code is
 
