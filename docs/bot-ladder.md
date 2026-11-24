@@ -118,6 +118,26 @@ By trick, per team‑hand: 32.9k (trick 1), 28.8k, 23.8k, 21.2k, 16.7k, 14.7k (t
 
 On bidding, most of the margin is knowledge no bot can have. The oracle declares only contracts it will make, and it pushes the opponents into contracts it knows they will fail: Expert‑0 made 41% of its contracts here, against 73% in ordinary play (Expert‑0 against Hard, `xb1`). The bound is of the same order as the all‑seeing card‑play oracle's against Hard (+21.9%, Results), and the bidding ideas are cheap to test, so bidding stays first in the plan. The discard and the trump choice, made once a hand by the declarer, are each worth about 6% in hindsight on the same contracts.
 
+**Bounds on card play** (against Expert‑0, `SPRT=0`, the same 200 boards, seed `xb2`, 2026‑11‑24). Every A keeps Expert‑0's contract decisions; the contracts are the same 200, so the contracts made show the card play.
+
+| A plays cards with | ΔME (95% CI) | Δ points ($, 95% CI) | Contracts made (A / Expert‑0) |
+|---|---|---|---|
+| every hand open, every trick (`hybrid:last=13`: exact from 7 tricks out, otherwise 3 tricks deep) | +19.2% [16.1, 22.3] | +131k [115k, 148k] | 181 / 112 |
+| every hand open, the last 4 tricks (`hybrid:last=4`) | +4.5% [2.9, 6.1] | +30.0k [20.6k, 39.3k] | 163 / 145 |
+| Expert‑0's information, the last 4 tricks valued by playing the hand out with Expert‑0 in all seats, 16 worlds (`rollout:last=4`) | +0.5% [−0.9, 1.9] | +2.7k [−5.6k, 11.0k] | 155 / 152 |
+| Expert‑0's own search on the true deal (`peek:cards=all`) | +15.9% [13.0, 18.8] | +110k [94k, 126k] | 179 / 118 |
+| … with only partner's hand where it really is (`peek:cards=partner`) | +9.8% [7.1, 12.6] | +69.6k [54.1k, 85.1k] | 164 / 129 |
+| … the left‑hand opponent's hand (`lho`) | +9.2% [6.6, 11.8] | +66.5k [50.6k, 82.4k] | 170 / 131 |
+| … the money cards (`money`) | +8.8% [6.1, 11.5] | +55.2k [40.0k, 70.5k] | 167 / 138 |
+| … the trumps, the Tiger included (`trumps`) | +7.2% [4.3, 10.2] | +46.6k [31.7k, 61.6k] | 163 / 136 |
+| … the Tiger, Bull and Bear (`bull+bear+tiger`) | +1.3% [−1.2, 3.8] | +9.0k [−5.5k, 23.5k] | 159 / 154 |
+
+What this says:
+
+- **The gap is information, not search.** In the last 4 tricks, where Expert‑0 already solves every world exactly, an all‑seeing player gains 30k a hand, but valuing each card by a realistic playout instead of the open‑hand solve (no strategy fusion, no assumption that the others see every hand) gains only 2.7k [−5.6, 11.0]. So PIMC's own flaws cost little there. They cannot be measured this way earlier in the hand, but bridge found the same (fusion fixes changed about 1% of deals; `bot-research.md`).
+- **With the cards open, a deeper search does help**: the oracle (3 tricks deep) beats Expert‑0's own 2‑deep search on the true deal by about 21k. In real play it does not (Tuning experiments: 3 tricks deep, −0.1% [−1.6, 1.4] for Hard; for Expert it cost 2.3× the time), because the sampling of hidden cards swamps it. A learned leaf evaluation would be one more way to search deeper, so it is unlikely to pay either.
+- **What to infer:** knowing one other hand is worth two thirds of the whole (partner 70k, the left‑hand opponent 67k, out of 110k). Of single card groups, where the money and the trumps lie is worth 55k and 47k. Where the Tiger, Bull and Bear lie is now worth only 9k: specials inference already gets most of the 21k it was worth against Hard (note 10).
+
 ## Offline screens (the Expert work)
 
 Cheap checks run before a duplicate test (`bot-roadmap.md`, Scripts).
