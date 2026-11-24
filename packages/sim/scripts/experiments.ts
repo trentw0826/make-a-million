@@ -50,6 +50,8 @@ for (const pair of pairs) {
   const line = {
     a,
     b,
+    ...(aPartner ? { aPartner } : {}),
+    ...(bPartner ? { bPartner } : {}),
     boards: r.boards,
     me: r.me,
     margin: r.margin,
@@ -63,6 +65,6 @@ for (const pair of pairs) {
   };
   appendFileSync(out, `${JSON.stringify(line)}\n`);
   console.log(
-    `${a} vs ${b}: ${r.boards} boards, ΔME ${(r.me.mean * 100).toFixed(2)}% [${(r.me.ci95[0] * 100).toFixed(2)}, ${(r.me.ci95[1] * 100).toFixed(2)}], SPRT ${r.sprt}, A mean ${r.timingA.meanMs.toFixed(0)}ms max ${r.timingA.maxMs.toFixed(0)}ms`,
+    `${ta} vs ${tb}: ${r.boards} boards, ΔME ${(r.me.mean * 100).toFixed(2)}% [${(r.me.ci95[0] * 100).toFixed(2)}, ${(r.me.ci95[1] * 100).toFixed(2)}], SPRT ${r.sprt}, A mean ${r.timingA.meanMs.toFixed(0)}ms max ${r.timingA.maxMs.toFixed(0)}ms`,
   );
 }
