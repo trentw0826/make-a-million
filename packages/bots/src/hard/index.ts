@@ -96,13 +96,15 @@ export const HARD_DEFAULTS: HardOptions = {
  * See docs/bot-ladder.md (Timing). Bids value contracts with the learned contract-value model
  * and predict the auction with the fitted bidding model: together +1.3% equity per board
  * against Expert-0 on two fixed fresh 1500-board runs (docs/bot-ladder.md). Card play also
- * weights its worlds by every past card play under the card-play model: +0.8% on top.
+ * weights its worlds by every past card play under the card-play model (+0.8% on top), and
+ * by the auction under the fitted bidding model (+0.6%, +3.9k points per hand on top).
  */
 export const EXPERT_DEFAULTS: HardOptions = {
   ...HARD_DEFAULTS,
   contractValue: 'model',
   ceilingModel: 'fitted',
   policyInference: true,
+  auctionInference: true,
   worlds: 60,
   nodes: 8_000_000,
   depth: 2,
