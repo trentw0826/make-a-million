@@ -131,6 +131,19 @@ Inference quality on 1,883 banked plays of other hands (seed `timing-xb1`). The 
 
 The policy model moves the truth's probability ten times as far as the specials model, which gained +4.1k points per hand in play, most of all late in the hand. But on 4,123 banked plays Expert‑0's true‑deal regret with it was 0.19k [−0.21, 0.60] per decision *higher* (not significant; 81% of cards unchanged). That metric cannot resolve a gain the size of the specials' (about 0.1k per decision), so the screen is inconclusive, not a failure. Next: a duplicate SPRT.
 
+**Card play's auction evidence by the fitted bidding model** (`auctionInference` with `ceilingModel: 'fitted'`). Hard weighs worlds by the auction only with the heuristic ceilings, which was rejected (no gain in play). On 3,765 banked plays (`timing-xb1`, every fourth, the same 360‑world pools; `inference-eval.ts`):
+
+| Weighting | all | money | specials | tricks 2–5 | 6–9 | 10–13 | ESS |
+|---|---|---|---|---|---|---|---|
+| uniform | −1.134 | −1.012 | −1.094 | −1.187 | −1.116 | −0.942 | 360 |
+| specials (Hard today) | −1.132 | −1.012 | −1.069 | −1.186 | −1.114 | −0.938 | 342 |
+| auction, heuristic ceilings | −1.190 | −1.076 | −1.208 | −1.249 | −1.169 | −0.978 | 117 |
+| auction, fitted model | −1.126 | −1.004 | −1.091 | −1.180 | −1.106 | −0.934 | 318 |
+| specials + auction, fitted | −1.124 | −1.005 | −1.066 | −1.179 | −1.104 | −0.930 | 302 |
+| policy | −1.109 | −0.988 | −1.075 | −1.174 | −1.083 | −0.883 | 216 |
+
+The heuristic ceilings put the truth *less* likely than no weighting at all, which explains their rejection. The fitted model moves it the right way, about five times as far as the specials model and a third as far as the policy model, at little cost in sample size. Worth a duplicate test on top of the current Expert.
+
 **Contract‑value model** (`contractValue: 'model'`, `contract/value.ts`). A linear model of the declaring team's capture from 23 features of the deal: the playout estimate, money, trump lengths, specials, top trumps, side aces, voids. Data: Hard self‑play, 4000 hands with the auction scripted so that a random seat declares (seed `xb-cvm1`, so weak hands are covered) and 2000 natural hands (`xb-cvm2`). Trained on the forced contracts and tested on the natural ones:
 
 | Estimate of the capture | r | RMSE | make/set log loss |

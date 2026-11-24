@@ -2,10 +2,12 @@
 // (scripts/timing-bank.ts collect), draw a pool of worlds from the seat's belief, weight them by
 // each scheme, and score the probability the weighted pool gives every unseen card's true
 // holder (mean log, overall, for money cards and for the specials), with the effective sample
-// size of the weights. Schemes: uniform, the specials model, the policy model, both.
-// Usage: tsx scripts/inference-eval.ts <bank.jsonl> [pool=360]  (env EVERY=4, TEMP, MIX)
+// size of the weights. Schemes: uniform, the specials model, the policy model, both, and the
+// auction's evidence by the heuristic or the fitted bidding model (alone and with the specials).
+// Usage: tsx scripts/inference-eval.ts <bank.jsonl> [pool=360]  (env EVERY=4, TEMP, MIX,
+// SCHEMES=uniform,specials,… to run only those)
 import { readFileSync } from 'node:fs';
-import { makePolicyWeight, makeSpecialsWeight, POLICY_MODEL } from '@mam/bots';
+import { makePolicyWeight, makeSpecialsWeight, makeWorldWeight, POLICY_MODEL } from '@mam/bots';
 import { type CardId, Rng, type Seat } from '@mam/engine';
 import { buildBelief, type World } from '@mam/search';
 import type { BankEntry } from '../src/bank';
@@ -28,8 +30,19 @@ const entries = readFileSync(file, 'utf8')
   .filter((e) => e.kind === 'play' && e.hands && e.obs.tricks.length > 0)
   .filter((_, i) => i % every === 0);
 
-type Scheme = 'uniform' | 'specials' | 'policy' | 'both';
-const SCHEMES: readonly Scheme[] = ['uniform', 'specials', 'policy', 'both'];
+const ALL_SCHEMES = [
+  'uniform',
+  'specials',
+  'policy',
+  'both',
+  'auction',
+  'auctionFit',
+  'specials+auctionFit',
+] as const;
+type Scheme = (typeof ALL_SCHEMES)[number];
+const SCHEMES: readonly Scheme[] = process.env.SCHEMES
+  ? (process.env.SCHEMES.split(',') as Scheme[])
+  : ALL_SCHEMES;
 const stats = new Map<string, RunningStats>();
 const push = (key: string, x: number) => {
   let s = stats.get(key);
@@ -49,6 +62,8 @@ for (const e of entries) {
   const pool: World[] = Array.from({ length: poolSize }, () => belief.sample(rng));
   const specials = makeSpecialsWeight(obs);
   const policy = makePolicyWeight(obs, POLICY_MODEL, policyOpts);
+  const auction = makeWorldWeight(obs, { ceilingModel: 'heuristic' });
+  const auctionFit = makeWorldWeight(obs, { ceilingModel: 'fitted' });
   const truth = new Map<CardId, Seat | 'pile'>();
   for (const c of belief.unseen) {
     const s = ([0, 1, 2, 3] as Seat[]).find(
@@ -60,9 +75,15 @@ for (const e of entries) {
     obs.tricks.length <= 4 ? 'tricks 2–5' : obs.tricks.length <= 8 ? 'tricks 6–9' : 'tricks 10–13';
   for (const scheme of SCHEMES) {
     const w = pool.map((world) => {
-      const a = scheme === 'specials' || scheme === 'both' ? (specials?.(world) ?? 1) : 1;
+      const a = scheme.startsWith('specials') || scheme === 'both' ? (specials?.(world) ?? 1) : 1;
       const b = scheme === 'policy' || scheme === 'both' ? (policy?.(world) ?? 1) : 1;
-      return a * b;
+      const c =
+        scheme === 'auction'
+          ? auction(world)
+          : scheme.endsWith('auctionFit')
+            ? auctionFit(world)
+            : 1;
+      return a * b * c;
     });
     const total = w.reduce((x, y) => x + y, 0);
     const ess = total ** 2 / w.reduce((x, y) => x + y * y, 0);
@@ -85,14 +106,14 @@ console.log(
   `${entries.length} positions, pool ${poolSize}, ${((performance.now() - t0) / 1000).toFixed(0)}s; policy model: ${POLICY_MODEL.source}`,
 );
 const cols = ['all', 'money', 'specials', 'tricks 2–5', 'tricks 6–9', 'tricks 10–13'];
-console.log(`  ${'scheme'.padEnd(9)} ${cols.map((c) => c.padStart(13)).join('')}   ESS`);
+console.log(`  ${'scheme'.padEnd(20)} ${cols.map((c) => c.padStart(13)).join('')}   ESS`);
 for (const scheme of SCHEMES) {
   const row = cols.map((c) => {
     const s = stats.get(`${scheme}|${c}`);
     return (s ? s.mean.toFixed(4) : '—').padStart(13);
   });
   console.log(
-    `  ${scheme.padEnd(9)} ${row.join('')}   ${(stats.get(`${scheme}|ess`)?.mean ?? 0).toFixed(0)}`,
+    `  ${scheme.padEnd(20)} ${row.join('')}   ${(stats.get(`${scheme}|ess`)?.mean ?? 0).toFixed(0)}`,
   );
 }
 console.log("  (mean log-probability of each unseen card's true holder; higher is better)");

@@ -39,6 +39,7 @@ export {
 export { ceilingForHand } from './heuristic/bidding';
 export { HeuristicBot } from './heuristic/index';
 export { POLICY_MODEL } from './inference/generated/policyModel';
+export { makeWorldWeight } from './inference/index';
 export {
   makePolicyWeight,
   PLAY_FEATURE_COUNT,
