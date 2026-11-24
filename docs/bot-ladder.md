@@ -255,22 +255,22 @@ Expert‑0 timing, 120 hands of self‑play (seed `timing-xb2`), plus the bank's
 
 Every kind's p99 is at most 3.0 s against the 4.5 s target and the 4.8 s deadline.
 
-**Expert with the bidding package** (`contractValue: 'model'`, `ceilingModel: 'fitted'`), and with policy inference on top, 2026‑11‑23/24. Same hands (`timing-xb2`) and bank (`timing-xb1`), 4 workers, idle machine apart from the desktop:
+**Expert with the bidding package** (`contractValue: 'model'`, `ceilingModel: 'fitted'`), with policy inference on top, and with auction inference on top of that (the current Expert), 2026‑11‑23/24. Same hands (`timing-xb2`) and bank (`timing-xb1`), 4 workers, idle machine apart from the desktop:
 
-| Decision | Expert‑0 p99 / max | Expert p99 / max | Expert + `policyInference` p99 / max (ms) |
-|---|---|---|---|
-| all | 1889 / 2988 | 1666 / 2607 | 1712 / 2665 |
-| bid | 78 / 118 | 94 / 107 | 96 / 102 |
-| discard | 2951 / 2951 | 2601 / 2607 | 2626 / 2665 |
-| trump | 2801 / 2988 | 2594 / 2605 | 2563 / 2633 |
-| play, 21–28 cards left | 1966 / 2113 | 1702 / 1728 | 1755 / 1833 |
-| play, 5–12 cards left | — | 7 / 11 | 65 / 70 |
-| bank: bid (3101) | 62 / 110 | 95 / 133 | — |
-| bank: misdeal (22) | 114 / 114 | 81 / 81 | — |
-| bank: discard (400) | 2763 / 3025 | 2523 / 2854 | — |
-| bank: trump (400) | 2635 / 2868 | 2402 / 2675 | — |
+| Decision | Expert‑0 p99 / max | + bidding package | + `policyInference` | + `auctionInference` p99 / max (ms) |
+|---|---|---|---|---|
+| all | 1889 / 2988 | 1666 / 2607 | 1712 / 2665 | 1760 / 2682 |
+| bid | 78 / 118 | 94 / 107 | 96 / 102 | 94 / 114 |
+| discard | 2951 / 2951 | 2601 / 2607 | 2626 / 2665 | 2620 / 2682 |
+| trump | 2801 / 2988 | 2594 / 2605 | 2563 / 2633 | 2562 / 2603 |
+| play, 21–28 cards left | 1966 / 2113 | 1702 / 1728 | 1755 / 1833 | 1814 / 1867 |
+| play, 5–12 cards left | — | 7 / 11 | 65 / 70 | 101 / 111 |
+| bank: bid (3101) | 62 / 110 | 95 / 133 | — | — |
+| bank: misdeal (22) | 114 / 114 | 81 / 81 | — | — |
+| bank: discard (400) | 2763 / 3025 | 2523 / 2854 | — | — |
+| bank: trump (400) | 2635 / 2868 | 2402 / 2675 | — | — |
 
-The models make a bid about 15 ms slower; everything else is run‑to‑run variation. Policy inference adds about 10% to the mean (226 against 204 ms), most of it late in the hand where decisions are fast. Every kind's p99 stays under 2.7 s against the 4.5 s target.
+The models make a bid about 15 ms slower; everything else is run‑to‑run variation. Policy inference adds about 10% to the mean (226 against 204 ms), most of it late in the hand where decisions are fast. Auction inference adds about 9% more (246 ms mean), again mostly late in the hand. Card play's inference does not touch the contract decisions, so their bank timings stand. Every kind's p99 stays under 2.7 s against the 4.5 s target.
 
 ## Settings
 
