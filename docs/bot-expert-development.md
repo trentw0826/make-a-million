@@ -260,7 +260,7 @@ All from the frozen final Expert (`0caa02d`) unless stated. The details are in `
 | 64 | 4.8 s | 4.8% |
 | 80 | 4.8 s | 9.6% |
 
-From 48 rooms decisions queue. Every search stops at its deadline, so answers still arrive within the 5 s reply time (at most 84 ms past the deadline, inside its 200 ms margin), but a queued decision searches for less time.
+From 48 rooms decisions queue. Every search stops at its deadline, so answers still arrive within the 5 s reply time (at most 84 ms past the deadline, inside its 200 ms margin), but a queued decision searches for less time. For comparison, 64 rooms of four Hard bots ran with no late answer and a p99 of 0.3 s, far from their limit.
 
 ## Shipping
 

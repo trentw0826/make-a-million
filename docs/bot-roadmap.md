@@ -4,7 +4,7 @@ Where the work on the strong bots stands, what was learned, what is left, and ho
 
 ## Status (2026‑11‑24)
 
-**The Expert work is done** (branch `expert-bot`, not merged; the brief is `.claude/prompts/expert-bot-research.md`). Where it stands:
+**The Expert work is done** and merged into `main` (branch `expert-bot`, 2026‑11‑24; the brief is `.claude/prompts/expert-bot-research.md`; how it was run is in `bot-expert-development.md`). Where it stands:
 
 - **Phase 0, a baseline Expert that fits its time: done.** Expert‑0 (`expert0`) has every decision kind's p99 at 3.0 s or less, and beats the current Hard by **+1.35% [0.05, 2.65]** equity and **+9.8k [2.6, 17.1]** points per hand over 1500 fixed fresh boards (seed `xb1`). Not yet replicated.
 - **Phase 1, the literature review: done** (`bot-research.md`). The gains over PIMC in comparable games came from better inputs to it: learned contract values and policy‑based inference. Search fixes for strategy fusion changed about 1% of deals in bridge.
@@ -31,7 +31,7 @@ Where the work on the strong bots stands, what was learned, what is left, and ho
 - **The robustness gate: passed** (800 fresh boards each, `bot-ladder.md`, The robustness gate for Expert). Partnered with Normal, Expert's team beats Hard's by +0.78% [−0.80, 2.35] equity and +9.2k [0.6, 17.8] points per hand (`xb16`); partnered with Easy, +0.68% [−1.12, 2.48] and +15.3k [4.8, 25.9] (`xb17`). Against a passive bidder Expert gains +4.39% where Hard gains +2.42% (`xb18`); against Normal, +14.32% where Hard gains +11.59% (`xb19`).
 - **The final Expert against Expert‑0** (a fixed 1500 fresh boards, `xb21`): **+1.36% [0.10, 2.62]** equity and **+13.6k [6.6, 20.6]** points per hand. The promoted steps sum to about +2.7% equity, just above this interval, and +16.3k points, inside it: steps promoted on noisy estimates are biased upward. Measured through Hard, the difference is +2.55% [0.97, 4.13].
 - **Expert is offered at the table**, after Hard in the lobby's level picker, with a 5 s reply time (`multiplayer.md`).
-- **The load test: one server with its default 4 bot workers carries 32 rooms of four Expert bots** with no late answers (p99 1.6 s, request to answer). From 48 rooms decisions queue; answers still come inside the 5 s reply time, but queued decisions search for less time (`bot-ladder.md`, Timing).
+- **The load test: one server with its default 4 bot workers carries 32 rooms of four Expert bots** with no late answers (p99 1.6 s, request to answer). From 48 rooms decisions queue; answers still come inside the 5 s reply time, but queued decisions search for less time. 64 rooms of four Hard bots ran with no late answer either, far from their limit (`bot-ladder.md`, Timing).
 - **How the runs are driven:** a job runner in the session scratchpad takes commands one at a time from a jobs file; each experiment runs from a frozen detached checkout of the branch, so edits cannot reach a running experiment. If the session is lost, rerun the queued experiments from the commands in this section and `bot-ladder.md`.
 
 ## Status of the strong bots before the Expert work (2026‑11‑16)
@@ -63,7 +63,7 @@ The plan was search‑centred: an exact open‑hand solver, sampling of hidden c
 | 5 | Inference | Auction, trump and throw‑off weighting: no gain. Specials inference: a small gain, promoted. Expert adds a learned card‑play policy model and auction weighting under the fitted bidding model |
 | 6 | Beyond PIMC (αμ, recursive PIMC, ISMCTS) → Expert | Not built: the headroom left by PIMC's own flaws is under 0.5% (`bot-ladder.md`, Headroom). Expert is a bigger budget with better inputs |
 | 7 | Learned evaluation, expert iteration | Not started. Python has no numpy or torch on the dev machine |
-| 8 | Production: worker pool, fixed delays, deadline, load test | Done; rooms of Expert bots load‑tested. Hard rooms were not load‑tested separately |
+| 8 | Production: worker pool, fixed delays, deadline, load test | Done: one server with 4 bot workers carries 32 rooms of Expert bots and more than 64 rooms of Hard bots |
 | 9 | Research track (mini‑game lab, self‑play learning) | Not started |
 
 ## What we learned
@@ -98,8 +98,8 @@ The plan was search‑centred: an exact open‑hand solver, sampling of hidden c
 
 ### To finish (concrete)
 
-1. **Merge `expert-bot`** (the owner decides). Since the branch was cut, `main` gained solo mode, which conflicts in `packages/bots/src/contract/index.ts` (the bid loop, where solo analysis values several utilities at once and Expert values the others' contracts by `declareValue`), `hard/index.ts` and `bots/src/index.ts` (both sides added code at the same places), `Lobby.tsx` and `styles.css` (main replaced the level picker with a shared `Segmented` control that has three slots; it needs this branch's `--levels` count, so a fourth level fits), and `docs/todo.md`. After the merge the golden test must still pass and solo analysis should be checked with Expert.
-2. **Load‑test rooms of Hard bots** (1.5 s reply time), and both levels on the production host size; the Expert test ran on the dev machine.
+1. **After the merge with solo mode** (`f9ce87c`): solo analysis now values bids through the shared bid evaluation and card play through the shared world weighting, both of which carry Expert's options. It still analyses with Hard's settings (`ANALYSIS_DEFAULTS`); analysing with Expert's would need its own timing against the analysis deadline.
+2. **Load‑test on the production host size.** On the dev machine one server with 4 bot workers carries 32 rooms of four Expert bots and more than 64 rooms of four Hard bots without a late answer (`bot-ladder.md`, Timing).
 3. **Carry Expert's gains to Hard**, if wanted: policy inference and auction inference each cost Expert about 10% more card‑play time, which Hard's p99 (0.7–0.8 s against its 1.3 s deadline) should absorb, and the bidding models make a bid about 15 ms slower. Auction inference helps only with the fitted bidding model (`ceilingModel: 'fitted'`); with Hard's heuristic ceilings it was rejected. Each change would need its own duplicate tests at Hard's budget and a new golden test.
 
 ### Done since the pause: specials inference

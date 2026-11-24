@@ -334,6 +334,17 @@ The models make a bid about 15 ms slower; everything else is run‑to‑run vari
 
 **One server with 4 bot workers carries 32 rooms of four Expert bots** with no late answers and its p99 near the idle machine's. From 48 rooms decisions queue: the search stops at its deadline, so answers still come within the 5 s reply time (the latest 84 ms past the deadline, inside its 200 ms margin), but a queued decision searches for less time and plays worse. Rooms with humans make fewer bot decisions, so carry more.
 
+**Rooms of Hard bots** (`load-test.ts hard 16,32,48,64 6`, from `cbea98e`, 2026‑11‑24; the same setup, 1.5 s reply time, 1.3 s deadline, 6 minutes a step):
+
+| Rooms | Decisions | Per second | p50 | p90 | p99 | max (ms) | Late | Queue |
+|---|---|---|---|---|---|---|---|---|
+| 16 | 3269 | 9.1 | 19 | 127 | 266 | 506 | 0 | 8 |
+| 32 | 6539 | 18.2 | 17 | 118 | 266 | 409 | 0 | 8 |
+| 48 | 9797 | 27.2 | 18 | 113 | 262 | 456 | 0 | 10 |
+| 64 | 13063 | 36.3 | 18 | 118 | 277 | 535 | 0 | 8 |
+
+**64 rooms of four Hard bots ran with no late answer** and the same times as 16 rooms: the limit is well beyond 64 rooms. A room of Expert bots costs the pool far more than a room of Hard bots, so on a mixed server Expert rooms set the capacity.
+
 ## Settings
 
 The `hard` defaults live in `packages/bots/src/hard/index.ts` (`HARD_DEFAULTS`). Individual options can be overridden in a spec, for example `hard:worlds=20,searchBid=0`.
