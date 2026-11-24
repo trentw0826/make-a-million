@@ -30,6 +30,21 @@ Every bot change is measured before it is kept. This page records the results, i
 | 2026‑11‑24 | **expert** (the final Expert: Expert‑0 with the bidding package, policy inference and auction inference; `0caa02d`), **fixed 1500 fresh boards** (`SPRT=0`, seed `xb14`) | hard | 1500 | **+3.68% [2.39, 4.97]** | **+24.5k [17.4, 31.6]** | A won 1413 of 3000 contracts and made 77.6%; B won 1587 and made 70.9%; mean bids $211k and $210k. Mean decision 780 / 157 ms on a busy machine (no deadline in the simulator) |
 | 2026‑11‑24 | expert, **replication on fixed 1500 fresh boards** (seed `xb15`) | hard | 1500 | **+4.11% [2.86, 5.35]** | **+32.3k [25.2, 39.5]** | **Pooled with `xb14`** by inverse variance: ΔME **+3.90% [3.00, 4.80]**, Δpoints **+28.4k [23.3, 33.4]** per hand. Expert is clearly stronger than Hard. A won 1356 of 3000 contracts and made 76.5%; B won 1644 and made 68.4% |
 
+### The robustness gate for Expert (2026‑11‑24)
+
+Before Expert is offered, it must be no worse than Hard where the table differs from self‑play: with a weaker partner, against a player who bids little, against a weaker table. All from the frozen final Expert (`0caa02d`), `SPRT=0`, 800 fresh boards each. With a partner, each team is the named bot and its partner (`A&P|B&Q`); the two rows with the same seed share their boards.
+
+| Setting | Seed | A | B | ΔME per board (95% CI) | Δpoints per hand (95% CI) | Contracts (made) A / B |
+|---|---|---|---|---|---|---|
+| partnered with Normal | `xb16` | expert & normal | hard & normal | +0.78% [−0.80, 2.35] | **+9.2k [0.6, 17.8]** | 680 (79.7%) / 920 (77.6%) |
+| partnered with Easy | `xb17` | expert & easy | hard & easy | +0.68% [−1.12, 2.48] | **+15.3k [4.8, 25.9]** | 610 (72.3%) / 990 (70.5%) |
+| against a passive bidder (Hard uncalibrated) | `xb18` | expert | hard, `calibA=0,calibB=1,calibSd=0` | **+4.39% [2.56, 6.21]** | **+18.1k [8.4, 27.7]** | 1020 (78.8%) / 580 (75.2%) |
+| … the same for Hard | `xb18` | hard | the same | **+2.42% [0.77, 4.06]** | +0.2k [−8.6, 8.9] | 1032 (74.1%) / 568 (72.7%) |
+| against Normal | `xb19` | expert | normal | **+14.32% [12.53, 16.12]** | **+69.7k [60.7, 78.6]** | 958 (91.8%) / 642 (77.1%) |
+| … the same for Hard | `xb19` | hard | normal | **+11.59% [9.78, 13.40]** | **+55.2k [45.6, 64.8]** | 1010 (88.8%) / 590 (77.6%) |
+
+**Passed.** With a weak partner Expert still gains points over Hard in the same seat (its equity gain is smaller and not significant on 800 boards: the partner's mistakes dominate). Against the passive bidder and against Normal it beats each by more than Hard does, by about 2.0% and 2.7% equity on the same boards.
+
 ### Tuning experiments (A against the Hard defaults unless stated; SPRT δ = 1%)
 
 | Date | Change in A | Boards | ΔME per board (95% CI) | Δpoints per hand | Mean decision time A / B | Verdict |
