@@ -1,6 +1,6 @@
 # Strong Bots – Status and Roadmap
 
-Where the work on the strong bots stands, what was learned, what is left, and how to pick it up. How the bots work is in `bot-design.md`; every measured result is in `bot-ladder.md`.
+Where the work on the strong bots stands, what was learned, what is left, and how to pick it up. How the bots work is in `bot-design.md`; every measured result is in `bot-ladder.md`; how the Expert work was run, phase by phase, is in `bot-expert-development.md`.
 
 ## Status (2026‑11‑24)
 

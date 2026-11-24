@@ -1,6 +1,6 @@
 # Make‑a‑Million – Strong Bot Design
 
-How the **Hard** and **Expert** bots work, and why each setting is what it is. Rules are in `game-rules.md`, what bots may know is in `bot-standards.md`, measured results are in `bot-ladder.md`, and the state of the work and what to do next is in `bot-roadmap.md`.
+How the **Hard** and **Expert** bots work, and why each setting is what it is. Rules are in `game-rules.md`, what bots may know is in `bot-standards.md`, measured results are in `bot-ladder.md`, the state of the work and what to do next is in `bot-roadmap.md`, and how Expert was developed is in `bot-expert-development.md`.
 
 ## Can the game be solved?
 
