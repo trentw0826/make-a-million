@@ -7,6 +7,7 @@ import { type Spot, spotOf } from '../spots';
 import { useGame } from '../store';
 import { POP_IN, SETTLE_SPRING } from '../theme/motion';
 import { useGameKeys } from '../useHotkeys';
+import { MoveValue } from './analysis/Analysis';
 import { Button } from './ui/Button';
 import { Panel } from './ui/Panel';
 import { Text } from './ui/Text';
@@ -129,6 +130,7 @@ function YourBid({
               onClick={() => act({ type: 'callMisdeal' })}
             >
               Call misdeal
+              <MoveValue action={{ type: 'callMisdeal' }} />
             </Button>
           )}
           <Button
@@ -140,6 +142,7 @@ function YourBid({
             onClick={() => act({ type: 'pass' })}
           >
             Pass
+            <MoveValue action={{ type: 'pass' }} />
           </Button>
           <Button
             variant="primary"
@@ -150,6 +153,8 @@ function YourBid({
             aria-keyshortcuts="Enter"
           >
             Bid
+            {/* The analysis values bidding the minimum only; a higher bid commits more. */}
+            {amount === legal.minBid && <MoveValue action={{ type: 'bid', amount }} />}
           </Button>
         </div>
       </fieldset>

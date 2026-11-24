@@ -16,7 +16,10 @@ import { type ClientState, initialState, type Msg, reduce } from './state';
 import { storage } from './storage';
 
 /** What to do once the server has greeted us. */
-export type Intent = { readonly type: 'create' } | { readonly type: 'join'; readonly code: string };
+export type Intent =
+  | { readonly type: 'create' }
+  | { readonly type: 'solo' }
+  | { readonly type: 'join'; readonly code: string };
 
 export interface GameApi {
   readonly state: ClientState;
@@ -47,6 +50,7 @@ export function GameProvider({ children, url }: { children: ReactNode; url?: str
           const next = intent.current;
           intent.current = null;
           if (next?.type === 'create') socket.current?.send({ type: 'createRoom' });
+          else if (next?.type === 'solo') socket.current?.send({ type: 'createSolo' });
           else if (next?.type === 'join')
             socket.current?.send({ type: 'joinRoom', code: next.code });
         }

@@ -12,6 +12,13 @@ import {
 import type { RoomView } from '@mam/protocol';
 import { LayoutGroup } from 'motion/react';
 import { useEffect, useState } from 'react';
+import {
+  AnalysisSwitch,
+  EvalBar,
+  MoveReview,
+  MoveValue,
+  useDecision,
+} from '../components/analysis/Analysis';
 import { ContractBar } from '../components/ContractBar';
 import { DiscardTray } from '../components/DiscardTray';
 import { GameOver } from '../components/GameOver';
@@ -26,6 +33,7 @@ import { TrickArea } from '../components/TrickArea';
 import { TrickPile } from '../components/TrickPile';
 import { TrumpPicker } from '../components/TrumpPicker';
 import { TurnNotice } from '../components/TurnNotice';
+import { UndoControls } from '../components/UndoControls';
 import { blockedReason, hasPassed, isMyTurn, seatChip } from '../hints';
 import { sound } from '../sound/player';
 import { spotOf } from '../spots';
@@ -52,27 +60,33 @@ export function Table({ room, view }: { room: RoomView; view: TableView }) {
     return () => clearTimeout(timer);
   }, [completed, dispatch]);
 
-  // The hand review waits until the last trick has been gathered, then a moment more.
+  // The hand review, or at the end of the game the win screen, waits until the last trick
+  // has been gathered, then a moment more.
   const handOver = view.phase === 'hand-complete';
+  const gameOver = view.phase === 'game-over';
   const [reviewOpen, setReviewOpen] = useState(false);
   useEffect(() => {
-    if (!handOver || completed) {
+    if (!(handOver || gameOver) || completed) {
       setReviewOpen(false);
       return;
     }
     const timer = setTimeout(() => setReviewOpen(true), RESULT_PAUSE_MS);
     return () => clearTimeout(timer);
-  }, [handOver, completed]);
+  }, [handOver, gameOver, completed]);
 
   // Selection only matters while discarding.
   useEffect(() => {
     if (view.legal.kind !== 'discard') setSelected(new Set());
   }, [view.legal.kind]);
 
-  // Choosing trump: the color the pointer is on in the hand, lit in the picker on the felt.
+  // Choosing trump: the color the pointer is on, in the hand or in the picker on the felt;
+  // each lights it in the other. Kept apart, so the hand letting go of a color (reported a
+  // render late) can't put out the token the pointer has just moved onto.
   const naming = view.legal.kind === 'trump';
   const nameable = new Set<Suit>(view.legal.kind === 'trump' ? view.legal.suits : []);
-  const [trumpPreview, setTrumpPreview] = useState<Suit | null>(null);
+  const [handColor, setHandColor] = useState<Suit | null>(null);
+  const [tokenColor, setTokenColor] = useState<Suit | null>(null);
+  const trumpPreview = handColor ?? tokenColor;
   const legalPlays = view.legal.kind === 'play' ? new Set(view.legal.cardIds) : null;
   const discarding = view.legal.kind === 'discard';
   const forbidden =
@@ -120,6 +134,9 @@ export function Table({ room, view }: { room: RoomView; view: TableView }) {
   };
 
   const myChip = seatChip(view, me);
+  // The analysis is still working on your decision.
+  const decision = useDecision();
+  const thinking = room.solo && room.analysis === 'hints' && myTurn && decision === null;
   const dealKey = `${view.handNumber}-${view.redeals}`;
 
   // Each side's taken tricks, in one pile beneath its score. The view counts a trick as soon
@@ -147,6 +164,7 @@ export function Table({ room, view }: { room: RoomView; view: TableView }) {
         {/* The hand's status in words, for screen readers; on screen it is shown by the
             bid on the felt, the bidder's badge (with trump) and each side's pile. */}
         <ContractBar view={view} room={room} />
+        <EvalBar thinking={thinking} />
         {/* One group per deal: a card you play flies from your hand to the felt, and on to
             the winners' pile, and ids never carry over from an earlier deal. */}
         <LayoutGroup id={dealKey}>
@@ -171,7 +189,12 @@ export function Table({ room, view }: { room: RoomView; view: TableView }) {
             completed={completed}
           />
           {view.legal.kind === 'trump' && (
-            <TrumpPicker legal={view.legal} hand={view.hand} preview={trumpPreview} />
+            <TrumpPicker
+              legal={view.legal}
+              hand={view.hand}
+              preview={trumpPreview}
+              onPreview={setTokenColor}
+            />
           )}
           {view.legal.kind === 'discard' && (
             <DiscardTray
@@ -179,6 +202,7 @@ export function Table({ room, view }: { room: RoomView; view: TableView }) {
               legal={view.legal}
               onReturn={onCard}
               onDone={() => setSelected(new Set())}
+              onPick={(ids) => setSelected(new Set(ids))}
             />
           )}
 
@@ -194,6 +218,9 @@ export function Table({ room, view }: { room: RoomView; view: TableView }) {
               You
               {hasPassed(view, me) && <span className="visually-hidden">, passed</span>}
               <SeatBadge chip={myChip} />
+              <span className="me-review">
+                <MoveReview />
+              </span>
             </div>
             <TurnNotice view={view} room={room} />
             <Hand
@@ -201,7 +228,14 @@ export function Table({ room, view }: { room: RoomView; view: TableView }) {
               ids={handIds}
               trump={view.trump}
               dealer={spotOf(view.dealer, me)}
-              onHoverColor={naming ? setTrumpPreview : undefined}
+              onHoverColor={naming ? setHandColor : undefined}
+              annotation={(id) =>
+                legalPlays?.has(id) ? (
+                  <MoveValue onCard action={{ type: 'playCard', cardId: id }} />
+                ) : null
+              }
+              litColor={naming ? tokenColor : null}
+              sinkBlocked={discarding}
               cardProps={(id) => {
                 if (naming) {
                   // The Tiger, Bull and Bear have no color to name; they fade back.
@@ -232,6 +266,8 @@ export function Table({ room, view }: { room: RoomView; view: TableView }) {
         </LayoutGroup>
         <div className="table-corner">
           <TableDrawer view={view} room={room} log={state.log} />
+          {room.solo && <AnalysisSwitch />}
+          {room.solo && <UndoControls room={room} />}
           <SoundToggle />
           <HelpButton icon />
         </div>
@@ -246,7 +282,7 @@ export function Table({ room, view }: { room: RoomView; view: TableView }) {
           pending={view.continuePending}
         />
       )}
-      {view.phase === 'game-over' && <GameOver view={view} room={room} />}
+      {gameOver && reviewOpen && <GameOver view={view} room={room} />}
     </main>
   );
 }

@@ -110,6 +110,9 @@ export class Gateway {
       case 'createRoom':
         manager.create(playerId, name);
         return;
+      case 'createSolo':
+        manager.create(playerId, name, { solo: true });
+        return;
       case 'joinRoom': {
         const error = manager.join(playerId, name, message.code);
         if (error) this.send(playerId, { type: 'error', ...error });
@@ -141,6 +144,12 @@ export class Gateway {
           return room.start(playerId);
         case 'playAgain':
           return room.playAgain(playerId);
+        case 'undo':
+          return room.undo(playerId);
+        case 'redo':
+          return room.redo(playerId);
+        case 'setAnalysis':
+          return room.setAnalysis(playerId, message.mode);
         case 'action':
           return room.action(playerId, message.action);
       }

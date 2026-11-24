@@ -16,7 +16,7 @@ export interface CardFaceProps {
   readonly onClick?: (() => void) | undefined;
   /** A click on a disabled card, e.g. to say why it can't be played. */
   readonly onBlockedClick?: (() => void) | undefined;
-  /** A trump card (the trump color or the Tiger), marked once trump is named. */
+  /** A trump card (the trump color or the Tiger), outlined in gold once trump is named. */
   readonly trump?: boolean | undefined;
   /** Just picked up from the widow: outlined in gold (and said in its name). */
   readonly fresh?: boolean | undefined;
@@ -64,11 +64,6 @@ export function CardFace({
   const name = [`${label} ${subtitle(card)}`, ...notes].join(', ');
   const content = (
     <>
-      {trump && (
-        <span className="card-star" aria-hidden="true">
-          ★
-        </span>
-      )}
       <CardArt card={card} />
       <span className="card-label">{label}</span>
       <span className="card-sub">{subtitle(card)}</span>

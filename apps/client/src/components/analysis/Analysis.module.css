@@ -1,0 +1,120 @@
+/* The solo analysis: the win-chance bar, the value chips on your choices, and the review of
+   your last move. Unlayered, like styles.css, since these are table pieces. */
+
+/* The bar runs down the felt's left edge: your side's share fills from the bottom. */
+.bar {
+  position: absolute;
+  left: var(--space-3);
+  top: 22%;
+  bottom: 22%;
+  z-index: var(--z-raised);
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  justify-items: center;
+  gap: var(--space-2);
+  pointer-events: none;
+}
+.track {
+  position: relative;
+  width: var(--eval-bar-w);
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+  background: var(--team-them);
+  box-shadow: var(--shadow-1);
+}
+.fill {
+  position: absolute;
+  inset: auto 0 0;
+  background: var(--team-us);
+}
+.pct {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  font-variant-numeric: tabular-nums;
+  line-height: var(--leading-none);
+}
+.us {
+  color: var(--team-us);
+}
+.them {
+  color: var(--team-them);
+}
+.thinking {
+  opacity: var(--opacity-muted);
+}
+
+/* A small tag on a choice: "Best", or what it gives up. */
+.chip {
+  display: inline-block;
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-pill);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-tight);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  background: var(--shade-2);
+  color: var(--paper);
+}
+.chip.best {
+  background: var(--label-best);
+  color: var(--on-label);
+}
+
+/* Above a card in the hand, clear of the card's own lift. */
+.onCard {
+  position: absolute;
+  left: 50%;
+  bottom: 100%;
+  z-index: var(--z-raised);
+  translate: -50% calc(-1 * var(--space-2));
+  pointer-events: none;
+}
+
+/* The review beside your name tag. */
+.review {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-pill);
+  font-size: var(--text-sm);
+  line-height: var(--leading-tight);
+  background: var(--shade-2);
+  color: var(--paper);
+}
+.label {
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-pill);
+  font-weight: var(--weight-semibold);
+  color: var(--on-label);
+}
+.label-best {
+  background: var(--label-best);
+}
+.label-good {
+  background: var(--label-good);
+}
+.label-inaccuracy {
+  background: var(--label-inaccuracy);
+  color: var(--on-label-light);
+}
+.label-mistake {
+  background: var(--label-mistake);
+}
+.label-blunder {
+  background: var(--label-blunder);
+}
+.label-forced {
+  background: var(--label-forced);
+}
+
+/* Suggested discards, under the tray. */
+.suggestions {
+  display: grid;
+  gap: var(--space-2);
+  justify-items: center;
+}
+.suggestions p {
+  margin: 0;
+}

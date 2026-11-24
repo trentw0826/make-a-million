@@ -308,6 +308,16 @@
 .home-way button {
   justify-self: start;
 }
+.home-solo {
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  padding-top: var(--space-5);
+  border-top: 1px solid var(--line);
+}
+.home-solo-text {
+  display: grid;
+  gap: var(--space-2);
+}
 .home-help {
   margin: 0;
 }
@@ -319,6 +329,9 @@
     padding: var(--space-5) 0 0;
     border-left: 0;
     border-top: 1px solid var(--line);
+  }
+  .home-solo {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -485,32 +498,32 @@
 .chair-partner {
   opacity: var(--opacity-soft);
 }
-/* The host's choice of bot level: one equal slot per level and a highlight that slides under
-   the chosen one. The others' labels stay quiet. */
-.bot-level {
+/* A choice of a few, such as a bot's level: one equal slot per option and a highlight that
+   slides under the chosen one. The others' labels stay quiet. */
+.segmented {
   --at: 1;
-  --levels: 4;
+  --count: 3;
 
   position: relative;
   display: grid;
-  grid-template-columns: repeat(var(--levels), 1fr);
+  grid-template-columns: repeat(var(--count), 1fr);
   margin: 0;
   padding: var(--space-1);
   border: 1px solid var(--line-on-felt);
   border-radius: var(--radius-pill);
 }
-.bot-level-thumb {
+.segmented-thumb {
   position: absolute;
   top: 2px;
   bottom: 2px;
   left: 2px;
-  width: calc((100% - 4px) / var(--levels));
+  width: calc((100% - 4px) / var(--count));
   border-radius: var(--radius-pill);
   background: var(--paper);
   transform: translateX(calc(var(--at) * 100%));
   transition: transform var(--dur-base) var(--ease-out);
 }
-.bot-level button {
+.segmented button {
   position: relative;
   padding: var(--space-1) var(--space-5);
   border: 0;
@@ -524,16 +537,16 @@
     opacity var(--dur-base),
     var(--press-transition);
 }
-.bot-level button:hover {
+.segmented button:hover {
   opacity: var(--opacity-soft);
 }
-.bot-level button[aria-pressed="true"] {
+.segmented button[aria-pressed="true"] {
   color: var(--ink);
   opacity: 1;
 }
 @media (prefers-reduced-motion: reduce) {
-  .bot-level-thumb,
-  .bot-level button {
+  .segmented-thumb,
+  .segmented button {
     transition: none;
   }
 }
@@ -814,6 +827,7 @@
 }
 /* Yours, above your hand, with the contract badge beside it when you hold it. */
 .me-name {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -821,8 +835,12 @@
   min-height: 24px;
   margin: 0;
 }
-.me-name > .seat-chip {
+/* Solo: the review of your last move, beside your name, so nothing shifts when it comes. */
+.me-review {
+  position: absolute;
+  left: 100%;
   margin-left: var(--space-4);
+  white-space: nowrap;
 }
 .seat-acting > .seat-name,
 .me-turn > .me-name {
@@ -854,6 +872,9 @@
   font-weight: var(--weight-bold);
   background: var(--paper);
   color: var(--ink);
+}
+.me-name > .seat-chip {
+  margin-left: var(--space-4);
 }
 /* The bidder's badge for the rest of the hand: the contract, and trump once named. */
 .chip-contract {
@@ -913,7 +934,6 @@
   justify-items: center;
   gap: var(--space-4);
 }
-.discard-tray-label,
 .felt-label {
   margin: 0;
   font-size: var(--text-sm);
@@ -939,7 +959,7 @@
   min-width: 120px;
 }
 /* Naming trump (TrumpPicker), in the middle of the felt: a token per color, lit while the
-   pointer is on that color in the hand. */
+   pointer is on that color in the hand (pointing at a token raises the color there too). */
 .trump-picker {
   grid-area: trick;
   place-self: center;
@@ -981,10 +1001,6 @@
   font-weight: var(--weight-bold);
   font-size: var(--text-sm);
   color: var(--ink);
-}
-.trump-pick-count {
-  font-size: var(--text-xs);
-  color: var(--muted);
 }
 /* The playing surface leans away from you. Only this backdrop tilts: the cards stay flat, so
    Motion can measure them for the flight from your hand. */
@@ -1230,9 +1246,17 @@
 }
 /* The fan: each card leans by its distance from the middle (--d) and drops a little. Around
    a hovered card the others part (--part, set by Hand) and the card itself rises (--raise);
-   a card picked for the discard stays up (--picked). The stacking order never changes. */
+   a card picked for the discard stays up (--picked), and one that must be kept sinks (--sunk).
+   The stacking order never changes. */
 .hand-fan {
-  --lift: calc(var(--raise, 0) * var(--hover-lift) + var(--picked, 0) * var(--pick-lift));
+  --lift: calc(
+    var(--raise, 0) *
+    var(--hover-lift) +
+    var(--picked, 0) *
+    var(--pick-lift) -
+    var(--sunk, 0) *
+    var(--kept-sink)
+  );
 
   position: relative;
   pointer-events: auto;
@@ -1267,7 +1291,16 @@
 .table-corner > button {
   z-index: var(--z-sticky);
 }
+/* The home screen's corner: sound and How to play, placed as they are at the table. */
+.home-corner {
+  position: fixed;
+  right: var(--space-6);
+  bottom: var(--space-5);
+  display: flex;
+  gap: var(--space-3);
+}
 /* Solid, so they read over the open score sheet as well as over the felt. */
+.home-corner > button:not(:hover),
 .table-corner > button:not(:hover, [aria-expanded="true"]) {
   background: var(--felt-dark);
 }
@@ -1459,17 +1492,24 @@ button.card-selected:hover:not([aria-disabled="true"]) {
 .card-disabled::before {
   opacity: var(--disabled-veil);
 }
-.card-star {
-  position: absolute;
-  top: 2px;
-  right: 4px;
-  font-size: var(--text-xs);
-  color: var(--accent);
+/* Discarding, a card that must be kept is solid grey instead (it sinks too; see .hand-fan):
+   a see-through veil let the cards beneath show through and made the fan hard to read. */
+.hand-sink-blocked .card {
+  transition:
+    transform var(--dur-fast),
+    box-shadow var(--dur-base),
+    filter var(--dur-base) var(--ease-out),
+    var(--press-transition);
 }
-.card-small .card-star {
-  top: 1px;
-  right: 3px;
+.hand-sink-blocked .card-disabled {
+  filter: var(--kept-filter);
 }
+.hand-sink-blocked .card-disabled::before {
+  opacity: 0;
+}
+/* A trump card wears a thin gold edge. (A widow card's gold edge says something else, but
+   the two never meet: trump is named after the discard.) */
+.card-trump,
 .card-fresh {
   border-color: var(--accent);
 }
@@ -1707,12 +1747,6 @@ button.card-selected:hover:not([aria-disabled="true"]) {
 .result-modal {
   max-width: 640px;
 }
-.result-contract {
-  margin: 0 0 var(--space-4);
-}
-.suit-word {
-  font-weight: var(--weight-bold);
-}
 
 /* The hand on one bar (ScoreBar): your side's capture from the left, theirs from the right,
    the bid notched from the bidders' end; above each end, the hand's score and the total. */
@@ -1852,9 +1886,6 @@ button.card-selected:hover:not([aria-disabled="true"]) {
 .result-trick-cards .card-label {
   top: 2px;
   left: 3px;
-  font-size: var(--text-2xs);
-}
-.result-trick-cards .card-star {
   font-size: var(--text-2xs);
 }
 .result-trick-cards .card-art {

@@ -79,7 +79,15 @@ describe('sound cues', () => {
   });
 
   it('has a sound, file or placeholder, for every cue', () => {
-    const names: SoundName[] = ['deal', 'play', 'trickWon', 'yourTurn', 'handWon', 'handLost'];
+    const names: SoundName[] = [
+      'deal',
+      'play',
+      'trickWon',
+      'yourTurn',
+      'handWon',
+      'handLost',
+      'gameWon',
+    ];
     for (const name of names) {
       const entry = SOUNDS[name];
       expect(

@@ -53,9 +53,10 @@ export function HelpButton({ icon = false }: { icon?: boolean }) {
 }
 
 /**
- * Shown on every screen: the brand on the left; the room code, sound, How to play and Leave
- * on the right. At the
- * table, sound and How to play sit in the felt's corner instead, by the player's seat.
+ * Shown once the player is in a room: the brand on the left; the room code, sound, How to
+ * play and Leave on the right. At the table, sound and How to play sit in the felt's corner
+ * instead, by the player's seat. The home screen has no bar: its own table carries the name,
+ * and sound and How to play sit in its corner as they do at the table.
  */
 export function TopBar() {
   const { state, send } = useGame();
@@ -76,15 +77,15 @@ export function TopBar() {
     send({ type: 'leaveRoom' });
   };
 
+  if (!room) return null;
   return (
     <header className="topbar">
-      {room && (
-        <span className="brand">
-          <Wordmark />
-        </span>
-      )}
+      <span className="brand">
+        <Wordmark />
+      </span>
       <nav className="topbar-actions" aria-label="Game">
-        {room && (
+        {/* A solo room's code is no use to anyone else, so it is not shown. */}
+        {room && !room.solo && (
           <span className="topbar-room">
             Room <strong className="room-code">{room.code}</strong>
           </span>
@@ -95,22 +96,18 @@ export function TopBar() {
             <HelpButton />
           </>
         )}
-        {room && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => (midGame ? setConfirming(true) : leave())}
-          >
-            Leave
-          </Button>
-        )}
+        <Button variant="ghost" size="sm" onClick={() => (midGame ? setConfirming(true) : leave())}>
+          Leave
+        </Button>
       </nav>
-      {confirming && room && (
+      {confirming && (
         <Modal
           title={lastHuman ? 'End the game?' : 'Leave the game?'}
           onClose={() => setConfirming(false)}
         >
-          {lastHuman ? (
+          {room.solo ? (
+            <p>This ends your solo game. It can't be picked up again afterwards.</p>
+          ) : lastHuman ? (
             <p>
               You're the last player at the table, so leaving ends the game. It can't be rejoined
               afterwards.

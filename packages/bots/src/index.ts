@@ -4,6 +4,22 @@ import { RandomBot } from './random';
 import type { BotStrategy, Difficulty } from './strategy';
 
 export {
+  ANALYSIS_DEFAULTS,
+  type Analysis,
+  type AnalysisOptions,
+  analyze,
+  analyzeDecision,
+  analyzePosition,
+  type Decision,
+  type DecisionKind,
+  type DecisionOption,
+  LABEL_LIMITS_K,
+  labelFor,
+  type MoveLabel,
+  type MoveReview,
+  reviewMove,
+} from './analysis/index';
+export {
   AUCTION_FEATURE_COUNT,
   AUCTION_FEATURES,
   type AuctionModel,
@@ -35,6 +51,7 @@ export {
   type PimcOptions,
   type PimcResult,
   pimcValues,
+  worldWeight,
 } from './hard/index';
 export { ceilingForHand } from './heuristic/bidding';
 export { HeuristicBot } from './heuristic/index';

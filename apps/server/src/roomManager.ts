@@ -1,5 +1,5 @@
 import type { ServerMessage } from '@mam/protocol';
-import type { DecideBot } from './botPool';
+import type { AnalyzeSeat, DecideBot } from './botPool';
 import type { ServerConfig } from './config';
 import { newRoomCode } from './ids';
 import type { Logger } from './log';
@@ -10,6 +10,7 @@ export interface RoomManagerDeps {
   readonly log: Logger;
   send(playerId: string, message: ServerMessage): void;
   readonly decideBot: DecideBot;
+  readonly analyze: AnalyzeSeat;
 }
 
 /** All live rooms, keyed by code. */
@@ -18,20 +19,27 @@ export class RoomManager {
 
   constructor(private readonly deps: RoomManagerDeps) {}
 
-  create(playerId: string, name: string): Room {
+  /** A new room with this player as host; a solo room seats them at Seat 1 at once. */
+  create(playerId: string, name: string, options: { solo?: boolean } = {}): Room {
     this.leave(playerId);
     let code = newRoomCode();
     while (this.rooms.has(code)) code = newRoomCode();
-    const room = new Room(code, {
-      config: this.deps.config,
-      log: this.deps.log,
-      send: this.deps.send,
-      onClosed: (closed) => this.rooms.delete(closed.code),
-      decideBot: this.deps.decideBot,
-    });
+    const room = new Room(
+      code,
+      {
+        config: this.deps.config,
+        log: this.deps.log,
+        send: this.deps.send,
+        onClosed: (closed) => this.rooms.delete(closed.code),
+        decideBot: this.deps.decideBot,
+        analyze: this.deps.analyze,
+      },
+      options.solo === true,
+    );
     this.rooms.set(code, room);
     room.join(playerId, name);
-    this.deps.log('info', 'room created', { room: code });
+    if (room.solo) room.sit(playerId, 0);
+    this.deps.log('info', 'room created', { room: code, solo: room.solo });
     return room;
   }
 

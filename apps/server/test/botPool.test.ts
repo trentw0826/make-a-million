@@ -9,7 +9,7 @@ import {
   SEATS,
 } from '@mam/engine';
 import { describe, expect, it } from 'vitest';
-import { BotPool, decideInline } from '../src/botPool';
+import { analyzeInline, BotPool, decideInline } from '../src/botPool';
 import { silentLogger } from '../src/log';
 
 /** A position late in a hand, where a Hard decision is quick. */
@@ -52,4 +52,37 @@ describe('BotPool', () => {
     expect(['bid', 'callMisdeal']).toContain(action?.type);
     await pool.close();
   });
+
+  it('gives the same analysis on a worker thread as inline', async () => {
+    const state = latePosition();
+    const obs = observe(state, state.hand?.turn ?? 0);
+    const pool = new BotPool(1, silentLogger);
+    try {
+      const [threaded, inline] = await Promise.all([pool.analyze(obs, 7), analyzeInline(obs, 7)]);
+      expect(threaded).toEqual(inline);
+      expect(threaded.decision?.kind).toBe('play');
+    } finally {
+      await pool.close();
+    }
+  }, 60_000);
+
+  it('puts a bot decision ahead of analysis waiting for a worker', async () => {
+    const state = latePosition();
+    const seat = state.hand?.turn ?? 0;
+    const obs = observe(state, seat);
+    const pool = new BotPool(1, silentLogger);
+    const done: string[] = [];
+    try {
+      // The first job takes the only worker; the rest queue, and the bot jumps the analyses.
+      await Promise.all([
+        pool.analyze(obs, 1).then(() => done.push('a1')),
+        pool.analyze(obs, 2).then(() => done.push('a2')),
+        pool.analyze(obs, 3).then(() => done.push('a3')),
+        pool.decide('hard', obs, 4).then(() => done.push('bot')),
+      ]);
+      expect(done).toEqual(['a1', 'bot', 'a2', 'a3']);
+    } finally {
+      await pool.close();
+    }
+  }, 60_000);
 });

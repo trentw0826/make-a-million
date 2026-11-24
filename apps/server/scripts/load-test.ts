@@ -60,7 +60,13 @@ console.log(
 );
 console.log('rooms  decisions  /s   p50   p90   p99    max (ms)  late  late%  max late  queue');
 for (const n of counts) {
-  const manager = new RoomManager({ config, log, send: () => {}, decideBot });
+  const manager = new RoomManager({
+    config,
+    log,
+    send: () => {},
+    decideBot,
+    analyze: pool.analyze,
+  });
   // Start the rooms spread over a minute or so, so their hands are out of step.
   const stagger = Math.min(5_000, 60_000 / n);
   for (let i = 0; i < n; i++) {

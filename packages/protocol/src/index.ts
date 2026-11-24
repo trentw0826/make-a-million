@@ -1,4 +1,4 @@
-import type { GameEvent, Seat, TableView } from '@mam/engine';
+import type { Action, GameEvent, Seat, TableView } from '@mam/engine';
 import { SUITS } from '@mam/engine';
 import { z } from 'zod';
 
@@ -46,10 +46,20 @@ export const ActionSchema = z.discriminatedUnion('type', [
 // ---------------------------------------------------------------------------
 // Client → server
 
+/**
+ * How much of the solo analysis the player sees: nothing; hints before each decision (the
+ * win-chance bar and the value of each choice) as well as a review after it; or only the
+ * review after each decision.
+ */
+export const AnalysisModeSchema = z.enum(['off', 'hints', 'feedback']);
+export type AnalysisMode = z.infer<typeof AnalysisModeSchema>;
+
 export const ClientMessageSchema = z.discriminatedUnion('type', [
   /** First message on every connection. A token reclaims an existing identity. */
   z.object({ type: z.literal('hello'), name: PlayerNameSchema, token: z.string().optional() }),
   z.object({ type: z.literal('createRoom') }),
+  /** A private room for one player and three bots (see "Solo rooms" in docs/multiplayer.md). */
+  z.object({ type: z.literal('createSolo') }),
   z.object({ type: z.literal('joinRoom'), code: RoomCodeSchema }),
   z.object({ type: z.literal('leaveRoom') }),
   z.object({ type: z.literal('sit'), seat: SeatSchema }),
@@ -57,6 +67,11 @@ export const ClientMessageSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('setBot'), seat: SeatSchema, difficulty: DifficultySchema }),
   z.object({ type: z.literal('startGame') }),
   z.object({ type: z.literal('playAgain') }),
+  /** Solo only: take back your last decision, or replay the one last taken back. */
+  z.object({ type: z.literal('undo') }),
+  z.object({ type: z.literal('redo') }),
+  /** Solo only: choose how much of the analysis to show (see `AnalysisMode`). */
+  z.object({ type: z.literal('setAnalysis'), mode: AnalysisModeSchema }),
   z.object({ type: z.literal('action'), action: ActionSchema }),
   z.object({ type: z.literal('ping') }),
 ]);
@@ -102,12 +117,40 @@ export interface RoomView {
   readonly seats: readonly [SeatView, SeatView, SeatView, SeatView];
   /** The receiving player's own seat, if seated. */
   readonly yourSeat: Seat | null;
+  /** A solo room: one player and three bots, private, with no clocks on the player. */
+  readonly solo: boolean;
+  /** Solo only: how much of the analysis is shown; `'off'` elsewhere. */
+  readonly analysis: AnalysisMode;
+  /** Solo only: there is a decision of yours to take back, or one taken back to replay. */
+  readonly canUndo: boolean;
+  readonly canRedo: boolean;
 }
 
 export interface ResultTimer {
   readonly remainingMs: number;
   readonly totalMs: number;
 }
+
+/** Solo analysis of one of the player's decisions (see "Solo rooms" in docs/multiplayer.md). */
+export interface AnalysisDecision {
+  readonly kind: 'play' | 'bid' | 'discard' | 'trump';
+  /**
+   * The choices valued: every legal card or trump, bid (at the minimum) or pass (and call a
+   * misdeal), or the best few discards.
+   */
+  readonly options: readonly {
+    readonly action: Action;
+    /** Expected score change for your side minus the opponents' this hand ($1000s). */
+    readonly points: number;
+    /** Your side's chance of winning the game after this choice (0–1). */
+    readonly winChance: number;
+  }[];
+  /** Index of the option worth the most points. */
+  readonly best: number;
+}
+
+/** How a move compares with the best: graded by the money it gave up. */
+export type MoveLabel = 'best' | 'good' | 'inaccuracy' | 'mistake' | 'blunder' | 'forced';
 
 export type ErrorCode =
   | 'BAD_MESSAGE'
@@ -120,7 +163,9 @@ export type ErrorCode =
   | 'SEAT_TAKEN'
   | 'NOT_SEATED'
   | 'ROOM_NOT_READY'
-  | 'ILLEGAL_ACTION';
+  | 'ILLEGAL_ACTION'
+  | 'NOT_SOLO'
+  | 'NOTHING_TO_UNDO';
 
 export type ServerMessage =
   | {
@@ -139,6 +184,30 @@ export type ServerMessage =
       readonly resultTimer?: ResultTimer;
     }
   | { readonly type: 'events'; readonly events: readonly GameEvent[] }
+  /**
+   * Solo: the game jumped to another point (undo or redo). The view that follows replaces
+   * the table; no events explain the jump.
+   */
+  | { readonly type: 'rewound'; readonly by: 'undo' | 'redo' }
+  /**
+   * Solo, with the analysis on: the value of the position in the view last sent (and of your
+   * decision there, if it is yours to make). A later view makes it stale. `ply` counts the
+   * game's actions so far.
+   */
+  | {
+      readonly type: 'analysis';
+      readonly ply: number;
+      readonly winChance: number;
+      readonly decision: AnalysisDecision | null;
+    }
+  /** Solo, with the analysis on: how the decision you made at `ply` compares with the best. */
+  | {
+      readonly type: 'moveReview';
+      readonly ply: number;
+      readonly label: MoveLabel;
+      readonly lossK: number;
+      readonly best: Action;
+    }
   | {
       readonly type: 'error';
       readonly code: ErrorCode;

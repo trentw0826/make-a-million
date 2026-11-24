@@ -1,9 +1,9 @@
 import type { Seat } from '@mam/engine';
 import type { Difficulty, RoomView, SeatView } from '@mam/protocol';
-import type { CSSProperties } from 'react';
+import { AnalysisPicker, MODE_TEXT, useAnalysisMode } from '../components/analysis/Analysis';
 import { SeatName } from '../components/SeatName';
+import { Segmented } from '../components/Segmented';
 import { Button } from '../components/ui/Button';
-import { PRESSABLE } from '../components/ui/pressable';
 import { Text } from '../components/ui/Text';
 import { DIFFICULTY_LABELS, DIFFICULTY_ORDER } from '../format';
 import { type Spot, spotOf } from '../spots';
@@ -42,7 +42,9 @@ export function Lobby({ room }: { room: RoomView }) {
             <line className={`side-${sideOf(1)}`} x1="82" y1="50" x2="97" y2="50" />
           </svg>
           <div className="lobby-felt-text">
-            {isHost ? (
+            {room.solo ? (
+              <SoloOptions onStart={() => send({ type: 'startGame' })} />
+            ) : isHost ? (
               <Button
                 variant="primary"
                 disabled={!anyHuman}
@@ -67,6 +69,7 @@ export function Lobby({ room }: { room: RoomView }) {
               room.seats[seat]?.kind === 'human' && room.seats[seat]?.playerId === room.hostId
             }
             isHost={isHost}
+            solo={room.solo}
             onSit={() => send({ type: 'sit', seat })}
             onStand={() => send({ type: 'stand' })}
             onSetBot={(difficulty) => send({ type: 'setBot', seat, difficulty })}
@@ -85,6 +88,8 @@ interface ChairProps {
   isMine: boolean;
   isHostSeat: boolean;
   isHost: boolean;
+  /** A solo room: your chair is fixed, so there is no sitting or standing. */
+  solo: boolean;
   onSit: () => void;
   onStand: () => void;
   onSetBot: (difficulty: Difficulty) => void;
@@ -111,37 +116,20 @@ function Chair(p: ChairProps) {
           {/* The host's level picker already says how strong the bot is. */}
           {bot && p.isHost ? bot.name : <SeatName seat={v} />}
           {p.isMine && <Text tone="muted"> (you)</Text>}
-          {p.isHostSeat && <span className="tag">host</span>}
+          {p.isHostSeat && !p.solo && <span className="tag">host</span>}
           {v.kind === 'human' && !v.connected && <span className="tag warn">away</span>}
         </strong>
       )}
       {bot && p.isHost && (
-        <fieldset
-          className="bot-level"
-          aria-label="Bot level"
-          style={
-            {
-              '--at': DIFFICULTY_ORDER.indexOf(bot.difficulty),
-              '--levels': DIFFICULTY_ORDER.length,
-            } as CSSProperties
-          }
-        >
-          {/* The highlight slides under the chosen level. */}
-          <span className="bot-level-thumb" aria-hidden="true" />
-          {DIFFICULTY_ORDER.map((d) => (
-            <button
-              key={d}
-              type="button"
-              className={PRESSABLE}
-              aria-pressed={bot.difficulty === d}
-              onClick={() => bot.difficulty !== d && p.onSetBot(d)}
-            >
-              {DIFFICULTY_LABELS[d]}
-            </button>
-          ))}
-        </fieldset>
+        <Segmented
+          label="Bot level"
+          options={DIFFICULTY_ORDER}
+          value={bot.difficulty}
+          text={(d) => DIFFICULTY_LABELS[d]}
+          onChange={p.onSetBot}
+        />
       )}
-      {(p.isMine || bot) && (
+      {(p.isMine || bot) && !p.solo && (
         <div className="chair-actions">
           {p.isMine ? (
             <Button variant="ghost" size="sm" onClick={p.onStand}>
@@ -155,6 +143,26 @@ function Chair(p: ChairProps) {
         </div>
       )}
     </fieldset>
+  );
+}
+
+/**
+ * The middle of a solo table: the choice of analysis, what it gives, and Start. The bots'
+ * levels are chosen on their chairs, with the same pickers as any table.
+ */
+function SoloOptions(p: { onStart: () => void }) {
+  const mode = useAnalysisMode();
+  return (
+    <>
+      <p className="felt-label">Analysis</p>
+      <AnalysisPicker />
+      <Text as="p" tone="muted" size="sm">
+        {MODE_TEXT[mode].about}
+      </Text>
+      <Button variant="primary" onClick={p.onStart}>
+        Start game
+      </Button>
+    </>
   );
 }
 

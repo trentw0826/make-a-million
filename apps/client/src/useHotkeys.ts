@@ -44,3 +44,23 @@ export function useGameKeys(keys: Readonly<Record<string, () => void>>): void {
     run();
   });
 }
+
+/**
+ * Ctrl+Z (⌘Z) undoes, and Ctrl+Shift+Z or Ctrl+Y (⌘⇧Z) redoes, except while typing or with
+ * a dialog open. Pass null to turn them off.
+ */
+export function useUndoKeys(keys: { undo: () => void; redo: () => void } | null): void {
+  useKeydown(
+    keys
+      ? (e) => {
+          if (!(e.ctrlKey || e.metaKey) || e.altKey || isModalOpen() || isTyping(e.target)) return;
+          const key = e.key.toLowerCase();
+          const redo = (key === 'z' && e.shiftKey) || (key === 'y' && !e.shiftKey);
+          if (key !== 'z' && !redo) return;
+          e.preventDefault();
+          if (redo) keys.redo();
+          else keys.undo();
+        }
+      : null,
+  );
+}

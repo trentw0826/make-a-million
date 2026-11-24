@@ -79,3 +79,6 @@ export const SHOWCASE_STAGGER_MS = 90;
  * `rise-in` takes `--dur-base`).
  */
 export const AFTER_MODAL_MS = DUR_BASE_MS;
+
+/** How long the review of a move you made stays beside your name (it then fades). */
+export const REVIEW_LINGER_MS = 5000;

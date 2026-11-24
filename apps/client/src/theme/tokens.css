@@ -94,6 +94,18 @@
   --warn-bg: #ffe0b2;
   --warn-ink: #7a3e00;
 
+  /* Colour: analysis (solo) ------------------------------------------- */
+  /* How a move compares with the best, from best to worst, each with the ink that reads on
+     it; and a forced move, which had no alternative. */
+  --label-best: #2e7d32;
+  --label-good: #5b8c2a;
+  --label-inaccuracy: #e9c46a;
+  --label-mistake: #e07b24;
+  --label-blunder: #c62828;
+  --label-forced: #6b6b6b;
+  --on-label: #fff;
+  --on-label-light: #1b1b1b;
+
   /* Opacity -------------------------------------------------------------- */
   /* A control that can't be used right now. */
   --opacity-disabled: 0.5;
@@ -185,6 +197,8 @@
   /* The top bar, the connection banner, and the buttons that stay over the open drawer. */
   --z-sticky: 6;
   --z-modal: 10;
+  /* Confetti over the win screen: above the modal, below a toast. */
+  --z-confetti: 15;
   --z-toast: 20;
 
   /* Cards --------------------------------------------------------------- */
@@ -210,6 +224,10 @@
   --hover-lift: 12px;
   --hover-scale: 0.04;
   --pick-lift: 22px;
+  /* Discarding: a card that must be kept sinks this far below the others, solid and grey
+     (--kept-filter) rather than veiled, so the fan stays readable where cards overlap. */
+  --kept-sink: 20px;
+  --kept-filter: grayscale(1) brightness(0.8) contrast(0.85);
   --part-gap: calc(var(--card-w) * var(--hand-overlap) + 6px);
   /* How far the felt leans away from the player. */
   --felt-tilt: 10deg;
@@ -221,6 +239,8 @@
   --topbar-h: 48px;
   /* A square icon button (the top bar's and the table corner's, and the bid steppers). */
   --icon-btn-size: 36px;
+  /* The solo win-chance bar down the felt's left edge. */
+  --eval-bar-w: 10px;
   /* A modal's padding; its sticky footer reaches back out to the modal's edges. */
   --modal-pad-y: var(--space-7);
   --modal-pad-x: var(--space-8);

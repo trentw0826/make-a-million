@@ -170,17 +170,18 @@ export function calibrated(
 }
 
 /**
- * The observer's utility `u` of `declarer` declaring `deal` (a sampled world): the calibrated
- * greedy playout, or the contract-value model's prediction (opts.contractValue).
+ * The observer's utility of `declarer` declaring `deal` (a sampled world), as a function of
+ * the utility `u` of the final captures: the calibrated greedy playout, or the contract-value
+ * model's prediction (opts.contractValue). The playout runs once, whatever `u` is asked.
  */
 function declareValue(
   deal: Deal,
   declarer: Seat,
-  u: (capK: readonly [number, number]) => number,
   opts: ContractOptions,
-): number {
-  if (opts.contractValue === 'model') return modelValue(deal, declarer, u, CONTRACT_MODEL);
-  return calibrated(u, teamOf(declarer), opts)(playoutDeclare(deal, declarer));
+): (u: (capK: readonly [number, number]) => number) => number {
+  if (opts.contractValue === 'model') return modelValuer(deal, declarer, CONTRACT_MODEL);
+  const cap = playoutDeclare(deal, declarer);
+  return (u) => calibrated(u, teamOf(declarer), opts)(cap);
 }
 
 /**
@@ -194,13 +195,23 @@ export function modelValue(
   u: (capK: readonly [number, number]) => number,
   model: ContractModel,
 ): number {
+  return modelValuer(deal, declarer, model)(u);
+}
+
+function modelValuer(
+  deal: Deal,
+  declarer: Seat,
+  model: ContractModel,
+): (u: (capK: readonly [number, number]) => number) => number {
   const playout: [number, number] = [0, 0];
   const x = contractFeatures(deal, declarer, undefined, playout);
   const mean = predictCapture(model, x);
-  return calibrated(u, teamOf(declarer), { calibA: mean, calibB: 0, calibSd: model.sd })(playout);
+  const sd = model.sd;
+  return (u) => calibrated(u, teamOf(declarer), { calibA: mean, calibB: 0, calibSd: sd })(playout);
 }
 
-function toDeal(obs: Observation, world: World): Deal {
+/** A sampled world as a full deal, with the observer's own hand. */
+export function toDeal(obs: Observation, world: World): Deal {
   return {
     hands: [0, 1, 2, 3].map((s) => (s === obs.seat ? obs.hand : (world.hands[s] ?? []))),
     widow: world.pile,
@@ -208,7 +219,7 @@ function toDeal(obs: Observation, world: World): Deal {
 }
 
 /** Predicted winner and price of an auction among `seats`, given the model's ceilings. */
-function predictAuction(
+export function predictAuction(
   ceilings: ReadonlyMap<Seat, number>,
   high: { seat: Seat; amount: number } | null,
   minBid: number,
@@ -255,6 +266,8 @@ export interface BidEvaluation {
   readonly ifPass: { readonly self: number; readonly partner: number; readonly opponent: number };
   /** Mean predicted price if we pass. */
   readonly passPrice: number;
+  /** The same two values under each of the extra `modes` asked for (same order). */
+  readonly byMode: readonly { readonly declare: number; readonly pass: number }[];
 }
 
 /** Evaluates bidding the minimum against passing (null: deals all inconsistent). */
@@ -263,6 +276,7 @@ export function evaluateBid(
   rng: Rng,
   opts: ContractOptions,
   deadline = Number.POSITIVE_INFINITY,
+  modes: readonly UtilityMode[] = [],
 ): BidEvaluation | null {
   const legal = obs.legal;
   if (legal.kind !== 'bid') throw new Error('evaluateBid outside bidding');
@@ -278,6 +292,7 @@ export function evaluateBid(
   let pass = 0;
   let price = 0;
   const share = { self: 0, partner: 0, opponent: 0 };
+  const extra = modes.map(() => ({ declare: 0, pass: 0 }));
   for (let i = 0; i < opts.bidWorlds; i++) {
     if (i >= MIN_WORLDS && Date.now() > deadline) break;
     const deal = toDeal(obs, belief.sample(rng));
@@ -300,20 +315,21 @@ export function evaluateBid(
       opts.bidOutcome === 'auction'
         ? afterOurBid(ceilings, obs.seat, legal.minBid, raise, step)
         : null;
-    const mine = after
-      ? declareValue(deal, after.seat, utilityFor(obs, after.seat, after.price, opts.utility), opts)
-      : declareValue(deal, obs.seat, utilityFor(obs, obs.seat, legal.minBid, opts.utility), opts);
+    const ours = after ?? { seat: obs.seat, price: legal.minBid };
+    const mineAt = declareValue(deal, ours.seat, opts);
+    const mine = mineAt(utilityFor(obs, ours.seat, ours.price, opts.utility));
     // If we pass: the others finish the auction by the model.
     const outcome = predictAuction(ceilings, high, legal.minBid, raise, step) ?? {
       seat: obs.seat,
       price: legal.minBid,
     };
-    const theirs = declareValue(
-      deal,
-      outcome.seat,
-      utilityFor(obs, outcome.seat, outcome.price, opts.utility),
-      opts,
-    );
+    const theirsAt = declareValue(deal, outcome.seat, opts);
+    const theirs = theirsAt(utilityFor(obs, outcome.seat, outcome.price, opts.utility));
+    modes.forEach((mode, k) => {
+      const e = extra[k] as { declare: number; pass: number };
+      e.declare += w * mineAt(utilityFor(obs, ours.seat, ours.price, mode));
+      e.pass += w * theirsAt(utilityFor(obs, outcome.seat, outcome.price, mode));
+    });
     wSum += w;
     declare += w * mine;
     pass += w * theirs;
@@ -333,6 +349,7 @@ export function evaluateBid(
       opponent: share.opponent / wSum,
     },
     passPrice: price / wSum,
+    byMode: extra.map((e) => ({ declare: e.declare / wSum, pass: e.pass / wSum })),
   };
 }
 
@@ -378,10 +395,18 @@ export function decideMisdeal(
   return keep < redeal ? { type: 'callMisdeal' } : null;
 }
 
-interface Candidate {
+export interface Candidate {
   readonly keep: readonly CardId[];
   readonly trump: Suit;
   readonly discard: readonly CardId[];
+}
+
+export interface RankedCandidate {
+  readonly candidate: Candidate;
+  /** The deciding team's value in `opts.utility` (re-checked, or screened only). */
+  readonly value: number;
+  /** Whether `value` comes from the re-check search rather than the screen. */
+  readonly refined: boolean;
 }
 
 /**
@@ -395,6 +420,20 @@ function bestCandidate(
   opts: ContractOptions,
   deadline: number,
 ): Candidate {
+  return (rankCandidates(obs, rng, candidates, opts, deadline)[0] as RankedCandidate).candidate;
+}
+
+/**
+ * Every candidate valued, best first: the re-checked ones (in the order of their re-check
+ * value) ahead of those only screened. The first is the one the bot plays.
+ */
+export function rankCandidates(
+  obs: Observation,
+  rng: Rng,
+  candidates: readonly Candidate[],
+  opts: ContractOptions,
+  deadline = Number.POSITIVE_INFINITY,
+): RankedCandidate[] {
   const contract = obs.contract;
   if (!contract) throw new Error('no contract');
   const belief = buildBelief(obs);
@@ -422,7 +461,9 @@ function bestCandidate(
   });
   screened.sort((a, b) => b.value - a.value);
   const top = screened.slice(0, opts.refineTop);
-  if (opts.refineWorlds <= 0 || top.length <= 1) return (top[0] as (typeof top)[0]).c;
+  const screenedOnly = (from: number): RankedCandidate[] =>
+    screened.slice(from).map((s) => ({ candidate: s.c, value: s.value, refined: false }));
+  if (opts.refineWorlds <= 0 || top.length <= 1) return screenedOnly(0);
 
   const u0 = captureUtility(
     {
@@ -445,8 +486,7 @@ function bestCandidate(
   solver.deadline = deadline;
   // Past the deadline or node budget, the best candidate among those fully re-checked wins
   // (the screen's best is re-checked first).
-  let best = top[0] as (typeof top)[0];
-  let bestValue = Number.NEGATIVE_INFINITY;
+  const refined: RankedCandidate[] = [];
   refine: for (const t of top) {
     let total = 0;
     for (const world of refineDeals) {
@@ -472,13 +512,35 @@ function bestCandidate(
       }
       total += team === 0 ? v0 : opts.utility === 'equity' ? 1 - v0 : -v0;
     }
-    const value = total / refineDeals.length;
-    if (value > bestValue) {
-      bestValue = value;
-      best = t;
-    }
+    refined.push({ candidate: t.c, value: total / refineDeals.length, refined: true });
   }
-  return best.c;
+  if (refined.length === 0) return screenedOnly(0);
+  // A stable sort keeps the screen's order among equal values, as the strict '>' did.
+  refined.sort((a, b) => b.value - a.value);
+  return [...refined, ...screenedOnly(refined.length)];
+}
+
+/**
+ * The (discard, trump) plans a bidder holding 16 cards considers. `include` adds a discard
+ * of the caller's own (with every trump), so that it is valued alongside the rest.
+ */
+export function discardPlans(
+  hand: readonly CardId[],
+  include: readonly CardId[] | null = null,
+): Candidate[] {
+  const seen = new Set<string>();
+  const candidates: Candidate[] = [];
+  const add = (discard: readonly CardId[], trump: Suit) => {
+    const key = `${[...discard].sort((a, b) => a - b).join(',')}|${trump}`;
+    if (seen.has(key)) return;
+    seen.add(key);
+    candidates.push({ discard, trump, keep: hand.filter((c) => !discard.includes(c)) });
+  };
+  for (const trump of SUITS) {
+    for (const discard of discardCandidates(hand, trump)) add(discard, trump);
+  }
+  if (include) for (const trump of SUITS) add(include, trump);
+  return candidates;
 }
 
 export function decideDiscard(
@@ -489,16 +551,7 @@ export function decideDiscard(
 ): Action {
   const legal = obs.legal;
   if (legal.kind !== 'discard') throw new Error('decideDiscard outside discarding');
-  const seen = new Set<string>();
-  const candidates: Candidate[] = [];
-  for (const trump of SUITS) {
-    for (const discard of discardCandidates(obs.hand, trump)) {
-      const key = `${[...discard].sort((a, b) => a - b).join(',')}|${trump}`;
-      if (seen.has(key)) continue;
-      seen.add(key);
-      candidates.push({ discard, trump, keep: obs.hand.filter((c) => !discard.includes(c)) });
-    }
-  }
+  const candidates = discardPlans(obs.hand);
   const best = bestCandidate(obs, rng, candidates, opts, deadline);
   return { type: 'discard', cardIds: [...best.discard] };
 }
