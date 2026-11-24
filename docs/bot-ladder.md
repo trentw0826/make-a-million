@@ -166,7 +166,19 @@ The policy model moves the truth's probability ten times as far as the specials 
 | specials + auction, fitted | −1.124 | −1.005 | −1.066 | −1.179 | −1.104 | −0.930 | 302 |
 | policy | −1.109 | −0.988 | −1.075 | −1.174 | −1.083 | −0.883 | 216 |
 
-The heuristic ceilings put the truth *less* likely than no weighting at all, which explains their rejection. The fitted model moves it the right way, about five times as far as the specials model and a third as far as the policy model, at little cost in sample size. Worth a duplicate test on top of the current Expert.
+The heuristic ceilings put the truth *less* likely than no weighting at all, which explains their rejection. The fitted model moves it the right way, about five times as far as the specials model and a third as far as the policy model, at little cost in sample size. Worth a duplicate test on top of the current Expert: it gained +0.63% [−0.01, 1.27] over two fixed runs and was promoted (Expert experiments, `xb12`, `xb20`).
+
+**Tempering Expert's combined weights** (specials × policy × fitted auction, as Expert multiplies them; `SCHEMES=expert`, the same 3,765 plays and pools, 2026‑11‑24). Each setting changed alone from Expert's (policy temperature 1.5 and mix 0.8, auction temperature 1.5, pool 360):
+
+| Setting | all | money | specials | tricks 2–5 | 6–9 | 10–13 | ESS |
+|---|---|---|---|---|---|---|---|
+| Expert as it is | −1.0999 | −0.9798 | −1.0593 | −1.1664 | −1.0713 | −0.8741 | 185 |
+| policy temperature 1.0 / 1.25 / 2.0 | −1.1003 / −1.0989 / −1.1033 | | | | | | 121 / 157 / 223 |
+| policy mix 0.6 / 0.9 / 1.0 | −1.1033 / −1.0987 / −1.0978 | | | | | | 208 / 172 / 159 |
+| auction temperature 1.0 / 2.0 | −1.0987 / −1.1014 | | | | | | 166 / 193 |
+| pool 720 (inferencePool 12) | −1.0964 | −0.9768 | −1.0571 | −1.1628 | −1.0680 | −0.8710 | 367 |
+
+Expert's settings are near the best. The best of each (a pool of 720, mix 1.0, auction temperature 1.0) would together gain about 0.006 nats a card, a quarter of what policy inference gained (0.025, worth +0.8% equity), so about 0.2% equity; mix 1.0 would also drop the guard against play the model does not expect, such as a human's. **Rejected** offline: under the stopping rule's 0.5%.
 
 **Contract‑value model** (`contractValue: 'model'`, `contract/value.ts`). A linear model of the declaring team's capture from 23 features of the deal: the playout estimate, money, trump lengths, specials, top trumps, side aces, voids. Data: Hard self‑play, 4000 hands with the auction scripted so that a random seat declares (seed `xb-cvm1`, so weak hands are covered) and 2000 natural hands (`xb-cvm2`). Trained on the forced contracts and tested on the natural ones:
 

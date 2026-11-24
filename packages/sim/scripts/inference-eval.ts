@@ -2,10 +2,12 @@
 // (scripts/timing-bank.ts collect), draw a pool of worlds from the seat's belief, weight them by
 // each scheme, and score the probability the weighted pool gives every unseen card's true
 // holder (mean log, overall, for money cards and for the specials), with the effective sample
-// size of the weights. Schemes: uniform, the specials model, the policy model, both, and the
-// auction's evidence by the heuristic or the fitted bidding model (alone and with the specials).
-// Usage: tsx scripts/inference-eval.ts <bank.jsonl> [pool=360]  (env EVERY=4, TEMP, MIX,
-// SCHEMES=uniform,specials,… to run only those)
+// size of the weights. Schemes: uniform, the specials model, the policy model, both, the
+// auction's evidence by the heuristic or the fitted bidding model (alone and with the specials),
+// and 'expert', all three as Expert combines them (specials × policy × fitted auction).
+// Usage: tsx scripts/inference-eval.ts <bank.jsonl> [pool=360]  (env EVERY=4; POLICY_TEMP and
+// POLICY_MIX for the policy model, AUCTION_TEMP for the auction's; SCHEMES=uniform,specials,…
+// to run only those). Not TEMP: Node takes that as its temporary directory.
 import { readFileSync } from 'node:fs';
 import { makePolicyWeight, makeSpecialsWeight, makeWorldWeight, POLICY_MODEL } from '@mam/bots';
 import { type CardId, Rng, type Seat } from '@mam/engine';
@@ -18,9 +20,12 @@ if (!file) throw new Error('usage: inference-eval.ts bank.jsonl [pool]');
 const poolSize = Number(poolArg);
 const every = Number(process.env.EVERY ?? 4);
 const policyOpts = {
-  ...(process.env.TEMP ? { temperature: Number(process.env.TEMP) } : {}),
-  ...(process.env.MIX ? { mix: Number(process.env.MIX) } : {}),
+  ...(process.env.POLICY_TEMP ? { temperature: Number(process.env.POLICY_TEMP) } : {}),
+  ...(process.env.POLICY_MIX ? { mix: Number(process.env.POLICY_MIX) } : {}),
 };
+const auctionOpts = process.env.AUCTION_TEMP
+  ? { temperature: Number(process.env.AUCTION_TEMP) }
+  : {};
 const MONEY_RANKS = new Set([4, 8, 10, 11, 12]);
 
 const entries = readFileSync(file, 'utf8')
@@ -38,6 +43,7 @@ const ALL_SCHEMES = [
   'auction',
   'auctionFit',
   'specials+auctionFit',
+  'expert',
 ] as const;
 type Scheme = (typeof ALL_SCHEMES)[number];
 const SCHEMES: readonly Scheme[] = process.env.SCHEMES
@@ -63,7 +69,7 @@ for (const e of entries) {
   const specials = makeSpecialsWeight(obs);
   const policy = makePolicyWeight(obs, POLICY_MODEL, policyOpts);
   const auction = makeWorldWeight(obs, { ceilingModel: 'heuristic' });
-  const auctionFit = makeWorldWeight(obs, { ceilingModel: 'fitted' });
+  const auctionFit = makeWorldWeight(obs, { ...auctionOpts, ceilingModel: 'fitted' });
   const truth = new Map<CardId, Seat | 'pile'>();
   for (const c of belief.unseen) {
     const s = ([0, 1, 2, 3] as Seat[]).find(
@@ -75,12 +81,14 @@ for (const e of entries) {
     obs.tricks.length <= 4 ? 'tricks 2–5' : obs.tricks.length <= 8 ? 'tricks 6–9' : 'tricks 10–13';
   for (const scheme of SCHEMES) {
     const w = pool.map((world) => {
-      const a = scheme.startsWith('specials') || scheme === 'both' ? (specials?.(world) ?? 1) : 1;
-      const b = scheme === 'policy' || scheme === 'both' ? (policy?.(world) ?? 1) : 1;
+      const all = scheme === 'expert';
+      const a =
+        all || scheme.startsWith('specials') || scheme === 'both' ? (specials?.(world) ?? 1) : 1;
+      const b = all || scheme === 'policy' || scheme === 'both' ? (policy?.(world) ?? 1) : 1;
       const c =
         scheme === 'auction'
           ? auction(world)
-          : scheme.endsWith('auctionFit')
+          : all || scheme.endsWith('auctionFit')
             ? auctionFit(world)
             : 1;
       return a * b * c;
