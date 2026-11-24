@@ -17,7 +17,7 @@ export const SuitSchema = z.enum(SUITS);
  * The bot levels a table can choose. `@mam/bots` also has an `expert` strategy, kept out of
  * play until its decisions fit their reply time (docs/bot-roadmap.md).
  */
-export const DifficultySchema = z.enum(['easy', 'normal', 'hard']);
+export const DifficultySchema = z.enum(['easy', 'normal', 'hard', 'expert']);
 export type Difficulty = z.infer<typeof DifficultySchema>;
 
 export const PlayerNameSchema = z

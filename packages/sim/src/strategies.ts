@@ -9,12 +9,23 @@ import type { Action, GameState, Observation, Rng, Seat } from '@mam/engine';
 export interface OracleStrategy {
   readonly id: string;
   readonly needsState: true;
+  /** What plays this seat in a hindsight rollout (see hindsight.ts); none: rollouts refuse it. */
+  readonly rolloutBot?: BotStrategy;
   decideWithState(
     state: GameState,
     seat: Seat,
     obs: Observation,
     rng: Rng,
+    ctx?: OracleContext,
   ): Action | Promise<Action>;
+}
+
+/** Where a decision sits in the simulated game: enough to replay the rest of it exactly. */
+export interface OracleContext {
+  readonly seed: string;
+  /** The runner's step counter for this decision (it keys each decision's random stream). */
+  readonly step: number;
+  readonly strategies: readonly SimStrategy[];
 }
 
 export type SimStrategy = BotStrategy | OracleStrategy;

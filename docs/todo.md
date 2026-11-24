@@ -17,7 +17,6 @@ A scratchpad for future fixes, features, and updates
   - [ ] A dev-only style guide page of every token and component, screenshotted by `pnpm e2e`
 - [ ] Test UI across different browsers and screen sizes
 - [ ] Create a phone-friendly UI
-- [] Strong bots: fit Expert to its reply time and offer it; load-test Hard rooms. Details in `docs/bot-roadmap.md`
 - [ ] 'play along mode' that accompanies a real-life game; You play along with the events of a real game and the board offers you analyses of the current game, including your best moves
 - [ ] User move scoring
 - [ ] Game review using scoring

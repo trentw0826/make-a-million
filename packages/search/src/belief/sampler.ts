@@ -82,7 +82,17 @@ interface Group {
   readonly allowed: number;
 }
 
-export function buildBelief(obs: Observation): Belief {
+/**
+ * Where specific unseen cards are known to be: a seat, or 'pile'. Not for bots: a seat never
+ * knows this. The simulator's diagnostics use it to condition worlds on the truth.
+ */
+export type Pins = ReadonlyMap<CardId, Seat | 'pile'>;
+
+/**
+ * The belief of `obs.seat`. `pins` (diagnostics only) fixes where some unseen cards are;
+ * sampling stays exact and uniform over the arrangements consistent with them.
+ */
+export function buildBelief(obs: Observation, pins?: Pins): Belief {
   const observer = obs.seat;
   const others = [0, 1, 2, 3].filter((s) => s !== observer) as [Seat, Seat, Seat];
   const known = new Set<CardId>(obs.hand);
@@ -138,6 +148,11 @@ export function buildBelief(obs: Observation): Belief {
     let mask = 0;
     for (let h = 0; h < 4; h++)
       if ((capacity[h] as number) > 0 && holderAllowed(h, card)) mask |= 1 << h;
+    const pin = pins?.get(card);
+    if (pin !== undefined) {
+      const h = pin === 'pile' ? PILE : others.indexOf(pin);
+      if (h >= 0 && (capacity[h] as number) > 0) mask = 1 << h;
+    }
     const list = byMask.get(mask) ?? [];
     list.push(card);
     byMask.set(mask, list);

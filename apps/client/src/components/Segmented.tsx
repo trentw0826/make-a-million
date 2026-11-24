@@ -16,7 +16,7 @@ export function Segmented<T extends string>(p: {
     <fieldset
       className="segmented"
       aria-label={p.label}
-      style={{ '--at': p.options.indexOf(p.value) } as CSSProperties}
+      style={{ '--at': p.options.indexOf(p.value), '--count': p.options.length } as CSSProperties}
     >
       <span className="segmented-thumb" aria-hidden="true" />
       {p.options.map((o) => (

@@ -45,6 +45,8 @@ export interface PlayGameOptions {
 
 export interface DecisionInfo {
   readonly seat: Seat;
+  /** The true state before the action (simulator diagnostics only; bots never see it). */
+  readonly state: GameState;
   readonly obs: Observation;
   readonly action: Action;
   readonly ms: number;
@@ -78,12 +80,16 @@ export async function playGame(options: PlayGameOptions): Promise<GameOutcome> {
     // the same position get the same randomness however much each consumed before, so
     // duplicate boards on which they decide alike play out identically (common random
     // numbers), which cuts the noise in A-versus-B comparisons.
-    const rng = Rng.fromSeed(`${seed}:seat:${seat}:step:${steps}`);
+    const rng = decisionRng(seed, seat, steps);
     const started = performance.now();
     const action = isOracle(strategy)
-      ? await strategy.decideWithState(state, seat, obs, rng)
+      ? await strategy.decideWithState(state, seat, obs, rng, {
+          seed: String(seed),
+          step: steps,
+          strategies,
+        })
       : await strategy.decide(obs, rng);
-    options.onDecision?.({ seat, obs, action, ms: performance.now() - started });
+    options.onDecision?.({ seat, state, obs, action, ms: performance.now() - started });
     const result = applyAction(state, seat, action);
     if (!result.ok) throw new IllegalBotAction(strategy.id, seat, action, result.error.code, obs);
     recorder.record(seat, action);
@@ -93,7 +99,12 @@ export async function playGame(options: PlayGameOptions): Promise<GameOutcome> {
   return { state, steps, recorder };
 }
 
-function nextActor(state: GameState): { seat: Seat; obs: Observation } {
+/** The random stream of the decision at `step` (see playGame: common random numbers). */
+export function decisionRng(seed: string | number, seat: Seat, step: number): Rng {
+  return Rng.fromSeed(`${seed}:seat:${seat}:step:${step}`);
+}
+
+export function nextActor(state: GameState): { seat: Seat; obs: Observation } {
   for (const seat of SEATS) {
     const obs = observe(state, seat);
     if (obs.legal.kind !== 'none') return { seat, obs };

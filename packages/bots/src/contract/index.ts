@@ -22,6 +22,7 @@ import {
   type UtilityMode,
   type World,
 } from '@mam/search';
+import { CONTRACT_MODEL } from './generated/contractModel';
 import {
   auctionLikelihood,
   type Deal,
@@ -31,6 +32,12 @@ import {
   playoutWith,
   utilityFor,
 } from './simulate';
+import {
+  type ContractModel,
+  contractFeatures,
+  contractFeaturesWith,
+  predictCapture,
+} from './value';
 
 export interface ContractOptions {
   /** Deals sampled for bidding and misdeal decisions. */
@@ -66,6 +73,12 @@ export interface ContractOptions {
   /** Whether a pass while partner holds the high bid counts as showing a weak hand. */
   readonly partnerPassInformative: boolean;
   /**
+   * The other players' bidding: 'heuristic' (the ceilings above) or 'fitted', the model of
+   * how the bots really bid (contract/auction.ts), for both the rest of the auction and the
+   * weighting of deals.
+   */
+  readonly ceilingModel: 'heuristic' | 'fitted';
+  /**
    * Calibration of the playout estimate in bidding and misdeal calls ($1000s): the
    * declaring team's capture is taken as Normal(calibA + calibB × estimate, calibSd²) and
    * the utility averaged over it; (0, 1, 0) uses the estimate as it is. Fit with
@@ -76,8 +89,26 @@ export interface ContractOptions {
   readonly calibA: number;
   readonly calibB: number;
   readonly calibSd: number;
+  /**
+   * How bidding and misdeal calls value a declarer's contract in a sampled deal: 'playout',
+   * the calibrated greedy playout; 'model', the learned contract-value model
+   * (contract/value.ts, generated/contractModel.ts), Normal(mean, sd²) around its prediction.
+   */
+  readonly contractValue: 'playout' | 'model';
   /** Also calibrate the playouts that screen discard and trump candidates. */
   readonly calibScreen: boolean;
+  /**
+   * How the screen values a discard-and-trump candidate in a sampled deal: 'playout', the
+   * greedy playout; 'model', the contract-value model with that keep and trump.
+   */
+  readonly screenValue: 'playout' | 'model';
+  /**
+   * What bidding the minimum is worth in a sampled deal. 'win': declaring at that price.
+   * 'auction': the rest of the auction by the bidding model. If an opponent's ceiling reaches
+   * the next price they overcall, we drop out, and the players still in finish the auction
+   * (partner may then outbid them); otherwise we declare at the minimum.
+   */
+  readonly bidOutcome: 'win' | 'auction';
 }
 
 export const CONTRACT_DEFAULTS: ContractOptions = {
@@ -94,10 +125,14 @@ export const CONTRACT_DEFAULTS: ContractOptions = {
   ceilingShift: 0,
   ceilingScale: 1,
   partnerPassInformative: true,
+  ceilingModel: 'heuristic',
   calibA: 130,
   calibB: 0.5,
   calibSd: 58,
   calibScreen: false,
+  contractValue: 'playout',
+  screenValue: 'playout',
+  bidOutcome: 'win',
 };
 
 /**
@@ -134,6 +169,47 @@ export function calibrated(
   };
 }
 
+/**
+ * The observer's utility of `declarer` declaring `deal` (a sampled world), as a function of
+ * the utility `u` of the final captures: the calibrated greedy playout, or the contract-value
+ * model's prediction (opts.contractValue). The playout runs once, whatever `u` is asked.
+ */
+function declareValue(
+  deal: Deal,
+  declarer: Seat,
+  opts: ContractOptions,
+): (u: (capK: readonly [number, number]) => number) => number {
+  if (opts.contractValue === 'model') return modelValuer(deal, declarer, CONTRACT_MODEL);
+  const cap = playoutDeclare(deal, declarer);
+  return (u) => calibrated(u, teamOf(declarer), opts)(cap);
+}
+
+/**
+ * The utility `u` of `declarer` declaring `deal` under a contract-value model: the declaring
+ * team's capture is Normal(model mean, model sd²), and the money it gains or loses against
+ * the greedy playout comes from or goes to the other team (as in `calibrated`).
+ */
+export function modelValue(
+  deal: Deal,
+  declarer: Seat,
+  u: (capK: readonly [number, number]) => number,
+  model: ContractModel,
+): number {
+  return modelValuer(deal, declarer, model)(u);
+}
+
+function modelValuer(
+  deal: Deal,
+  declarer: Seat,
+  model: ContractModel,
+): (u: (capK: readonly [number, number]) => number) => number {
+  const playout: [number, number] = [0, 0];
+  const x = contractFeatures(deal, declarer, undefined, playout);
+  const mean = predictCapture(model, x);
+  const sd = model.sd;
+  return (u) => calibrated(u, teamOf(declarer), { calibA: mean, calibB: 0, calibSd: sd })(playout);
+}
+
 /** A sampled world as a full deal, with the observer's own hand. */
 export function toDeal(obs: Observation, world: World): Deal {
   return {
@@ -156,6 +232,25 @@ export function predictAuction(
   const second = ranked[1]?.[1] ?? (high ? high.amount - raise : minBid - raise);
   const price = Math.max(minBid, Math.min(top[1], Math.floor((second + raise) / step) * step));
   return { seat: top[0], price };
+}
+
+/**
+ * The model's auction after we bid `bid`: null if no opponent's ceiling reaches the next
+ * price (we declare at `bid`), else the winner and price once we drop out and the others
+ * finish it (the partner may outbid the opponents).
+ */
+export function afterOurBid(
+  ceilings: ReadonlyMap<Seat, number>,
+  seat: Seat,
+  bid: number,
+  raise: number,
+  step: number,
+): { seat: Seat; price: number } | null {
+  const next = bid + raise;
+  let overcall = false;
+  for (const [s, c] of ceilings) if (teamOf(s) !== teamOf(seat) && c >= next) overcall = true;
+  if (!overcall) return null;
+  return predictAuction(ceilings, { seat, amount: bid }, next, raise, step);
 }
 
 /** Fewest sampled deals a contract decision uses, even past its deadline. */
@@ -203,13 +298,7 @@ export function evaluateBid(
     const deal = toDeal(obs, belief.sample(rng));
     const w = auctionLikelihood(deal, obs, step, opts.auctionSigma, opts);
     if (w < 1e-9) continue;
-    const mineCap = playoutDeclare(deal, obs.seat);
-    const mine = calibrated(
-      utilityFor(obs, obs.seat, legal.minBid, opts.utility),
-      teamOf(obs.seat),
-      opts,
-    )(mineCap);
-    // If we pass: the others (still in) finish the auction by the model.
+    // The others still in, with their ceilings by the model.
     const ceilings = new Map<Seat, number>();
     for (const s of [0, 1, 2, 3] as Seat[]) {
       if (s === obs.seat || passed.has(s)) continue;
@@ -220,28 +309,26 @@ export function evaluateBid(
           : modelCeiling(deal, s, obs, step, opts),
       );
     }
+    // If we bid the minimum: we declare at it, or (bidOutcome 'auction') an opponent who would
+    // pay the next price overcalls, we drop out and the others finish the auction.
+    const after =
+      opts.bidOutcome === 'auction'
+        ? afterOurBid(ceilings, obs.seat, legal.minBid, raise, step)
+        : null;
+    const ours = after ?? { seat: obs.seat, price: legal.minBid };
+    const mineAt = declareValue(deal, ours.seat, opts);
+    const mine = mineAt(utilityFor(obs, ours.seat, ours.price, opts.utility));
+    // If we pass: the others finish the auction by the model.
     const outcome = predictAuction(ceilings, high, legal.minBid, raise, step) ?? {
       seat: obs.seat,
       price: legal.minBid,
     };
-    const theirsCap = playoutDeclare(deal, outcome.seat);
-    const theirs = calibrated(
-      utilityFor(obs, outcome.seat, outcome.price, opts.utility),
-      teamOf(outcome.seat),
-      opts,
-    )(theirsCap);
+    const theirsAt = declareValue(deal, outcome.seat, opts);
+    const theirs = theirsAt(utilityFor(obs, outcome.seat, outcome.price, opts.utility));
     modes.forEach((mode, k) => {
       const e = extra[k] as { declare: number; pass: number };
-      e.declare +=
-        w *
-        calibrated(utilityFor(obs, obs.seat, legal.minBid, mode), teamOf(obs.seat), opts)(mineCap);
-      e.pass +=
-        w *
-        calibrated(
-          utilityFor(obs, outcome.seat, outcome.price, mode),
-          teamOf(outcome.seat),
-          opts,
-        )(theirsCap);
+      e.declare += w * mineAt(utilityFor(obs, ours.seat, ours.price, mode));
+      e.pass += w * theirsAt(utilityFor(obs, outcome.seat, outcome.price, mode));
     });
     wSum += w;
     declare += w * mine;
@@ -353,11 +440,22 @@ export function rankCandidates(
   const raw = utilityFor(obs, contract.bidder, contract.amount, opts.utility);
   const u = opts.calibScreen ? calibrated(raw, teamOf(contract.bidder), opts) : raw;
   const screenDeals = Array.from({ length: opts.screenWorlds }, () => belief.sample(rng));
+  const team = teamOf(obs.seat);
   const screened = candidates.map((c) => {
     let total = 0;
     for (const world of screenDeals) {
       const hands = [0, 1, 2, 3].map((s) => (s === obs.seat ? c.keep : (world.hands[s] ?? [])));
-      total += u(playoutWith(hands, obs.seat, c.keep, c.trump));
+      if (opts.screenValue === 'model') {
+        // The contract-value model's capture, Normal around its prediction (as in bidding).
+        const playout: [number, number] = [0, 0];
+        const x = contractFeaturesWith(hands, obs.seat, c.keep, c.trump, undefined, playout);
+        const mean = predictCapture(CONTRACT_MODEL, x);
+        total += calibrated(raw, team, { calibA: mean, calibB: 0, calibSd: CONTRACT_MODEL.sd })(
+          playout,
+        );
+      } else {
+        total += u(playoutWith(hands, obs.seat, c.keep, c.trump));
+      }
     }
     return { c, value: total / screenDeals.length };
   });
@@ -367,7 +465,6 @@ export function rankCandidates(
     screened.slice(from).map((s) => ({ candidate: s.c, value: s.value, refined: false }));
   if (opts.refineWorlds <= 0 || top.length <= 1) return screenedOnly(0);
 
-  const team = teamOf(obs.seat);
   const u0 = captureUtility(
     {
       ruleset: obs.ruleset,

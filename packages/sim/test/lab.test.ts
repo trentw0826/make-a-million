@@ -78,6 +78,21 @@ describe('runDuplicate', () => {
     expect(r.me.mean).toBeGreaterThan(0);
     expect(r.margin.mean).toBeGreaterThan(0);
   });
+
+  it('seats each team with its own partner', async () => {
+    const mixed = { a: 'normal', aPartner: 'easy', b: 'normal', bPartner: 'easy' };
+    const level = await runDuplicate({ ...mixed, boards, table: ME_TABLE, workers: 1 });
+    expect(level.me.mean).toBeCloseTo(0, 10);
+    // Normal with a Normal partner beats Normal with an Easy one.
+    const r = await runDuplicate({
+      ...mixed,
+      aPartner: 'normal',
+      boards,
+      table: ME_TABLE,
+      workers: 1,
+    });
+    expect(r.me.mean).toBeGreaterThan(0);
+  });
 });
 
 describe('parseSpec', () => {

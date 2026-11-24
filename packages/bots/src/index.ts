@@ -20,12 +20,26 @@ export {
   reviewMove,
 } from './analysis/index';
 export {
+  AUCTION_FEATURE_COUNT,
+  AUCTION_FEATURES,
+  type AuctionModel,
+  auctionFeatures,
+  fittedCeiling,
+} from './contract/auction';
+export {
   type BidEvaluation,
   CONTRACT_DEFAULTS,
   type ContractOptions,
   evaluateBid,
 } from './contract/index';
-export { type Deal, playoutDeclare, playoutWith } from './contract/simulate';
+export { type Deal, discardCandidates, playoutDeclare, playoutWith } from './contract/simulate';
+export {
+  CONTRACT_FEATURE_COUNT,
+  CONTRACT_FEATURES,
+  type ContractModel,
+  contractFeatures,
+  predictCapture,
+} from './contract/value';
 export { fallbackAction } from './fallback';
 export {
   EXPERT_DEFAULTS,
@@ -41,6 +55,16 @@ export {
 } from './hard/index';
 export { ceilingForHand } from './heuristic/bidding';
 export { HeuristicBot } from './heuristic/index';
+export { POLICY_MODEL } from './inference/generated/policyModel';
+export { makeWorldWeight } from './inference/index';
+export {
+  makePolicyWeight,
+  PLAY_FEATURE_COUNT,
+  PLAY_FEATURES,
+  type PolicyModel,
+  playFeatures,
+  playProbabilities,
+} from './inference/policy';
 export {
   COARSE_CELLS,
   FINE_CELLS,

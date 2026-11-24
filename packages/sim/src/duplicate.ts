@@ -44,7 +44,7 @@ export function makeBoards(count: number, seed: string, pool: readonly HandStart
 
 /** Equity for `team` once a hand has been scored. */
 export function equityAfter(
-  line: HandLine,
+  line: Pick<HandLine, 'scoresAfter' | 'bidder' | 'dealer'>,
   team: Team,
   table: MatchEquityTable,
   target = DEFAULT_RULESET.targetScore,
@@ -111,6 +111,13 @@ export interface DuplicateResult {
 export interface DuplicateOptions {
   readonly a: BotSpec;
   readonly b: BotSpec;
+  /**
+   * Partners: A's team is `a` with `aPartner` across the table (default `a` itself), B's is
+   * `b` with `bPartner`. "Expert partnered with Normal" against "Hard partnered with Normal"
+   * is a: expert, aPartner: normal, b: hard, bPartner: normal.
+   */
+  readonly aPartner?: BotSpec;
+  readonly bPartner?: BotSpec;
   readonly boards: readonly Board[];
   readonly table: MatchEquityTable | null;
   readonly workers?: number;
@@ -122,20 +129,22 @@ export interface DuplicateOptions {
 /** Plays every board twice (A as team 0, then as team 1) and compares A with B. */
 export async function runDuplicate(opts: DuplicateOptions): Promise<DuplicateResult> {
   const started = performance.now();
+  const a2 = opts.aPartner ?? opts.a;
+  const b2 = opts.bPartner ?? opts.b;
   const inputs: PlayInput[] = opts.boards.flatMap((board) => [
     {
       seed: board.seed,
       dealer: board.dealer,
       scores: board.scores,
       hands: 1,
-      specs: [opts.a, opts.b, opts.a, opts.b],
+      specs: [opts.a, opts.b, a2, b2],
     },
     {
       seed: board.seed,
       dealer: board.dealer,
       scores: board.scores,
       hands: 1,
-      specs: [opts.b, opts.a, opts.b, opts.a],
+      specs: [opts.b, opts.a, b2, a2],
     },
   ]);
   const me = new RunningStats();

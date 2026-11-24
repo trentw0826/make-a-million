@@ -243,8 +243,9 @@ async function openTable(page: Page, base: string): Promise<void> {
     'every bot starts at Normal',
   );
   check(
-    (await levels.first().getByRole('button', { name: 'Expert' }).count()) === 0,
-    'the lobby offers no Expert bot yet',
+    (await levels.first().getByRole('button').allTextContents()).join(', ') ===
+      'Easy, Normal, Hard, Expert',
+    'the lobby offers Easy, Normal, Hard and Expert, in that order',
   );
   check(
     (await page.locator('.chair-mine.chair-bottom').count()) === 1,

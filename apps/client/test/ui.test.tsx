@@ -340,6 +340,11 @@ describe('lobby', () => {
       'aria-pressed',
       'false',
     );
+    expect(
+      within(level)
+        .getAllByRole('button')
+        .map((b) => b.textContent),
+    ).toEqual(['Easy', 'Normal', 'Hard', 'Expert']);
     expect(within(chair(3)).queryByRole('button', { name: 'Sit here' })).toBeNull();
     expect(screen.getByRole('button', { name: 'Start game' })).toBeEnabled();
   });
@@ -351,7 +356,7 @@ describe('lobby', () => {
       seats: [
         { kind: 'bot', name: 'Bot 1', difficulty: 'normal' },
         { kind: 'bot', name: 'Bot 2', difficulty: 'hard' },
-        { kind: 'bot', name: 'Bot 3', difficulty: 'normal' },
+        { kind: 'bot', name: 'Bot 3', difficulty: 'expert' },
         { kind: 'bot', name: 'Bot 4', difficulty: 'normal' },
       ],
       yourSeat: null,
@@ -360,6 +365,7 @@ describe('lobby', () => {
     const chair = (n: number) => screen.getByRole('group', { name: `Seat ${n}` });
     expect(chair(2)).toHaveTextContent('Bot 2 Hard');
     expect(within(chair(2)).getByText('Hard')).toHaveClass('seat-difficulty');
+    expect(chair(3)).toHaveTextContent('Bot 3 Expert');
     expect(screen.queryByRole('group', { name: 'Bot level' })).toBeNull();
     expect(screen.getAllByRole('button', { name: 'Sit here' })).toHaveLength(4);
     expect(screen.queryByRole('button', { name: 'Start game' })).toBeNull();

@@ -11,7 +11,7 @@ How rooms, seats and connections behave. The aim is a small, predictable set of 
 
 - **Private codes.** A room is created by a host and identified by a six‑character code. Anyone with the code can join; there is no public listing.
 - **Four seats.** Seats are arranged around the table; opposite seats are partners. Every seat starts with a Normal bot. Players **pick their own seats**, and so their own partners, by clicking any seat a bot holds; the bot makes way. A player may stand up and move while the room is in the lobby, and the seat they leave gets a Normal bot again.
-- **Bots.** The host may set the difficulty (Easy, Normal or Hard) of the bot in any seat. A game can start with any mix, including one human and three bots. Each level replies after a fixed delay (700, 900 and 1500 ms), whatever it decides.
+- **Bots.** The host may set the difficulty (Easy, Normal, Hard or Expert) of the bot in any seat. A game can start with any mix, including one human and three bots. Each level replies after a fixed delay (700, 900, 1500 and 5000 ms), whatever it decides.
 - **Starting.** The host starts the game once at least one human is seated. Seats are locked for the whole game.
 - **No spectators and no mid‑game joining.** During a game the only way into a room is to reclaim your own seat with your token.
 - **Play again.** After a game ends, the host may start another with the same seats. Scores reset.

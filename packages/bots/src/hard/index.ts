@@ -15,7 +15,9 @@ import {
   decideTrump,
 } from '../contract/index';
 import { HeuristicBot } from '../heuristic/index';
+import { POLICY_MODEL } from '../inference/generated/policyModel';
 import { makeWorldWeight } from '../inference/index';
+import { makePolicyWeight } from '../inference/policy';
 import { makeSpecialsWeight } from '../inference/specials';
 import type { BotStrategy, DecideContext } from '../strategy';
 import { PIMC_DEFAULTS, type PimcOptions, pimcValues } from './pimc';
@@ -52,6 +54,16 @@ export interface HardOptions extends PimcOptions, ContractOptions {
    * have played one and did not (inference/specials.ts).
    */
   readonly specialsInference: boolean;
+  /**
+   * With inference on, weight worlds by every other player's past card plays under the
+   * card-play policy model (inference/policy.ts): policy-based inference.
+   */
+  readonly policyInference: boolean;
+  /** Its tempering (> 1 flattens) and the model's share against uniform over legal cards. */
+  readonly policyTemperature: number;
+  readonly policyMix: number;
+  /** Worlds for a lead before the exact window, nodes scaled to match (≤ worlds: off). */
+  readonly leadWorlds: number;
 }
 
 export const HARD_DEFAULTS: HardOptions = {
@@ -69,17 +81,32 @@ export const HARD_DEFAULTS: HardOptions = {
   auctionInference: false,
   throwOffs: false,
   specialsInference: true,
+  policyInference: false,
+  policyTemperature: 1.5,
+  policyMix: 0.8,
+  leadWorlds: 0,
 };
 
 /**
- * Expert: the same algorithms with about three times Hard's budget. Card play spends it on
- * more worlds and exact solving from seven tricks out, not on depth: searching three tricks
- * deep instead of two cost 2.3× the time for no measurable gain (docs/bot-ladder.md).
+ * Expert: the same algorithms with a bigger budget, sized for a 5 s reply time (4.8 s
+ * deadline). Card play spends it on more worlds and exact solving from seven tricks out, not
+ * on depth: searching three tricks deep instead of two cost 2.3× the time for no measurable
+ * gain. 8M nodes caps the first exact solves (12M chose no better on 1348 banked positions),
+ * and 24M re-check nodes cap the discard and trump decisions (99.9% of choices unchanged).
+ * See docs/bot-ladder.md (Timing). Bids value contracts with the learned contract-value model
+ * and predict the auction with the fitted bidding model: together +1.3% equity per board
+ * against Expert-0 on two fixed fresh 1500-board runs (docs/bot-ladder.md). Card play also
+ * weights its worlds by every past card play under the card-play model (+0.8% on top), and
+ * by the auction under the fitted bidding model (+0.6%, +3.9k points per hand on top).
  */
 export const EXPERT_DEFAULTS: HardOptions = {
   ...HARD_DEFAULTS,
+  contractValue: 'model',
+  ceilingModel: 'fitted',
+  policyInference: true,
+  auctionInference: true,
   worlds: 60,
-  nodes: 12_000_000,
+  nodes: 8_000_000,
   depth: 2,
   exactTricks: 7,
   worldNodes: 1_200_000,
@@ -88,6 +115,7 @@ export const EXPERT_DEFAULTS: HardOptions = {
   refineWorlds: 24,
   refineTop: 5,
   refineDepth: 2,
+  refineNodes: 24_000_000,
 };
 
 /**
@@ -100,9 +128,15 @@ export function worldWeight(
 ): ((world: World) => number) | undefined {
   if (o.inferencePool <= 0) return undefined;
   const parts: ((world: World) => number)[] = [];
-  if (o.auctionInference) parts.push(makeWorldWeight(obs, { throwOffs: o.throwOffs }));
+  if (o.auctionInference) {
+    parts.push(makeWorldWeight(obs, { throwOffs: o.throwOffs, ceilingModel: o.ceilingModel }));
+  }
   const specials = o.specialsInference ? makeSpecialsWeight(obs) : undefined;
   if (specials) parts.push(specials);
+  const policy = o.policyInference
+    ? makePolicyWeight(obs, POLICY_MODEL, { temperature: o.policyTemperature, mix: o.policyMix })
+    : undefined;
+  if (policy) parts.push(policy);
   if (parts.length === 0) return undefined;
   if (parts.length === 1) return parts[0];
   return (world) => parts.reduce((w, f) => w * f(world), 1);
@@ -162,7 +196,7 @@ export class HardBot implements BotStrategy {
     if (legal.cardIds.length === 1) return { type: 'playCard', cardId: legal.cardIds[0] as number };
     const weight = worldWeight(obs, this.options);
     const utility = this.playLeafUtility(obs);
-    const result = pimcValues(obs, rng, this.options, {
+    const result = pimcValues(obs, rng, this.leadBudget(obs), {
       ...(utility ? { utility } : {}),
       ...(weight ? { weight } : {}),
       utilityAt: this.options.fastUtility ? 'root' : 'leaf',
@@ -181,6 +215,20 @@ export class HardBot implements BotStrategy {
       return { type: 'playCard', cardId: preferredCard };
     }
     return { type: 'playCard', cardId: result.moves[best] as number };
+  }
+
+  /**
+   * The card-play budget: `leadWorlds` (when set) gives a lead before the exact window that
+   * many worlds, with the node budgets scaled to match. Leads have the most legal cards and
+   * carry most of the regret against the oracle (docs/bot-ladder.md, Headroom).
+   */
+  private leadBudget(obs: Observation): HardOptions {
+    const o = this.options;
+    if (o.leadWorlds <= o.worlds || (obs.currentTrick?.plays.length ?? 0) > 0) return o;
+    const live = obs.handSizes.reduce((a, b) => a + b, 0);
+    if (live <= o.exactTricks * 4) return o;
+    const scale = o.leadWorlds / o.worlds;
+    return { ...o, worlds: o.leadWorlds, nodes: o.nodes * scale, worldNodes: o.worldNodes };
   }
 
   /** Team 0's utility of final captures ($1000s); undefined = linear money difference. */

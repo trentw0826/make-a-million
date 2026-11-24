@@ -1,5 +1,7 @@
 // Runs a list of duplicate SPRT experiments in sequence and appends results as JSON lines.
-// Usage: tsx scripts/experiments.ts <out.jsonl> "A|B" ["A|B" ...]  (env BOARDS, DELTA, SEED, WORKERS, MIN_BOARDS, SPRT=0)
+// Usage: tsx scripts/experiments.ts <out.jsonl> "A|B" ["A|B" ...]  (env BOARDS, DELTA, SEED,
+// WORKERS, MIN_BOARDS, SPRT=0). A team with a different partner is "A&P|B&Q": A partnered with P
+// against B partnered with Q.
 import { appendFileSync } from 'node:fs';
 import { ME_TABLE } from '@mam/search';
 import { handStarts, makeBoards, runDuplicate } from '../src/duplicate';
@@ -25,11 +27,16 @@ const pool = await runParallel(
 const boards = makeBoards(boardsN, seed, handStarts(pool));
 
 for (const pair of pairs) {
-  const [a, b] = pair.split('|');
-  if (!a || !b) throw new Error(`bad pair ${pair}`);
+  // "A|B", or with partners "A&P|B&Q" ('+' already joins values inside a spec).
+  const [ta, tb] = pair.split('|');
+  if (!ta || !tb) throw new Error(`bad pair ${pair}`);
+  const [a, aPartner] = ta.split('&') as [string, string | undefined];
+  const [b, bPartner] = tb.split('&') as [string, string | undefined];
   const r = await runDuplicate({
     a,
     b,
+    ...(aPartner ? { aPartner } : {}),
+    ...(bPartner ? { bPartner } : {}),
     boards,
     table: ME_TABLE,
     workers,
@@ -43,6 +50,8 @@ for (const pair of pairs) {
   const line = {
     a,
     b,
+    ...(aPartner ? { aPartner } : {}),
+    ...(bPartner ? { bPartner } : {}),
     boards: r.boards,
     me: r.me,
     margin: r.margin,
@@ -56,6 +65,6 @@ for (const pair of pairs) {
   };
   appendFileSync(out, `${JSON.stringify(line)}\n`);
   console.log(
-    `${a} vs ${b}: ${r.boards} boards, ΔME ${(r.me.mean * 100).toFixed(2)}% [${(r.me.ci95[0] * 100).toFixed(2)}, ${(r.me.ci95[1] * 100).toFixed(2)}], SPRT ${r.sprt}, A mean ${r.timingA.meanMs.toFixed(0)}ms max ${r.timingA.maxMs.toFixed(0)}ms`,
+    `${ta} vs ${tb}: ${r.boards} boards, ΔME ${(r.me.mean * 100).toFixed(2)}% [${(r.me.ci95[0] * 100).toFixed(2)}, ${(r.me.ci95[1] * 100).toFixed(2)}], SPRT ${r.sprt}, A mean ${r.timingA.meanMs.toFixed(0)}ms max ${r.timingA.maxMs.toFixed(0)}ms`,
   );
 }

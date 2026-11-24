@@ -11,7 +11,10 @@ import {
   type Trick,
   teamOf,
 } from '@mam/engine';
+import { bankTask, decideTask } from './bank';
 import { bidRolloutTask } from './bidRollout';
+import { contractDataTask } from './contractData';
+import { regretTask } from './regret';
 import './registry';
 import { playGame } from './runner';
 import { type BotSpec, makeStrategy } from './strategies';
@@ -255,6 +258,10 @@ export const TASKS = {
   timing: timingTask,
   specials: specialsTask,
   bidRollout: bidRolloutTask,
+  bank: bankTask,
+  decide: decideTask,
+  regret: regretTask,
+  contractData: contractDataTask,
 } as const;
 
 export type TaskName = keyof typeof TASKS;
