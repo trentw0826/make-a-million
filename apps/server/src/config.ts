@@ -31,7 +31,8 @@ export interface ServerConfig {
   readonly handResultMs: number;
   /**
    * How long the solo analysis of one position may take. It is a deadline, as for the bots;
-   * its budgets are sized to finish well inside it (docs/bot-standards.md, Analysis).
+   * its budgets are sized to finish well inside it (docs/bot-standards.md, Analysis). It
+   * searches with Expert's budgets, so it has Expert's deadline.
    */
   readonly analysisMs: number;
   /** Strategy used to play a human's seat while they are away. */
@@ -55,7 +56,7 @@ export const DEFAULT_CONFIG: ServerConfig = {
   trickPauseMs: 1_500,
   botContinueDelayMs: 4_000,
   handResultMs: 25_000,
-  analysisMs: 2_000,
+  analysisMs: 4_800,
   takeoverDifficulty: 'normal',
   botWorkers: Number(env.BOT_WORKERS ?? Math.max(1, Math.min(4, availableParallelism() - 1))),
   ruleset: DEFAULT_RULESET,

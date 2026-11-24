@@ -98,9 +98,12 @@ The plan was search‑centred: an exact open‑hand solver, sampling of hidden c
 
 ### To finish (concrete)
 
-1. **After the merge with solo mode** (`f9ce87c`): solo analysis now values bids through the shared bid evaluation and card play through the shared world weighting, both of which carry Expert's options. It still analyses with Hard's settings (`ANALYSIS_DEFAULTS`); analysing with Expert's would need its own timing against the analysis deadline.
-2. **Load‑test on the production host size.** On the dev machine one server with 4 bot workers carries 32 rooms of four Expert bots and more than 64 rooms of four Hard bots without a late answer (`bot-ladder.md`, Timing).
-3. **Carry Expert's gains to Hard**, if wanted: policy inference and auction inference each cost Expert about 10% more card‑play time, which Hard's p99 (0.7–0.8 s against its 1.3 s deadline) should absorb, and the bidding models make a bid about 15 ms slower. Auction inference helps only with the fitted bidding model (`ceilingModel: 'fitted'`); with Hard's heuristic ceilings it was rejected. Each change would need its own duplicate tests at Hard's budget and a new golden test.
+1. **Load‑test on the production host size.** On the dev machine one server with 4 bot workers carries 32 rooms of four Expert bots and more than 64 rooms of four Hard bots without a late answer (`bot-ladder.md`, Timing). The deploy branch's host (`shared-cpu-1x`) gives the server one bot worker, which the Expert bots and the solo analysis would share.
+2. **Carry Expert's gains to Hard**, if wanted: policy inference and auction inference each cost Expert about 10% more card‑play time, which Hard's p99 (0.7–0.8 s against its 1.3 s deadline) should absorb, and the bidding models make a bid about 15 ms slower. Auction inference helps only with the fitted bidding model (`ceilingModel: 'fitted'`); with Hard's heuristic ceilings it was rejected. Each change would need its own duplicate tests at Hard's budget and a new golden test.
+
+### Done: solo analysis on Expert (2026‑11‑24)
+
+The solo analysis searches with Expert's settings (`ANALYSIS_DEFAULTS`), so its hints and grades value each choice as Expert would, with Expert's card‑play inference and contract values. A decision costs it what it costs an Expert bot, so `analysisMs` is Expert's 4.8 s deadline, still only a safety net (`bot-ladder.md`, Timing). It picks the same best choice as Hard's analysis in 74% of decisions.
 
 ### Done since the pause: specials inference
 

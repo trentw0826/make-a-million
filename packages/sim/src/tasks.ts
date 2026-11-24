@@ -11,6 +11,7 @@ import {
   type Trick,
   teamOf,
 } from '@mam/engine';
+import { analysisTimingTask } from './analysisTiming';
 import { bankTask, decideTask } from './bank';
 import { bidRolloutTask } from './bidRollout';
 import { contractDataTask } from './contractData';
@@ -262,6 +263,7 @@ export const TASKS = {
   decide: decideTask,
   regret: regretTask,
   contractData: contractDataTask,
+  analysisTiming: analysisTimingTask,
 } as const;
 
 export type TaskName = keyof typeof TASKS;
