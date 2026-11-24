@@ -71,7 +71,7 @@ Hidden information is enforced by projection, never by flags.
 ## Bots
 
 - One interface: `decide(observation, rng) → action`. Strategies are registered by difficulty id and can be swapped per seat.
-- Current strategies: `easy` (random legal play, never raises), `normal` (heuristic evaluation, bidding, discarding and play) and `hard` (search: sampled deals solved with all hands open, plus simulation for contract decisions; see `bot-design.md`). Hard runs on server worker threads. An `expert` strategy (Hard with about three times the budget) exists in `@mam/bots` and the simulator but is not offered at the table yet; see `bot-roadmap.md`.
+- Current strategies: `easy` (random legal play, never raises), `normal` (heuristic evaluation, bidding, discarding and play), `hard` (search: sampled deals solved with all hands open, plus simulation for contract decisions; see `bot-design.md`) and `expert` (the same search with a bigger budget for its 5 s reply time, bidding by learned models and weighting its sampled deals by the auction and every card played). Hard and Expert run on server worker threads.
 - The think delay is applied by the server, not the strategy, so timing carries no information.
 
 ## Server

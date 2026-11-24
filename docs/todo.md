@@ -14,7 +14,6 @@ A scratchpad for future fixes, features, and updates
   - [ ] A dev-only style guide page of every token and component, screenshotted by `pnpm e2e`
 - [ ] Test UI across different browsers and screen sizes
 - [ ] Create a phone-friendly UI
-- [] Strong bots: fit Expert to its reply time and offer it; load-test Hard rooms. Details in `docs/bot-roadmap.md`
 - [ ] Solo mode
   - [ ] Includes undo/redo
 - [ ] User move scoring

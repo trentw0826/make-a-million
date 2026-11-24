@@ -119,7 +119,12 @@ function Chair(p: ChairProps) {
         <fieldset
           className="bot-level"
           aria-label="Bot level"
-          style={{ '--at': DIFFICULTY_ORDER.indexOf(bot.difficulty) } as CSSProperties}
+          style={
+            {
+              '--at': DIFFICULTY_ORDER.indexOf(bot.difficulty),
+              '--levels': DIFFICULTY_ORDER.length,
+            } as CSSProperties
+          }
         >
           {/* The highlight slides under the chosen level. */}
           <span className="bot-level-thumb" aria-hidden="true" />

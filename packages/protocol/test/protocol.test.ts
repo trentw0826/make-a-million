@@ -21,6 +21,9 @@ describe('client messages', () => {
         JSON.stringify({ type: 'action', action: { type: 'bid', amount: 175000 } }),
       ),
     ).toEqual({ type: 'action', action: { type: 'bid', amount: 175000 } });
+    expect(
+      parseClientMessage(JSON.stringify({ type: 'setBot', seat: 1, difficulty: 'expert' })),
+    ).toEqual({ type: 'setBot', seat: 1, difficulty: 'expert' });
   });
 
   it('rejects malformed input', () => {

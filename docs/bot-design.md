@@ -1,6 +1,6 @@
 # Make‑a‑Million – Strong Bot Design
 
-How the **Hard** bot (and the experimental **Expert**) work, and why each setting is what it is. Rules are in `game-rules.md`, what bots may know is in `bot-standards.md`, measured results are in `bot-ladder.md`, and the state of the work and what to do next is in `bot-roadmap.md`.
+How the **Hard** and **Expert** bots work, and why each setting is what it is. Rules are in `game-rules.md`, what bots may know is in `bot-standards.md`, measured results are in `bot-ladder.md`, and the state of the work and what to do next is in `bot-roadmap.md`.
 
 ## Can the game be solved?
 
@@ -51,7 +51,7 @@ Card play maximises money won from here on minus the opponents' (`playUtility: '
 
 Two kinds of soft inference re‑weight the sampled worlds when `inferencePool > 0`: draw `inferencePool × worlds` candidates, weight each, and resample. Hard weights by the specials only (`inferencePool` 6).
 
-- **Auction and trump choice** (`auctionInference`, `inference/index.ts`): with the heuristic ceilings it did not help (H0); off in Hard. With `ceilingModel: 'fitted'`, the model of how the bots really bid, it makes the true deal more likely, not less (`bot-ladder.md`, Offline screens). Expert: on, +0.6% [−0.0, 1.3] equity and +3.9k [0.5, 7.3] points per hand on top of policy inference, over two fixed 1500‑board runs.
+- **Auction and trump choice** (`auctionInference`, `inference/index.ts`): with the heuristic ceilings it did not help (H0); off in Hard. With `ceilingModel: 'fitted'`, the model of how the bots really bid, it makes the true deal more likely, not less (`bot-ladder.md`, Offline screens). Expert: on, +0.6% [−0.01, 1.27] equity and +3.9k [0.5, 7.3] points per hand on top of policy inference, over two fixed 1500‑board runs.
 - **The specials** (`specialsInference`, `inference/specials.ts`). A player who could have played the Tiger, Bull or Bear and did not is less likely to hold it, by P(play | situation) fitted from self‑play (`inference/generated/specialsModel.ts`, written by `packages/sim/scripts/specials-model.ts`). Its three fixed 1500‑board runs gave +0.8%, +0.4% and +0.6% equity per board, pooling to +0.6% [0.1, 1.2] and +4.3k points per hand: a small gain, promoted (`bot-ladder.md`, note 10). Refit the model whenever card play or the rules change.
 
 ### Live‑play safety net
@@ -90,11 +90,21 @@ Simulations pass no deadline, so their results do not depend on the machine.
 | `bidMargin` | 0 | Required edge before bidding | 0.01: H0 on replication |
 | `auctionSigma` | 20k | Scale of the auction likelihood | 40k: H0 |
 | `ceilingShift`, `ceilingScale`, `partnerPassInformative` | 0, 1, true | Model of the other players' bidding | not yet tested (`bot-roadmap.md`) |
-| `inferencePool`, `auctionInference`, `throwOffs`, `specialsInference` | 6, false, false, true | Soft inference for card play | specials: +4.3k points per hand, promoted. Expert also weights by the auction under the fitted bidding model: +0.6% [−0.0, 1.3] equity, +3.9k [0.5, 7.3] points per hand on top of policy inference, promoted |
+| `inferencePool`, `auctionInference`, `throwOffs`, `specialsInference` | 6, false, false, true | Soft inference for card play | specials: +4.3k points per hand, promoted. Expert also weights by the auction under the fitted bidding model: +0.6% [−0.01, 1.27] equity, +3.9k [0.5, 7.3] points per hand on top of policy inference, promoted |
 | `leadWorlds` | 0 | Worlds for a lead before the exact window, the node budgets scaled to match (≤ `worlds`: off). Leads carry two thirds of the regret against the oracle | 180 vs 60 worlds: no better on 1200 banked leads (`bot-ladder.md`); rejected |
 | `policyInference`, `policyTemperature`, `policyMix` | false, 1.5, 0.8 | Policy‑based inference: weight worlds by every other player's past card plays under the card‑play model (`inference/policy.ts`, fitted by `scripts/policy-model.ts`), each play's likelihood mixed with uniform over the legal cards, then tempered | Expert: on. +0.8% [0.2, 1.4] equity, +3.9k [0.6, 7.1] points per hand on top of the bidding package, over two fixed 1500‑board runs, for about 10% more decision time; promoted |
 
-**Expert** (`EXPERT_DEFAULTS`) is Hard with `worlds` 60, `nodes` 8M, `exactTricks` 7, `worldNodes` 1.2M, `bidWorlds` 400, `screenWorlds` 80, `refineWorlds` 24, `refineTop` 5, `refineDepth` 2 and `refineNodes` 24M, sized for a 5 s reply time (4.8 s deadline; `bot-ladder.md`, Timing). These settings are frozen as the simulator spec `expert0` (Expert‑0, `packages/sim/src/registry.ts`), so that later changes to Expert can be measured against it. On top of them, Expert bids with the learned models: `contractValue: 'model'` values each sampled contract by the contract‑value model instead of the calibrated playout, and `ceilingModel: 'fitted'` predicts the rest of the auction (and weights the deals) by a model of how the bots really bid. It wins fewer contracts than Expert‑0 and makes more of them. In card play, `policyInference` weights the sampled worlds by how likely each makes every card the other players have played, under a model of how the bots play, and `auctionInference` by how likely each makes the auction, under the fitted bidding model. It is not offered at the table; see `bot-roadmap.md`.
+## How Expert differs
+
+**Expert** (`EXPERT_DEFAULTS` in `hard/index.ts`) is the same bot as Hard, the same PIMC card play and the same contract search, with a bigger budget and better inputs. It is offered at the table, with a 5 s reply time.
+
+- **Budget, sized for a 5 s reply time** (4.8 s deadline; `bot-ladder.md`, Timing): `worlds` 60, `nodes` 8M, `exactTricks` 7, `worldNodes` 1.2M, `bidWorlds` 400, `screenWorlds` 80, `refineWorlds` 24, `refineTop` 5, `refineDepth` 2 and `refineNodes` 24M. These settings alone are frozen as the simulator spec `expert0` (Expert‑0, `packages/sim/src/registry.ts`), so that each change can be measured against them. The budget goes to more worlds and to exact solving from seven tricks out, not to depth: three tricks deep cost 2.3× the time for no measurable gain.
+- **Bidding by learned models** (the bidding package): `contractValue: 'model'` values each sampled contract by the contract‑value model instead of the calibrated playout, and `ceilingModel: 'fitted'` predicts the rest of the auction, and weights the sampled deals by the bids so far, with a model of how the bots really bid. Expert wins fewer contracts than Hard and makes more of them.
+- **Card play's inference from everything seen**: besides the specials evidence that Hard uses, `policyInference` weights the sampled worlds by how likely each makes every card the other players have played, under the card‑play model, and `auctionInference` by how likely each makes the auction, under the fitted bidding model. Each is tempered and the card‑play model is mixed with uniform over the legal cards, so a player who plays differently from the bots (a human) does not make Expert certain of wrong things.
+
+Each piece was promoted only after two fixed runs of 1500 fresh boards, pooled (`bot-ladder.md`, Expert experiments): the bidding package +1.3% [0.4, 2.1] equity against Expert‑0, policy inference +0.8% [0.2, 1.4] on top, auction inference +0.6% [−0.01, 1.27] on top. **Against Hard**, on two more fixed runs of 1500 fresh boards: **+3.9% [3.0, 4.8]** equity and **+28.4k [23.3, 33.4]** points per hand. On the server its overall p99 is 1.8 s and its slowest decision 2.7 s, well inside the deadline.
+
+What Expert still loses is mostly information. An all‑seeing player gains about 130k a hand over it, and knowing partner's hand alone is worth 70k; PIMC's own flaws (strategy fusion) are worth only about 3k a hand in the last 4 tricks (`bot-ladder.md`, Headroom). The ideas left are each expected to gain under 0.5% a board (`bot-roadmap.md`).
 
 ## Where the code is
 

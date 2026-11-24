@@ -97,6 +97,8 @@ describe('lobby', () => {
     expect(h.room.start('ann')).toEqual(expect.objectContaining({ code: 'ROOM_NOT_READY' }));
     expect(h.room.setBot('ann', 1, 'hard')).toBeNull();
     expect(h.room.seats[1]).toEqual({ kind: 'bot', difficulty: 'hard', name: 'Bot 2' });
+    expect(h.room.setBot('ann', 2, 'expert')).toBeNull();
+    expect(h.room.seats[2]).toEqual({ kind: 'bot', difficulty: 'expert', name: 'Bot 3' });
     h.room.sit('ann', 3);
     expect(h.room.setBot('ann', 3, 'easy')).toEqual(
       expect.objectContaining({ code: 'SEAT_TAKEN' }),
@@ -186,6 +188,21 @@ describe('play', () => {
     await vi.advanceTimersByTimeAsync(10);
     expect(h.room.game?.hand?.phase).toBe('bidding');
     expect(h.room.game?.hand?.turn).toBe(0);
+  });
+
+  it("waits each level's own reply time, Expert's included", async () => {
+    const h = harness({ botDelayMs: { easy: 1, normal: 1, hard: 1, expert: 5_000 } });
+    readyRoom(h);
+    h.room.setBot('ann', 1, 'expert');
+    h.room.start('ann');
+    // Seat 1 opens the auction; as an Expert it answers (a bid, a pass or a misdeal) only
+    // after its 5 s.
+    expect(h.room.game?.hand?.turn).toBe(1);
+    const dealt = h.room.game;
+    await vi.advanceTimersByTimeAsync(4_900);
+    expect(h.room.game).toBe(dealt);
+    await vi.advanceTimersByTimeAsync(200);
+    expect(h.room.game).not.toBe(dealt);
   });
 
   it('plays a whole game with one human and three bots', async () => {
