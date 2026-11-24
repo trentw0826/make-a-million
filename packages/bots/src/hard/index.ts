@@ -93,10 +93,14 @@ export const HARD_DEFAULTS: HardOptions = {
  * on depth: searching three tricks deep instead of two cost 2.3× the time for no measurable
  * gain. 8M nodes caps the first exact solves (12M chose no better on 1348 banked positions),
  * and 24M re-check nodes cap the discard and trump decisions (99.9% of choices unchanged).
- * See docs/bot-ladder.md (Timing).
+ * See docs/bot-ladder.md (Timing). Bids value contracts with the learned contract-value model
+ * and predict the auction with the fitted bidding model: together +1.3% equity per board
+ * against Expert-0 on two fixed fresh 1500-board runs (docs/bot-ladder.md).
  */
 export const EXPERT_DEFAULTS: HardOptions = {
   ...HARD_DEFAULTS,
+  contractValue: 'model',
+  ceilingModel: 'fitted',
   worlds: 60,
   nodes: 8_000_000,
   depth: 2,
