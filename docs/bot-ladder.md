@@ -322,6 +322,18 @@ Every kind's p99 is at most 3.0 s against the 4.5 s target and the 4.8 s deadlin
 
 The models make a bid about 15 ms slower; everything else is run‑to‑run variation. Policy inference adds about 10% to the mean (226 against 204 ms), most of it late in the hand where decisions are fast. Auction inference adds about 9% more (246 ms mean), again mostly late in the hand. Card play's inference does not touch the contract decisions, so their bank timings stand. Every kind's p99 stays under 2.7 s against the 4.5 s target.
 
+**Rooms of Expert bots on one server** (`apps/server/scripts/load-test.ts expert 16,32,48,64,80 8`, from `97af165`, 2026‑11‑24). The rooms run through the server's own room code with four Expert bots each (the room's one human drops at once and Expert takes the seat: the worst case), on the server's default 4 bot workers, 8 minutes a step, idle machine apart from the desktop. Times run from request to answer, queueing included. A late answer is one after the 4.8 s deadline, which the server logs as "bot answered after its deadline"; the queue is the most decisions waiting or running at once.
+
+| Rooms | Decisions | Per second | p50 | p90 | p99 | max (ms) | Late | Most late by (ms) | Queue |
+|---|---|---|---|---|---|---|---|---|---|
+| 16 | 1567 | 3.3 | 80 | 615 | 1422 | 2096 | 0 | — | 4 |
+| 32 | 3123 | 6.5 | 83 | 631 | 1575 | 2287 | 0 | — | 8 |
+| 48 | 4685 | 9.8 | 142 | 2044 | 4706 | 4805 | 41 (0.9%) | 5 | 43 |
+| 64 | 6212 | 12.9 | 370 | 4447 | 4801 | 4810 | 298 (4.8%) | 10 | 58 |
+| 80 | 7783 | 16.2 | 2295 | 4775 | 4801 | 4884 | 745 (9.6%) | 84 | 78 |
+
+**One server with 4 bot workers carries 32 rooms of four Expert bots** with no late answers and its p99 near the idle machine's. From 48 rooms decisions queue: the search stops at its deadline, so answers still come within the 5 s reply time (the latest 84 ms past the deadline, inside its 200 ms margin), but a queued decision searches for less time and plays worse. Rooms with humans make fewer bot decisions, so carry more.
+
 ## Settings
 
 The `hard` defaults live in `packages/bots/src/hard/index.ts` (`HARD_DEFAULTS`). Individual options can be overridden in a spec, for example `hard:worlds=20,searchBid=0`.

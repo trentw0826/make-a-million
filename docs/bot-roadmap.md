@@ -2,9 +2,9 @@
 
 Where the work on the strong bots stands, what was learned, what is left, and how to pick it up. How the bots work is in `bot-design.md`; every measured result is in `bot-ladder.md`.
 
-## Status (2026‑11‑23)
+## Status (2026‑11‑24)
 
-**The Expert work is under way** (branch `expert-bot`; the brief is `.claude/prompts/expert-bot-research.md`). Where it stands:
+**The Expert work is done** (branch `expert-bot`, not merged; the brief is `.claude/prompts/expert-bot-research.md`). Where it stands:
 
 - **Phase 0, a baseline Expert that fits its time: done.** Expert‑0 (`expert0`) has every decision kind's p99 at 3.0 s or less, and beats the current Hard by **+1.35% [0.05, 2.65]** equity and **+9.8k [2.6, 17.1]** points per hand over 1500 fixed fresh boards (seed `xb1`). Not yet replicated.
 - **Phase 1, the literature review: done** (`bot-research.md`). The gains over PIMC in comparable games came from better inputs to it: learned contract values and policy‑based inference. Search fixes for strategy fusion changed about 1% of deals in bridge.
@@ -31,7 +31,7 @@ Where the work on the strong bots stands, what was learned, what is left, and ho
 - **The robustness gate: passed** (800 fresh boards each, `bot-ladder.md`, The robustness gate for Expert). Partnered with Normal, Expert's team beats Hard's by +0.78% [−0.80, 2.35] equity and +9.2k [0.6, 17.8] points per hand (`xb16`); partnered with Easy, +0.68% [−1.12, 2.48] and +15.3k [4.8, 25.9] (`xb17`). Against a passive bidder Expert gains +4.39% where Hard gains +2.42% (`xb18`); against Normal, +14.32% where Hard gains +11.59% (`xb19`).
 - **The final Expert against Expert‑0** (a fixed 1500 fresh boards, `xb21`): **+1.36% [0.10, 2.62]** equity and **+13.6k [6.6, 20.6]** points per hand. The promoted steps sum to about +2.7% equity, just above this interval, and +16.3k points, inside it: steps promoted on noisy estimates are biased upward. Measured through Hard, the difference is +2.55% [0.97, 4.13].
 - **Expert is offered at the table**, after Hard in the lobby's level picker, with a 5 s reply time (`multiplayer.md`).
-- **Next:** load‑test rooms of Expert bots (running).
+- **The load test: one server with its default 4 bot workers carries 32 rooms of four Expert bots** with no late answers (p99 1.6 s, request to answer). From 48 rooms decisions queue; answers still come inside the 5 s reply time, but queued decisions search for less time (`bot-ladder.md`, Timing).
 - **How the runs are driven:** a job runner in the session scratchpad takes commands one at a time from a jobs file; each experiment runs from a frozen detached checkout of the branch, so edits cannot reach a running experiment. If the session is lost, rerun the queued experiments from the commands in this section and `bot-ladder.md`.
 
 ## Status of the strong bots before the Expert work (2026‑11‑16)
@@ -58,12 +58,12 @@ The plan was search‑centred: an exact open‑hand solver, sampling of hidden c
 | 0 | Measurement: duplicate boards, SPRT, ladder, match‑equity table | Done; common random numbers added |
 | 1 | Fast play state, open‑hand solver, oracle; decide on Rust | Done; the search stays in TypeScript (`bot-design.md`, Performance) |
 | 2 | Belief sampler and PIMC card play | Done; Hard beat Normal |
-| 3 | Contract decisions by search and models | Search done, plus calibration. A learned contract‑value model was not built |
+| 3 | Contract decisions by search and models | Search done, plus calibration. Expert bids with a learned contract‑value model and a fitted bidding model |
 | 4 | Match equity as the objective | Contract decisions use it. Card play stays in points: equity play lost |
-| 5 | Inference | Auction, trump and throw‑off weighting: no gain. Specials inference: a small gain, promoted. A learned policy model was not built |
-| 6 | Beyond PIMC (αμ, recursive PIMC, ISMCTS) → Expert | Not started. Expert so far is only a bigger budget |
+| 5 | Inference | Auction, trump and throw‑off weighting: no gain. Specials inference: a small gain, promoted. Expert adds a learned card‑play policy model and auction weighting under the fitted bidding model |
+| 6 | Beyond PIMC (αμ, recursive PIMC, ISMCTS) → Expert | Not built: the headroom left by PIMC's own flaws is under 0.5% (`bot-ladder.md`, Headroom). Expert is a bigger budget with better inputs |
 | 7 | Learned evaluation, expert iteration | Not started. Python has no numpy or torch on the dev machine |
-| 8 | Production: worker pool, fixed delays, deadline, load test | Done for Hard, except a load test with many rooms |
+| 8 | Production: worker pool, fixed delays, deadline, load test | Done; rooms of Expert bots load‑tested. Hard rooms were not load‑tested separately |
 | 9 | Research track (mini‑game lab, self‑play learning) | Not started |
 
 ## What we learned
@@ -98,21 +98,9 @@ The plan was search‑centred: an exact open‑hand solver, sampling of hidden c
 
 ### To finish (concrete)
 
-1. **Expert's time budget, then a fresh test.** On a loaded machine its slowest decisions were:
-   - discard 3.3 s on average and up to 9.6 s;
-   - trump up to 7.5 s;
-   - card play with 21–28 cards left, p99 10.6 s.
-
-   The re‑check (24 deals × 5 candidates, two tricks deep) and exact solves seven tricks out dominate.
-   1. Set `refineNodes` and lower `nodes` / `exactTricks` until `scripts/timing.ts expert` shows p99 under about 4.5 s on an idle machine.
-   2. Run a fixed‑board test against the current Hard.
-   3. If Expert is clearly stronger, re‑enable it in one commit:
-      - `DifficultySchema` in `packages/protocol/src/index.ts`;
-      - `botDelayMs` in `apps/server/src/config.ts`;
-      - `DIFFICULTY_LABELS` and `DIFFICULTY_ORDER` in `apps/client/src/format.ts`;
-      - the level list in `docs/multiplayer.md` and `docs/architecture.md`;
-      - the "no Expert" check in `apps/client/e2e/smoke.ts`.
-2. **Load test** the server with several rooms of Hard bots on the production host size. Watch the `bot answered after its deadline` warnings.
+1. **Merge `expert-bot`** (the owner decides). Since the branch was cut, `main` gained solo mode, which conflicts in `packages/bots/src/contract/index.ts` (the bid loop, where solo analysis values several utilities at once and Expert values the others' contracts by `declareValue`), `hard/index.ts` and `bots/src/index.ts` (both sides added code at the same places), `Lobby.tsx` and `styles.css` (main replaced the level picker with a shared `Segmented` control that has three slots; it needs this branch's `--levels` count, so a fourth level fits), and `docs/todo.md`. After the merge the golden test must still pass and solo analysis should be checked with Expert.
+2. **Load‑test rooms of Hard bots** (1.5 s reply time), and both levels on the production host size; the Expert test ran on the dev machine.
+3. **Carry Expert's gains to Hard**, if wanted: policy inference and auction inference each cost Expert about 10% more card‑play time, which Hard's p99 (0.7–0.8 s against its 1.3 s deadline) should absorb, and the bidding models make a bid about 15 ms slower. Auction inference helps only with the fitted bidding model (`ceilingModel: 'fitted'`); with Hard's heuristic ceilings it was rejected. Each change would need its own duplicate tests at Hard's budget and a new golden test.
 
 ### Done since the pause: specials inference
 
