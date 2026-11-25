@@ -174,7 +174,7 @@ export function calibrated(
  * the utility `u` of the final captures: the calibrated greedy playout, or the contract-value
  * model's prediction (opts.contractValue). The playout runs once, whatever `u` is asked.
  */
-function declareValue(
+export function declareValue(
   deal: Deal,
   declarer: Seat,
   opts: ContractOptions,

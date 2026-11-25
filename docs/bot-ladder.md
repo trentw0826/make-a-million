@@ -345,6 +345,23 @@ The models make a bid about 15 ms slower; everything else is run‑to‑run vari
 
 **64 rooms of four Hard bots ran with no late answer** and the same times as 16 rooms: the limit is well beyond 64 rooms. A room of Expert bots costs the pool far more than a room of Hard bots, so on a mixed server Expert rooms set the capacity.
 
+**The solo analysis with Expert's settings** (`packages/sim/scripts/analysis-timing.ts`, 2026‑11‑24). Four Hard bots play each hand. Before every action Seat 0's view is analysed, as the server analyses each view it sends with hints on, and the Expert bot also makes each of Seat 0's decisions, for comparison. 80 hands (seed `analysis-timing`), 4 workers, idle machine apart from the desktop, no deadline:
+
+| Position | n | mean | p50 | p99 | max (ms) | Expert bot: mean / p99 / max (ms) |
+|---|---|---|---|---|---|---|
+| all | 4940 | 89 | 37 | 1145 | 1953 | |
+| bid | 151 | 78 | 80 | 98 | 99 | 56 / 86 / 89 |
+| discard | 22 | 986 | 992 | 1765 | 1765 | 1037 / 2011 / 2011 |
+| trump | 22 | 968 | 826 | 1953 | 1953 | 937 / 2145 / 2145 |
+| play | 1040 | 238 | 109 | 1684 | 1794 | 226 / 1686 / 1781 |
+| play, 17–28 cards left | 201 | 525 | 291 | 1726 | 1794 | 545 / 1746 / 1781 |
+| nothing to decide, bidding | 469 | 62 | 61 | 88 | 96 | |
+| nothing to decide, playing | 3120 | 35 | 17 | 215 | 286 | |
+
+**A decision costs the analysis what it costs the Expert bot**, because both run the same searches. Expert's rare slow decisions therefore apply too: on the decision bank, discards take up to 2.9 s and trumps up to 2.7 s. So `analysisMs` is Expert's own 4.8 s deadline, which stays a safety net. Positions with nothing to decide use the analysis's own small budgets and stay under 0.3 s. A solo hand with hints costs the workers about 5.5 s of analysis (62 positions). That is about three times Hard's analysis: on 200 hands with 12 workers, Hard's analysis took 47 ms a position on average and Expert's 147 ms, with Expert's slowest at 3.7 s. Running 12 workers at once slows every search by about 1.6×.
+
+On those 200 hands the two analyses pick the same best choice in 74.0% of 2486 decisions with more than one option. Valued by the other analysis, Hard's best gives up 6.8k on average and Expert's best 5.3k. The grades a player sees therefore change, toward the bot that measures +3.9% equity per board stronger.
+
 ## Settings
 
 The `hard` defaults live in `packages/bots/src/hard/index.ts` (`HARD_DEFAULTS`). Individual options can be overridden in a spec, for example `hard:worlds=20,searchBid=0`.

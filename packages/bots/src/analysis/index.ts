@@ -24,7 +24,7 @@ import {
 } from '@mam/search';
 import {
   type Candidate,
-  calibrated,
+  declareValue,
   discardPlans,
   evaluateBid,
   predictAuction,
@@ -35,11 +35,10 @@ import {
   auctionLikelihood,
   heuristicContract,
   modelCeiling,
-  playoutDeclare,
   playoutWith,
   utilityFor,
 } from '../contract/simulate';
-import { HARD_DEFAULTS, type HardOptions, pimcValues, worldWeight } from '../hard/index';
+import { EXPERT_DEFAULTS, type HardOptions, pimcValues, worldWeight } from '../hard/index';
 import { bestTrump } from '../heuristic/evaluate';
 import { labelFor, type MoveLabel } from './labels';
 
@@ -47,9 +46,9 @@ export { LABEL_LIMITS_K, labelFor, type MoveLabel } from './labels';
 
 /**
  * Solo analysis: what a decision and a position are worth to one seat, from that seat's
- * Observation alone (docs/bot-standards.md, Analysis). It reuses Hard's search, so it knows
- * exactly what a Hard bot in the seat would know, and it never plays: nothing here changes
- * what any bot does.
+ * Observation alone (docs/bot-standards.md, Analysis). It reuses Expert's search and
+ * inference, so it knows exactly what an Expert bot in the seat would know, and it never
+ * plays: nothing here changes what any bot does.
  *
  * Two units: `points` is the hand's expected score change for the seat's side minus the
  * opponents' ($1000s), which is what a move is graded by; `winChance` is the side's chance of
@@ -57,8 +56,8 @@ export { LABEL_LIMITS_K, labelFor, type MoveLabel } from './labels';
  */
 
 export interface AnalysisOptions {
-  /** The search settings (budgets, inference) the analysis borrows from Hard. */
-  readonly hard: HardOptions;
+  /** The search settings (budgets, inference, contract values) the analysis borrows. */
+  readonly search: HardOptions;
   /** Sampled deals for valuing a position when the seat has no decision to make. */
   readonly positionWorlds: number;
   /** Node budget of that position search, in total and per deal. */
@@ -68,8 +67,13 @@ export interface AnalysisOptions {
   readonly listDiscards: number;
 }
 
+/**
+ * Expert's settings: its decisions measure +3.9% equity per board over Hard's. A decision
+ * costs the analysis what it costs an Expert bot, so the server gives it Expert's deadline
+ * (docs/bot-ladder.md, Timing).
+ */
 export const ANALYSIS_DEFAULTS: AnalysisOptions = {
-  hard: HARD_DEFAULTS,
+  search: EXPERT_DEFAULTS,
   positionWorlds: 24,
   positionNodes: 1_500_000,
   positionWorldNodes: 150_000,
@@ -173,7 +177,7 @@ function withBest(kind: DecisionKind, options: DecisionOption[]): Decision {
 }
 
 // ---------------------------------------------------------------------------
-// Card play: Hard's PIMC search, valued at the root in money and in match equity.
+// Card play: the bot's PIMC search, valued at the root in money and in match equity.
 
 function analyzePlay(
   obs: Observation,
@@ -186,8 +190,8 @@ function analyzePlay(
   const team = teamOf(obs.seat);
   const money = captureUtility(ctx, team, 'margin', null);
   const equity = captureUtility(ctx, team, 'equity', ME_TABLE);
-  const weight = worldWeight(obs, opts.hard);
-  const result = pimcValues(obs, rng, opts.hard, {
+  const weight = worldWeight(obs, opts.search);
+  const result = pimcValues(obs, rng, opts.search, {
     ...(weight ? { weight } : {}),
     deadline,
     rootUtilities: [
@@ -218,7 +222,7 @@ function analyzeBid(
 ): Decision | null {
   const legal = obs.legal;
   if (legal.kind !== 'bid') return null;
-  const e = evaluateBid(obs, rng, opts.hard, deadline, ['margin', 'equity']);
+  const e = evaluateBid(obs, rng, opts.search, deadline, ['margin', 'equity']);
   if (!e) return null;
   const [money, equity] = e.byMode as [
     { declare: number; pass: number },
@@ -275,7 +279,7 @@ function analyzeContract(
     obs,
     rng,
     candidates,
-    { ...opts.hard, utility: 'margin' },
+    { ...opts.search, utility: 'margin' },
     deadline,
   );
 
@@ -295,7 +299,7 @@ function analyzeContract(
 
   // Match equity by greedy playouts over shared sampled deals (cheap, and enough for a bar).
   const belief = buildBelief(obs);
-  const deals = Array.from({ length: opts.hard.screenWorlds }, () => belief.sample(rng));
+  const deals = Array.from({ length: opts.search.screenWorlds }, () => belief.sample(rng));
   const u = utilityFor(obs, contract.bidder, contract.amount, 'equity');
   const equityOf = (c: Candidate) => {
     let total = 0;
@@ -369,7 +373,7 @@ function auctionOutlook(
   // A hand thrown in is dealt again by the next seat.
   const redeal = startEquity(ME_TABLE, obs.scores, team, nextSeat(obs.dealer));
   const belief = buildBelief(obs);
-  const h = opts.hard;
+  const h = opts.search;
   let wSum = 0;
   let total = 0;
   for (let i = 0; i < h.bidWorlds; i++) {
@@ -385,11 +389,7 @@ function auctionOutlook(
     }
     const outcome = predictAuction(ceilings, high, minBid, raise, step);
     const value = outcome
-      ? calibrated(
-          utilityFor(obs, outcome.seat, outcome.price, 'equity'),
-          teamOf(outcome.seat),
-          h,
-        )(playoutDeclare(deal, outcome.seat))
+      ? declareValue(deal, outcome.seat, h)(utilityFor(obs, outcome.seat, outcome.price, 'equity'))
       : redeal;
     wSum += w;
     total += w * value;
@@ -407,7 +407,7 @@ function contractOutlook(obs: Observation, rng: Rng, opts: AnalysisOptions): num
   const bidder = contract.bidder;
   const belief = buildBelief(obs);
   const u = utilityFor(obs, bidder, contract.amount, 'equity');
-  const n = opts.hard.screenWorlds;
+  const n = opts.search.screenWorlds;
   let total = 0;
   for (let i = 0; i < n; i++) {
     const world = belief.sample(rng);
@@ -428,17 +428,17 @@ function contractOutlook(obs: Observation, rng: Rng, opts: AnalysisOptions): num
 
 /**
  * During play, whoever is to move: each sampled deal searched from the current position as
- * Hard would search it (two tricks deep, exact near the end), then valued in match equity.
+ * the bot would search it (two tricks deep, exact near the end), then valued in match equity.
  */
 function playOutlook(obs: Observation, rng: Rng, opts: AnalysisOptions, deadline: number): number {
   const ctx = handContext(obs);
   if (!ctx || obs.trump === null || obs.turn === null) return 0.5;
   const team = teamOf(obs.seat);
   const equity = captureUtility(ctx, team, 'equity', ME_TABLE);
-  const weight = worldWeight(obs, opts.hard);
+  const weight = worldWeight(obs, opts.search);
   const belief = buildBelief(obs);
   const live = obs.handSizes.reduce((a, b) => a + b, 0) + (obs.currentTrick?.plays.length ?? 0);
-  let depth = live <= opts.hard.exactTricks * 4 ? Number.POSITIVE_INFINITY : opts.hard.depth;
+  let depth = live <= opts.search.exactTricks * 4 ? Number.POSITIVE_INFINITY : opts.search.depth;
   const solver = new Solver({ mode: 'linear', maxEntries: 400_000 });
   solver.deadline = deadline;
   let wSum = 0;
@@ -469,7 +469,7 @@ function playOutlook(obs: Observation, rng: Rng, opts: AnalysisOptions, deadline
           continue;
         }
         if (!(e instanceof SearchAborted)) throw e;
-        depth = depth === Number.POSITIVE_INFINITY ? opts.hard.depth : Math.max(1, depth - 1);
+        depth = depth === Number.POSITIVE_INFINITY ? opts.search.depth : Math.max(1, depth - 1);
       }
     }
   }

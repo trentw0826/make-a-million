@@ -22,14 +22,13 @@ import {
   reviewMove,
 } from '../src/analysis/index';
 import { decideDiscard, decideTrump } from '../src/contract/index';
-import { HARD_DEFAULTS } from '../src/hard/index';
 import { HeuristicBot } from '../src/heuristic/index';
 
 /** Small budgets: the tests check shape and consistency, not strength. */
 const FAST: AnalysisOptions = {
   ...ANALYSIS_DEFAULTS,
-  hard: {
-    ...HARD_DEFAULTS,
+  search: {
+    ...ANALYSIS_DEFAULTS.search,
     worlds: 6,
     exactWorlds: 6,
     nodes: 150_000,
@@ -164,11 +163,11 @@ describe('solo analysis', () => {
     );
   });
 
-  it("leaves Hard's discard and trump legal and repeatable", () => {
+  it("leaves the bot's discard and trump legal and repeatable", () => {
     for (const kind of ['discard', 'trump'] as const) {
       for (const state of decisions(kind, 0, 2)) {
         const obs = observe(state, 0);
-        const opts = FAST.hard;
+        const opts = FAST.search;
         const a =
           kind === 'discard'
             ? decideDiscard(obs, Rng.fromSeed('k'), opts)

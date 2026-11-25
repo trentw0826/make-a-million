@@ -1,10 +1,4 @@
-import {
-  ANALYSIS_DEFAULTS,
-  type AnalysisOptions,
-  analyze,
-  fallbackAction,
-  HARD_DEFAULTS,
-} from '@mam/bots';
+import { ANALYSIS_DEFAULTS, type AnalysisOptions, analyze, fallbackAction } from '@mam/bots';
 import { type Action, legalMoves, Rng } from '@mam/engine';
 import type { AnalysisMode, ServerMessage } from '@mam/protocol';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -16,8 +10,8 @@ import { Room } from '../src/room';
 /** The analysis on small budgets: these tests check when it is sent, not how good it is. */
 const CHEAP: AnalysisOptions = {
   ...ANALYSIS_DEFAULTS,
-  hard: {
-    ...HARD_DEFAULTS,
+  search: {
+    ...ANALYSIS_DEFAULTS.search,
     worlds: 4,
     exactWorlds: 4,
     nodes: 60_000,
