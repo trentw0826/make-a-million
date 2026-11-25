@@ -332,7 +332,7 @@ The models make a bid about 15 ms slower; everything else is run‑to‑run vari
 | 64 | 6212 | 12.9 | 370 | 4447 | 4801 | 4810 | 298 (4.8%) | 10 | 58 |
 | 80 | 7783 | 16.2 | 2295 | 4775 | 4801 | 4884 | 745 (9.6%) | 84 | 78 |
 
-**One server with 4 bot workers carries 32 rooms of four Expert bots** with no late answers and its p99 near the idle machine's. From 48 rooms decisions queue: the search stops at its deadline, so answers still come within the 5 s reply time (the latest 84 ms past the deadline, inside its 200 ms margin), but a queued decision searches for less time and plays worse. Rooms with humans make fewer bot decisions, so carry more.
+**One server with 4 bot workers carried 32 rooms of four Expert bots** (at the first 5 s reply time for every decision) with no late answers and its p99 near the idle machine's. From 48 rooms decisions queue: the search stops at its deadline, so answers still come within the 5 s reply time (the latest 84 ms past the deadline, inside its 200 ms margin), but a queued decision searches for less time and plays worse. Rooms with humans make fewer bot decisions, so carry more.
 
 **Rooms of Hard bots** (`load-test.ts hard 16,32,48,64 6`, from `cbea98e`, 2026‑11‑24; the same setup, 1.5 s reply time, 1.3 s deadline, 6 minutes a step):
 
@@ -344,6 +344,32 @@ The models make a bid about 15 ms slower; everything else is run‑to‑run vari
 | 64 | 13063 | 36.3 | 18 | 118 | 277 | 535 | 0 | 8 |
 
 **64 rooms of four Hard bots ran with no late answer** and the same times as 16 rooms: the limit is well beyond 64 rooms. A room of Expert bots costs the pool far more than a room of Hard bots, so on a mixed server Expert rooms set the capacity.
+
+**Expert's reply time by kind of decision** (2026‑11‑24). Expert first replied after 5 s to everything, though most of its decisions take well under a second. It now replies in 1.5 s to a bid or misdeal call (and to confirm a hand result), 2.5 s to a card and 5 s to the discards and trump, each with its deadline 200 ms earlier. The kind of decision is public, so these times reveal nothing (`bot-standards.md`). The budget is unchanged, so while no deadline fires Expert makes exactly the same moves. With three Expert bots the wait for their moves in a hand falls from about 230 s to about 115 s (about 39 cards, 5 or 6 bids and 1.5 contract decisions). Re‑timed on the idle machine with 4 workers: a new 400‑hand decision bank from Hard self‑play (seed `timing-xb1`), and 120 hands of Expert self‑play (`timing-xb2`):
+
+| Decision | n | p99 | max (ms) | Reply / deadline (ms) |
+|---|---|---|---|---|
+| bank: bid | 3101 | 102 | 147 | 1500 / 1300 |
+| bank: misdeal | 22 | 94 | 94 | 1500 / 1300 |
+| bank: play, 21–28 cards left | 2696 | 1925 | 2128 | 2500 / 2300 |
+| bank: play, 13–20 cards left | 1366 | 379 | 675 | 2500 / 2300 |
+| bank: discard | 400 | 2595 | 2942 | 5000 / 4800 |
+| bank: trump | 400 | 2518 | 2788 | 5000 / 4800 |
+| self‑play: play | 6240 | 1831 | 2219 | 2500 / 2300 |
+| self‑play: discard | 120 | 2698 | 2728 | 5000 / 4800 |
+| self‑play: trump | 120 | 2749 | 2904 | 5000 / 4800 |
+
+Every decision finished inside its deadline. Card play has the least room: its slowest, with 21–28 cards left where the exact solving begins, took 2.2 s against 2.3 s, about the margin Hard runs with (its slowest 1.1–1.3 s against a 1.3 s deadline). On a slower host the deadline will fire on the slowest card plays first; each such play uses the deals solved so far and is a little weaker. If `bot answered after its deadline` warnings appear, give card play 3 s.
+
+Rooms of four Expert bots with these reply times (`load-test.ts expert 16,24,32 6`, the same setup as above, 6 minutes a step):
+
+| Rooms | Decisions | Per second | p50 | p90 | p99 | max (ms) | Late | Most late by (ms) | Queue |
+|---|---|---|---|---|---|---|---|---|---|
+| 16 | 2221 | 6.2 | 68 | 591 | 1433 | 1968 | 0 | — | 7 |
+| 24 | 3338 | 9.3 | 89 | 794 | 1849 | 2624 | 4 (0.12%) | 1 | 16 |
+| 32 | 4439 | 12.3 | 100 | 980 | 2009 | 2308 | 15 (0.34%) | 8 | 24 |
+
+**The faster pace halves a server's Expert capacity: 16 rooms of four Expert bots, against 32 before.** Each room asks for decisions about twice as often, so 16 rooms now make as many decisions a second as 32 did. At 24 and 32 rooms a few decisions were cut short at their deadline, and still answered within the reply time.
 
 **The solo analysis with Expert's settings** (`packages/sim/scripts/analysis-timing.ts`, 2026‑11‑24). Four Hard bots play each hand. Before every action Seat 0's view is analysed, as the server analyses each view it sends with hints on, and the Expert bot also makes each of Seat 0's decisions, for comparison. 80 hands (seed `analysis-timing`), 4 workers, idle machine apart from the desktop, no deadline:
 

@@ -216,19 +216,40 @@ describe('play', () => {
     expect(h.room.game?.hand?.turn).toBe(0);
   });
 
-  it("waits each level's own reply time, Expert's included", async () => {
-    const h = harness({ botDelayMs: { easy: 1, normal: 1, hard: 1, expert: 5_000 } });
+  it("waits each level's own reply time, Expert's by the kind of decision", async () => {
+    const expert = { bid: 3_000, play: 1, discard: 1, trump: 1, continue: 1 };
+    const h = harness({ botDelayMs: { easy: 1, normal: 1, hard: 1, expert } });
     readyRoom(h);
     h.room.setBot('ann', 1, 'expert');
     h.room.start('ann');
     // Seat 1 opens the auction; as an Expert it answers (a bid, a pass or a misdeal) only
-    // after its 5 s.
+    // after its time for a bid.
     expect(h.room.game?.hand?.turn).toBe(1);
     const dealt = h.room.game;
-    await vi.advanceTimersByTimeAsync(4_900);
+    await vi.advanceTimersByTimeAsync(2_900);
     expect(h.room.game).toBe(dealt);
     await vi.advanceTimersByTimeAsync(200);
     expect(h.room.game).not.toBe(dealt);
+  });
+
+  it('times a card differently from a bid when the level says so', async () => {
+    const quick = { bid: 1, play: 700, discard: 1, trump: 1, continue: 1 };
+    const h = harness({ botDelayMs: { easy: quick, normal: quick, hard: 1, expert: 1 } });
+    readyRoom(h);
+    h.room.start('ann');
+    // On to the first card a bot is to play (Ann's own turns taken at once).
+    for (let i = 0; i < 2_000; i++) {
+      const game = h.room.game;
+      if (game?.phase === 'playing' && game.hand?.turn !== 0) break;
+      if (game?.hand?.turn === 0) humanActs(h, 'ann');
+      await vi.advanceTimersByTimeAsync(1);
+    }
+    expect(h.room.game?.phase).toBe('playing');
+    const before = h.room.game;
+    await vi.advanceTimersByTimeAsync(690);
+    expect(h.room.game).toBe(before);
+    await vi.advanceTimersByTimeAsync(20);
+    expect(h.room.game).not.toBe(before);
   });
 
   it('plays a whole game with one human and three bots', async () => {

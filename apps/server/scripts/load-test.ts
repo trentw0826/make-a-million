@@ -54,9 +54,16 @@ const pct = (sorted: readonly number[], p: number) =>
     ? 0
     : (sorted[Math.min(sorted.length - 1, Math.floor(p * sorted.length))] ?? 0);
 
+const reply = config.botDelayMs[level];
+const replyText =
+  typeof reply === 'number'
+    ? `${reply} ms`
+    : Object.entries(reply)
+        .map(([kind, ms]) => `${kind} ${ms} ms`)
+        .join(', ');
 console.log(
-  `${level} rooms, ${config.botWorkers} bot workers, reply time ${config.botDelayMs[level]} ms ` +
-    `(deadline ${config.botDelayMs[level] - config.botDeadlineMarginMs} ms), ${minutes} min a step`,
+  `${level} rooms, ${config.botWorkers} bot workers, reply time ${replyText} ` +
+    `(each deadline ${config.botDeadlineMarginMs} ms before it), ${minutes} min a step`,
 );
 console.log('rooms  decisions  /s   p50   p90   p99    max (ms)  late  late%  max late  queue');
 for (const n of counts) {
