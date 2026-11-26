@@ -25,7 +25,7 @@ import type {
   ServerMessage,
 } from '@mam/protocol';
 import type { AnalyzeSeat, DecideBot } from './botPool';
-import type { ServerConfig } from './config';
+import { replyMs, type ServerConfig } from './config';
 import { newGameSeed } from './ids';
 import type { Logger } from './log';
 
@@ -617,7 +617,7 @@ export class Room {
       for (const seat of game.hand.continuePending) {
         if (!this.isBotControlled(seat)) continue;
         const delay = watched
-          ? this.deps.config.botDelayMs[this.botDifficulty(seat)]
+          ? replyMs(this.deps.config, this.botDifficulty(seat), 'continue')
           : this.deps.config.botContinueDelayMs;
         this.scheduleBot(seat, delay);
       }
@@ -626,8 +626,10 @@ export class Room {
 
     for (const seat of SEATS) {
       if (!this.isBotControlled(seat)) continue;
-      if (legalMoves(game, seat).kind === 'none') continue;
-      this.scheduleBot(seat, this.deps.config.botDelayMs[this.botDifficulty(seat)]);
+      const kind = legalMoves(game, seat).kind;
+      if (kind === 'none') continue;
+      // By the kind of decision only, which the whole table can see.
+      this.scheduleBot(seat, replyMs(this.deps.config, this.botDifficulty(seat), kind));
     }
   }
 

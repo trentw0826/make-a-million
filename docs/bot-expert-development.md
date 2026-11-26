@@ -19,7 +19,7 @@ Expert is Hard's search (PIMC card play, simulated contract decisions) with a bi
 | Expert‑0 (where it started) | `xb21`: 1500 fixed | +1.36% [0.10, 2.62] | +13.6k [6.6, 20.6] |
 | Normal | `xb19`: 800 fixed | +14.32% [12.53, 16.12] (Hard: +11.59%) | +69.7k [60.7, 78.6] (Hard: +55.2k) |
 
-It passed the robustness gate (a weak partner, a passive bidder, a weaker table). Its slowest decision on the dev machine took 2.7 s against a 4.8 s deadline, and one server with its default 4 bot workers carries 32 rooms of four Expert bots without a late answer. Hard is unchanged: its `HARD_DEFAULTS` are untouched and a golden test of its decisions still passes.
+It passed the robustness gate (a weak partner, a passive bidder, a weaker table). Its slowest decision on the dev machine took 2.7 s against a 4.8 s deadline, and one server with its default 4 bot workers carries 32 rooms of four Expert bots without a late answer (16 since its reply times were shortened, `bot-ladder.md`). Hard is unchanged: its `HARD_DEFAULTS` are untouched and a golden test of its decisions still passes.
 
 ## The brief
 
@@ -267,7 +267,7 @@ From 48 rooms decisions queue. Every search stops at its deadline, so answers st
 The ship commit (`97af165`) makes `expert` a level in the protocol's `DifficultySchema`, gives it a 5 s `botDelayMs`, adds its label and its place after Hard in the lobby's level picker, and updates the level lists in `multiplayer.md`, `architecture.md` and the README. It removes the strong‑bots item from `todo.md` and checks the four levels in the e2e smoke test. The server already ran Expert on its worker threads alongside Hard. `pnpm check`, the server tests three runs in a row and `pnpm e2e` passed, and the lobby and table screenshots were looked at.
 
 **Decisions made by the owner** (24 November):
-- Keep the full 5 s Expert as the default Expert for now. Its p99 of 1.8 s would allow a shorter reply time, but that is left for later.
+- Keep the full 5 s Expert as the default Expert for now. Its p99 of 1.8 s would allow a shorter reply time, but that is left for later. (Done later the same day, at the owner's choice: a reply time per kind of decision, with the same budget and so the same moves; `bot-ladder.md`, Timing.)
 - Merge the branch into `main`. `main` had gained solo mode since the branch was cut; that merge is described in its own commit.
 
 ## What was learned
