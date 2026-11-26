@@ -124,6 +124,26 @@ export interface RoomView {
   /** Solo only: there is a decision of yours to take back, or one taken back to replay. */
   readonly canUndo: boolean;
   readonly canRedo: boolean;
+  /**
+   * Solo only, once the game is over: every decision of yours the analysis graded, in the
+   * order made (none if the analysis was off). Null elsewhere and while the game goes on.
+   */
+  readonly gameReview: readonly ReviewedMove[] | null;
+}
+
+/** One of your decisions in a solo game, as the analysis graded it (`RoomView.gameReview`). */
+export interface ReviewedMove {
+  /** How many of the game's actions came before it. */
+  readonly ply: number;
+  /** The hand it was made in (1 for the first). */
+  readonly hand: number;
+  /** For a card, the trick it was played to (1–13); null for any other decision. */
+  readonly trick: number | null;
+  readonly played: Action;
+  readonly label: MoveLabel;
+  /** Points given up against the best choice ($1000s, never negative). */
+  readonly lossK: number;
+  readonly best: Action;
 }
 
 export interface ResultTimer {

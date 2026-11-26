@@ -1,0 +1,46 @@
+/* The game review on the game-over screen (GameReview.tsx): your decisions by grade, what
+   they gave up, and the costliest moments. */
+.review {
+  display: grid;
+  gap: var(--space-4);
+  margin-bottom: var(--space-6);
+}
+.title {
+  margin: 0;
+}
+.grades {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3) var(--space-5);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.grades li {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+}
+.summary {
+  margin: 0;
+}
+.moments {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--text-sm);
+  line-height: var(--leading-tight);
+}
+.moments li {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: baseline;
+  gap: var(--space-4);
+}
+/* A sum of money never breaks across lines (not even after its minus sign). */
+.amount {
+  white-space: nowrap;
+}

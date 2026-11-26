@@ -1,4 +1,10 @@
-import { ANALYSIS_DEFAULTS, type AnalysisOptions, analyze, fallbackAction } from '@mam/bots';
+import {
+  ANALYSIS_DEFAULTS,
+  type Analysis,
+  type AnalysisOptions,
+  analyze,
+  fallbackAction,
+} from '@mam/bots';
 import { type Action, legalMoves, Rng } from '@mam/engine';
 import type { AnalysisMode, ServerMessage } from '@mam/protocol';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -699,6 +705,65 @@ describe('solo', () => {
       const [review] = sentOf(h, 'moveReview');
       expect(review).toMatchObject({ type: 'moveReview', ply: expect.any(Number) });
       expect(h.room.reviews).toHaveLength(1);
+    });
+
+    it('sends the game review once the game is over', async () => {
+      // Values every legal choice (the first best, each next 1k worse), a little late, so
+      // the last move's review can land after the game has ended.
+      const flat: AnalyzeSeat = (obs, _seed, _deadline, include) => {
+        const l = obs.legal;
+        const actions: Action[] =
+          l.kind === 'play'
+            ? l.cardIds.map((cardId) => ({ type: 'playCard', cardId }))
+            : l.kind === 'bid'
+              ? [
+                  { type: 'bid', amount: l.minBid },
+                  ...(l.canPass ? [{ type: 'pass' as const }] : []),
+                ]
+              : l.kind === 'trump'
+                ? l.suits.map((suit) => ({ type: 'nameTrump', suit }))
+                : l.kind === 'discard' && include
+                  ? [{ type: 'discard', cardIds: [...include] }]
+                  : [];
+        const kind =
+          l.kind === 'play' || l.kind === 'bid' || l.kind === 'discard' ? l.kind : 'trump';
+        const options = actions.map((action, i) => ({ action, points: -i, winChance: 0.5 }));
+        const analysis: Analysis = {
+          winChance: 0.5,
+          decision: options.length > 0 ? { kind, options, best: 0 } : null,
+        };
+        return new Promise((resolve) => setTimeout(() => resolve(analysis), 50));
+      };
+      const h = begun('feedback', flat);
+      const act = vi.spyOn(h.room, 'action');
+      for (let i = 0; i < 20_000 && h.room.phase === 'playing'; i++) {
+        await vi.advanceTimersByTimeAsync(5);
+        if (h.room.phase === 'playing') humanActs(h, 'ann');
+        if (i === 100) {
+          expect(h.last('ann', 'room')).toMatchObject({ room: { gameReview: null } });
+        }
+      }
+      expect(h.room.phase).toBe('finished');
+      await vi.advanceTimersByTimeAsync(500);
+      const room = h.last('ann', 'room');
+      if (room?.type !== 'room') throw new Error('no room');
+      const review = room.room.gameReview ?? [];
+      expect(review.length).toBeGreaterThan(20);
+      expect(review).toHaveLength(sentOf(h, 'moveReview').length);
+      // Each review is of one of Ann's own actions, in the order she made them.
+      const anns = act.mock.calls.filter(([id]) => id === 'ann').map(([, a]) => a);
+      let j = 0;
+      review.forEach((m, i) => {
+        if (i > 0) expect(m.ply).toBeGreaterThan((review[i - 1] as { ply: number }).ply);
+        while (j < anns.length && JSON.stringify(anns[j]) !== JSON.stringify(m.played)) j++;
+        expect(j).toBeLessThan(anns.length);
+        j++;
+        expect(m.hand).toBeGreaterThanOrEqual(1);
+        if (m.played.type === 'playCard') {
+          expect(m.trick).toBeGreaterThanOrEqual(1);
+          expect(m.trick).toBeLessThanOrEqual(13);
+        } else expect(m.trick).toBeNull();
+      });
     });
 
     it('sends no review for a move taken back first', async () => {

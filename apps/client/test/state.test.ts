@@ -27,6 +27,7 @@ const room: RoomView = {
   analysis: 'off',
   canUndo: false,
   canRedo: false,
+  gameReview: null,
 };
 
 const welcome: ServerMessage = { type: 'welcome', playerId: 'p1', token: 't', name: 'Ann' };
