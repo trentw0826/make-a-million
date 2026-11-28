@@ -88,7 +88,6 @@
 .felt,
 .lobby,
 .home,
-.topbar,
 .chair-bot {
   --text-muted: var(--on-felt-muted);
   --text-good: var(--good-on-felt);
@@ -138,71 +137,6 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-}
-.topbar {
-  position: sticky;
-  top: 0;
-  z-index: var(--z-sticky);
-  height: var(--topbar-h);
-  display: flex;
-  align-items: center;
-  gap: var(--space-6);
-  padding: 0 var(--space-6);
-  background: var(--bar);
-  color: var(--paper);
-  border-bottom: 1px solid var(--line-on-felt-faint);
-}
-.brand {
-  display: flex;
-}
-
-/* Wordmark --------------------------------------------------------------- */
-/* The wordmark is drawn at whatever size it is given; the coin and the gap grow with it. */
-.wordmark {
-  display: inline-flex;
-  align-items: center;
-  /* stylelint-disable-next-line declaration-property-unit-allowed-list -- scales with the wordmark */
-  gap: 0.4em;
-  font-family: var(--font-display);
-  font-weight: var(--weight-semibold);
-  letter-spacing: var(--tracking-display);
-}
-.wordmark-coin {
-  width: 1.25em;
-  height: 1.25em;
-  flex: none;
-}
-.wordmark-million {
-  color: var(--accent-light);
-}
-/* The name on the home table. */
-.wordmark-large {
-  font-size: var(--text-3xl);
-}
-.topbar-room {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  margin-right: var(--space-3);
-}
-.room-code {
-  font-family: var(--font-mono);
-  letter-spacing: var(--tracking-code);
-}
-.topbar-actions {
-  display: flex;
-  gap: var(--space-4);
-  margin-left: auto;
-}
-.conn-banner {
-  position: sticky;
-  top: var(--topbar-h);
-  z-index: var(--z-sticky);
-  padding: var(--space-3) var(--space-6);
-  text-align: center;
-  font-size: var(--text-sm);
-  background: var(--warn-bg);
-  color: var(--warn-ink);
 }
 
 /* Home ------------------------------------------------------------------- */
@@ -1880,21 +1814,6 @@ button.card-selected:hover:not([aria-disabled="true"]) {
   opacity: var(--opacity-muted);
 }
 
-/* Toast ------------------------------------------------------------------ */
-.toast {
-  position: fixed;
-  left: 50%;
-  bottom: 24px;
-  transform: translateX(-50%);
-  z-index: var(--z-toast);
-}
-.toast-error {
-  border-left: 5px solid var(--danger);
-}
-.toast-info {
-  border-left: 5px solid var(--accent);
-}
-
 /* A narrow window: the chairs line up around a smaller table. */
 @media (max-width: 700px) {
   .lobby-table {
@@ -1969,13 +1888,6 @@ button.card-selected:hover:not([aria-disabled="true"]) {
   .table-corner {
     grid-area: corner;
   }
-  .brand {
-    display: none;
-  }
-  .topbar {
-    gap: var(--space-4);
-    padding: 0 var(--space-4);
-  }
 }
 
 /* Motion ----------------------------------------------------------------- */
@@ -2009,16 +1921,6 @@ button.card-selected:hover:not([aria-disabled="true"]) {
 }
 .modal {
   animation: rise-in var(--dur-base) var(--ease-out);
-}
-
-@keyframes toast-in {
-  from {
-    opacity: 0;
-    transform: translate(-50%, 16px);
-  }
-}
-.toast {
-  animation: toast-in var(--dur-base) var(--ease-out);
 }
 
 /* Each side's change after a hand: rises, lingers, fades. */
@@ -2083,7 +1985,6 @@ button.card-selected:hover:not([aria-disabled="true"]) {
   .modal-backdrop,
   .modal,
   .guide-panel,
-  .toast,
   .delta-float {
     animation: none;
   }

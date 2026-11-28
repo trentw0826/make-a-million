@@ -154,7 +154,7 @@ describe('How to play', () => {
 describe('top bar', () => {
   it('stays off the home screen, where sound and How to play sit in the corner', () => {
     renderWith();
-    expect(document.querySelector('.topbar')).toBeNull();
+    expect(screen.queryByRole('banner')).toBeNull();
     const corner = document.querySelector('.home-corner') as HTMLElement;
     expect(
       within(corner)

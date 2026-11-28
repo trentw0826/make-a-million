@@ -480,7 +480,7 @@ async function act(page: Page, shoot: Shoot): Promise<boolean> {
         await blocked.click({ ...quick, force: true });
         check(
           await page
-            .locator('.toast')
+            .getByRole('status')
             .getByText(reason ?? '')
             .isVisible(),
           'clicking a greyed-out card shows the reason',
@@ -552,7 +552,7 @@ async function fullHand(browser: Browser, base: string): Promise<void> {
 
   // How to play, from the home screen's corner (the home screen has no top bar).
   await page.goto(base);
-  check((await page.locator('.topbar').count()) === 0, 'the home screen has no top bar');
+  check((await page.getByRole('banner').count()) === 0, 'the home screen has no top bar');
   await page.locator('.home-corner').getByRole('button', { name: 'How to play' }).click();
   const help = page.getByRole('dialog', { name: 'How to play' });
   check(await help.isVisible(), 'How to play opens from the corner of the home screen');
@@ -601,7 +601,7 @@ async function fullHand(browser: Browser, base: string): Promise<void> {
     (await corner.locator('button svg').count()) === 3 &&
       (await corner.getByRole('button', { name: 'Score sheet', exact: true }).count()) === 1 &&
       (await corner.getByRole('button', { name: 'How to play' }).count()) === 1 &&
-      (await page.locator('.topbar').getByRole('button', { name: 'How to play' }).count()) === 0,
+      (await page.getByRole('banner').getByRole('button', { name: 'How to play' }).count()) === 0,
     'the score sheet, sound and How to play sit as icons in the corner by your seat',
   );
   check(
@@ -904,7 +904,13 @@ async function soloGame(browser: Browser, base: string): Promise<void> {
     (await page.getByRole('button', { name: 'Sit here' }).count()) === 0,
     'solo: there are no chairs to take',
   );
-  check(!(await page.locator('.topbar-room').isVisible()), 'solo: no room code is shown');
+  check(
+    (await page
+      .getByRole('banner')
+      .getByText(/^Room\b/)
+      .count()) === 0,
+    'solo: no room code is shown',
+  );
   await levels.first().getByRole('button', { name: 'Hard' }).click();
   const modes = page.getByRole('group', { name: 'Analysis' });
   await modes.getByRole('button', { name: 'Hints' }).click();

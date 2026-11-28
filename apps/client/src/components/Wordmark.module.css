@@ -1,0 +1,36 @@
+/* The game's name as a mark (Wordmark.tsx). It is drawn at whatever size it is given: the
+   coin and the gap grow with it. */
+.wordmark {
+  display: inline-flex;
+  align-items: center;
+  /* stylelint-disable-next-line declaration-property-unit-allowed-list -- scales with the wordmark */
+  gap: 0.4em;
+  font-family: var(--font-display);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-display);
+}
+/* The name on the home table. */
+.large {
+  font-size: var(--text-3xl);
+}
+.million {
+  color: var(--accent-light);
+}
+
+.coin {
+  width: 1.25em;
+  height: 1.25em;
+  flex: none;
+}
+.coinFace {
+  fill: var(--accent);
+}
+.coinRim {
+  fill: none;
+  stroke: var(--accent-light);
+}
+.coinMark {
+  fill: var(--bar);
+  font-family: var(--font-display);
+  font-weight: var(--weight-bold);
+}

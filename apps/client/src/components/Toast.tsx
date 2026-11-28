@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { useGame } from '../store';
+import styles from './Toast.module.css';
 import { Panel } from './ui/Panel';
 
 export function Toast() {
@@ -18,7 +19,7 @@ export function Toast() {
       as="output"
       tone="paper"
       pad="sm"
-      className={`toast toast-${toast.kind}`}
+      className={`${styles.toast} ${styles[toast.kind]}`}
       aria-live="polite"
     >
       {toast.text}

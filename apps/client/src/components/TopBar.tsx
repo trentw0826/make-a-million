@@ -3,6 +3,7 @@ import { sound } from '../sound/player';
 import { useGame } from '../store';
 import { Icon } from './Icon';
 import { Modal } from './Modal';
+import styles from './TopBar.module.css';
 import { Button } from './ui/Button';
 import { Wordmark } from './Wordmark';
 
@@ -79,15 +80,15 @@ export function TopBar() {
 
   if (!room) return null;
   return (
-    <header className="topbar">
-      <span className="brand">
+    <header className={styles.bar}>
+      <span className={styles.brand}>
         <Wordmark />
       </span>
-      <nav className="topbar-actions" aria-label="Game">
+      <nav className={styles.actions} aria-label="Game">
         {/* A solo room's code is no use to anyone else, so it is not shown. */}
         {room && !room.solo && (
-          <span className="topbar-room">
-            Room <strong className="room-code">{room.code}</strong>
+          <span className={styles.room}>
+            Room <strong className={styles.code}>{room.code}</strong>
           </span>
         )}
         {!atTable && (
@@ -115,7 +116,7 @@ export function TopBar() {
           ) : (
             <p>
               A bot will play your seat right away. Rejoin with room code{' '}
-              <strong className="room-code">{room.code}</strong> to take it back.
+              <strong className={styles.code}>{room.code}</strong> to take it back.
             </p>
           )}
           <div className="row">
@@ -135,7 +136,7 @@ export function ConnectionBanner() {
   const { state } = useGame();
   if (!state.room || state.connection !== 'reconnecting') return null;
   return (
-    <div className="conn-banner" role="status">
+    <div className={styles.banner} role="status">
       Connection lost. Reconnecting…
     </div>
   );
