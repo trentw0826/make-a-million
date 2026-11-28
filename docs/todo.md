@@ -6,6 +6,11 @@ A scratchpad for future fixes, features, and updates
 - [ ] The bottom right button panel should go analysis, undo, redo, score sheet, sound, how to play
 - [ ] Reimagine win screen
   - [ ] Include a game review feature similar to chess.com
+- [ ] Instead of "Bidders captured $270k, made by $55k" the hand review should say "They captured $270k (made their bid by $55k)", other messages should be similarly rewritten
+- [ ] Ensure that the solo move analysis doesn't have vision on the other players' hands
+- [ ] When moves are forced in the solo analysis, the badge above the card should say 'forced' rather than 'best'
+- [ ] I've realized that widow discarding and trump choosing are logically the same step (even if they happen one after the other in the actual gameplay) given that you discard based on what you're about to choose as trump. Account for this fact in the solo analysis machine by noting which trump is intended to be chosen alongside each discard suggestions
+- [ ] Red glow over 'call misdeal' button
 
 ## Later
 - [ ] Create a design system so that styles and animations are standardized across the entire project (avoid manually copying/individually deciding on fonts, animations, text size, colors, etc for each element)
