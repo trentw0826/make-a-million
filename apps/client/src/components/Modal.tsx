@@ -1,6 +1,8 @@
 import { type ReactNode, useEffect, useId, useRef } from 'react';
 import { Icon } from './Icon';
 import { Button } from './ui/Button';
+import { Heading } from './ui/Heading';
+import { Panel } from './ui/Panel';
 
 /** Open dialogs, innermost last. Only the top one answers Esc. */
 const stack: object[] = [];
@@ -24,7 +26,7 @@ interface ModalProps {
 /** The one dialog shell: backdrop, title, focus moved in on open and given back on close. */
 export function Modal({ title, children, onClose, className }: ModalProps) {
   const titleId = useId();
-  const box = useRef<HTMLDivElement>(null);
+  const box = useRef<HTMLElement>(null);
   const token = useRef({});
 
   useEffect(() => {
@@ -56,8 +58,10 @@ export function Modal({ title, children, onClose, className }: ModalProps) {
 
   return (
     <div className="modal-backdrop">
-      <div
+      <Panel
         ref={box}
+        tone="paper"
+        pad="lg"
         className={className ? `modal ${className}` : 'modal'}
         role="dialog"
         aria-modal="true"
@@ -65,7 +69,9 @@ export function Modal({ title, children, onClose, className }: ModalProps) {
         tabIndex={-1}
       >
         <div className="modal-head">
-          <h2 id={titleId}>{title}</h2>
+          <Heading level={2} id={titleId}>
+            {title}
+          </Heading>
           {onClose && (
             <Button variant="ghost" shape="square" onClick={onClose} aria-label="Close">
               <Icon name="close" />
@@ -73,7 +79,7 @@ export function Modal({ title, children, onClose, className }: ModalProps) {
           )}
         </div>
         {children}
-      </div>
+      </Panel>
     </div>
   );
 }

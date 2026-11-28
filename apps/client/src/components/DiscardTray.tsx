@@ -8,6 +8,7 @@ import { SuggestedDiscards } from './analysis/Analysis';
 import { CardFace } from './CardFace';
 import { cardLayoutId } from './TrickArea';
 import { Button } from './ui/Button';
+import { Panel } from './ui/Panel';
 
 const SLOTS = 3;
 
@@ -95,9 +96,9 @@ function RulesTip({ label, children }: { label: string; children: ReactNode }) {
       >
         ?
       </Button>
-      <span id={id} role="tooltip" className="rules-tip-text">
+      <Panel as="span" tone="paper" pad="sm" id={id} role="tooltip" className="rules-tip-text">
         {children}
-      </span>
+      </Panel>
     </span>
   );
 }

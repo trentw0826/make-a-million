@@ -1,9 +1,9 @@
 import type { Action } from '@mam/engine';
 import type { MoveLabel, ReviewedMove } from '@mam/protocol';
 import { SUIT_NAMES, shortMoney } from '../../format';
+import { Badge } from '../ui/Badge';
 import { Panel } from '../ui/Panel';
 import { Text } from '../ui/Text';
-import styles from './Analysis.module.css';
 import { cardName, describeAction, LABEL_TEXT } from './describe';
 import review from './GameReview.module.css';
 
@@ -47,7 +47,11 @@ function placeText(move: ReviewedMove): string {
 }
 
 function Grade({ label }: { label: MoveLabel }) {
-  return <span className={`${styles.label} ${styles[`label-${label}`]}`}>{LABEL_TEXT[label]}</span>;
+  return (
+    <Badge tone={`grade-${label}`} size="md">
+      {LABEL_TEXT[label]}
+    </Badge>
+  );
 }
 
 /**

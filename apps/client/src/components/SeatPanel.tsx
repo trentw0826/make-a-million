@@ -4,6 +4,7 @@ import { hasPassed, seatChip } from '../hints';
 import { CardBack } from './CardFace';
 import { SeatBadge } from './SeatBadge';
 import { SeatName } from './SeatName';
+import { Badge } from './ui/Badge';
 
 interface Props {
   seat: Seat;
@@ -40,7 +41,9 @@ export function SeatPanel({ seat, room, view, position }: Props) {
           {passed && ', passed'}
         </span>
         {s?.kind === 'human' && !s.connected && (
-          <span className="tag warn">{s.botControlled ? 'bot playing' : 'reconnecting…'}</span>
+          <Badge tone="warn" className="tag">
+            {s.botControlled ? 'bot playing' : 'reconnecting…'}
+          </Badge>
         )}
       </div>
       <CardBack count={view.handSizes[seat]} />

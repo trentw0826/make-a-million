@@ -62,12 +62,14 @@
   --line-current: color-mix(in srgb, currentcolor 40%, transparent);
   --tint-hover: color-mix(in srgb, currentcolor 10%, transparent);
 
-  /* Colour: text, by surface ---------------------------------------------- */
+  /* Colour: text and tracks, by surface -------------------------------------- */
   /* Quiet text, and gains and losses. These are for paper; the felt and the bars over it
      set them to their on-felt versions (styles.css), so a Text tone suits wherever it is. */
   --text-muted: var(--muted);
   --text-good: var(--good-ink);
   --text-bad: var(--danger);
+  /* The empty part of a Meter: the line colour of the surface it sits on. */
+  --track: var(--line);
 
   /* Colour: suits and specials ----------------------------------------- */
   --red: #c62828;

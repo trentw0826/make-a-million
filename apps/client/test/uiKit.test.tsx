@@ -1,7 +1,10 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { CardFace } from '../src/components/CardFace';
+import { Badge } from '../src/components/ui/Badge';
 import { Button } from '../src/components/ui/Button';
+import { Heading } from '../src/components/ui/Heading';
+import { Meter } from '../src/components/ui/Meter';
 import { Panel } from '../src/components/ui/Panel';
 import { PRESSABLE } from '../src/components/ui/pressable';
 import { Text } from '../src/components/ui/Text';
@@ -122,5 +125,76 @@ describe('Text', () => {
     expect(plain).not.toHaveAttribute('class');
     expect(money?.tagName).toBe('STRONG');
     expect(money?.className).not.toBe('');
+  });
+});
+
+describe('Badge', () => {
+  it('names its tone, defaults to neutral, and keeps the caller’s class', () => {
+    render(
+      <>
+        <Badge>host</Badge>
+        <Badge tone="grade-blunder" size="md" className="tag">
+          Blunder
+        </Badge>
+      </>,
+    );
+    expect(screen.getByText('host')).toHaveAttribute('data-tone', 'neutral');
+    const blunder = screen.getByText('Blunder');
+    expect(blunder).toHaveAttribute('data-tone', 'grade-blunder');
+    expect(blunder).toHaveClass('tag');
+    expect(blunder.className).not.toBe(screen.getByText('host').className);
+  });
+
+  it('can be a list item', () => {
+    render(
+      <ul>
+        <Badge as="li" tone="good">
+          Bot 2
+        </Badge>
+      </ul>,
+    );
+    expect(screen.getByRole('listitem')).toHaveTextContent('Bot 2');
+  });
+});
+
+describe('Meter', () => {
+  const fill = (el: Element | undefined) =>
+    (el?.firstElementChild as HTMLElement | null)?.style.width;
+
+  it('fills to its value, clamped to the track, and is hidden from screen readers', () => {
+    const { container } = render(
+      <>
+        <Meter value={0.25} fill="us" />
+        <Meter value={-0.4} />
+        <Meter value={3} />
+        <Meter value={Number.NaN} />
+      </>,
+    );
+    const [quarter, below, above, nan] = Array.from(container.children);
+    expect(fill(quarter)).toBe('25%');
+    expect(fill(below)).toBe('0%');
+    expect(fill(above)).toBe('100%');
+    expect(fill(nan)).toBe('0%');
+    expect(quarter).toHaveAttribute('aria-hidden', 'true');
+  });
+});
+
+describe('Heading', () => {
+  it('takes its element from the level and its size apart from it', () => {
+    render(
+      <>
+        <Heading level={2}>Score sheet</Heading>
+        <Heading level={2} size="md">
+          Start a table
+        </Heading>
+        <Heading level={3} className="sheet-hand-head">
+          Hand 1
+        </Heading>
+      </>,
+    );
+    const [big, small] = screen.getAllByRole('heading', { level: 2 });
+    expect(big).toHaveTextContent('Score sheet');
+    expect(big?.className).not.toBe(small?.className);
+    expect(screen.getByRole('heading', { level: 3 })).toHaveClass('sheet-hand-head');
   });
 });

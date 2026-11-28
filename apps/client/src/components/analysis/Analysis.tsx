@@ -6,7 +6,9 @@ import { shortMoney } from '../../format';
 import { useGame } from '../../store';
 import { DUR_BASE_MS, GLIDE_SPRING, REVIEW_LINGER_MS } from '../../theme/motion';
 import { Segmented } from '../Segmented';
+import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';
+import { Text } from '../ui/Text';
 import styles from './Analysis.module.css';
 import { describeAction, LABEL_TEXT, optionFor, valueText } from './describe';
 
@@ -82,8 +84,8 @@ export function MoveValue({ action, onCard = false }: { action: Action; onCard?:
   const best = text === 'Best';
   // On a card only a sliver shows in the fan, so the chip drops the dollar sign ("−12k").
   const chip = (
-    <span
-      className={`${styles.chip} ${best ? styles.best : ''}`}
+    <Badge
+      tone={best ? 'grade-best' : 'shade'}
       title={
         best
           ? 'The best choice here, by the analysis'
@@ -91,7 +93,7 @@ export function MoveValue({ action, onCard = false }: { action: Action; onCard?:
       }
     >
       {onCard ? text.replace('$', '') : text}
-    </span>
+    </Badge>
   );
   // Beside a word ("Pass Best"), with its own space, so a control without one reads as before.
   return onCard ? <span className={styles.onCard}>{chip}</span> : <> {chip}</>;
@@ -129,9 +131,9 @@ export function MoveReview() {
             exit={{ opacity: 0 }}
             transition={{ duration: DUR_BASE_MS / 1000 }}
           >
-            <span className={`${styles.label} ${styles[`label-${review.label}`]}`}>
+            <Badge tone={`grade-${review.label}`} size="md">
               {LABEL_TEXT[review.label]}
-            </span>
+            </Badge>
             {details.length > 0 && <span>{details.join(' · ')}</span>}
           </motion.span>
         )}
@@ -189,7 +191,9 @@ export function SuggestedDiscards({ onPick }: { onPick: (ids: readonly number[])
   if (decision?.kind !== 'discard') return null;
   return (
     <div className={styles.suggestions}>
-      <p className="felt-label">Suggested discards</p>
+      <Text as="p" size="sm" tone="muted" caps className="felt-label">
+        Suggested discards
+      </Text>
       {decision.options.map((o) =>
         o.action.type === 'discard' ? (
           <Button

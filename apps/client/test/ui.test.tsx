@@ -284,8 +284,8 @@ describe('score sheet', () => {
     expect(within(hands[0] as HTMLElement).getByText('Bot 2 deals.')).toBeVisible();
     // Then hand 1: who bid what, how it went for us (they made it: red), the bar, the totals.
     const done = hands[1] as HTMLElement;
-    expect(done.querySelector('.sheet-chip')).toHaveTextContent('Made');
-    expect(done.querySelector('.sheet-chip')).toHaveClass('bad');
+    const outcome = within(done).getByText('Made');
+    expect(outcome).toHaveAttribute('data-tone', 'bad');
     expect(done).toHaveTextContent('Bot 2 bid $185k in Red');
     expect(within(done).getByRole('img', { name: /made by \$25k/ })).toBeInTheDocument();
     expect(done.querySelector('.sheet-hand-sides')).toHaveTextContent(
@@ -1000,7 +1000,7 @@ describe('table status', () => {
     const { unmount } = renderWith(auction([]));
     for (const spot of ['bottom', 'left', 'top', 'right']) {
       expect(chip(spot)).toHaveTextContent('No bid');
-      expect(chip(spot)).toHaveClass('bid-chip-none');
+      expect(chip(spot)).toHaveAttribute('data-tone', 'quiet');
     }
     unmount();
     renderWith(
@@ -1011,9 +1011,10 @@ describe('table status', () => {
       ]),
     );
     expect(chip('bottom')).toHaveTextContent('$175k');
-    expect(chip('bottom')).not.toHaveClass('bid-chip-high');
+    expect(chip('bottom')).toHaveAttribute('data-tone', 'shade');
     expect(chip('left')).toHaveTextContent('$180k');
-    expect(chip('left')).toHaveClass('bid-chip-high');
+    // The high bid is drawn as the contract badge it becomes.
+    expect(chip('left')).toHaveAttribute('data-tone', 'contract');
     expect(chip('left')).not.toHaveTextContent(/high/i);
     expect(document.querySelector('.bid-spot-top')).toBeNull();
     expect(chip('right')).toHaveTextContent('No bid');

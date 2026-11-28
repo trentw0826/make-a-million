@@ -2,7 +2,8 @@
  * Browser smoke test. Starts the built server, then in headless Chromium plays one hand
  * against three bots (one Hard, two Normal), checking the table's signals, the hand order
  * and the motion along the way; a second pass checks that reduced motion switches the
- * animations off; a third plays solo with hints on, then undoes and redoes a card.
+ * animations off; a third plays solo with hints on, then undoes and redoes a card. Last, the
+ * style guide (built in by `pnpm e2e`, which sets STYLEGUIDE=1) is photographed whole.
  *
  *   pnpm e2e                         # builds first
  *   CHROMIUM_PATH=/path/to/chrome pnpm e2e
@@ -790,6 +791,49 @@ async function reducedMotion(browser: Browser, base: string): Promise<void> {
   await context.close();
 }
 
+/** Every section the style guide shows. */
+const GUIDE_SECTIONS = [
+  'Button',
+  'Badge',
+  'Meter',
+  'Heading',
+  'Text',
+  'Panel',
+  'Game pieces',
+  'Tokens',
+  'Motion presets (theme/motion.ts)',
+];
+
+/**
+ * The style guide: every token and shared component on one page, photographed whole so a
+ * change to the design system can be looked over in one place.
+ */
+async function styleGuide(browser: Browser, base: string): Promise<void> {
+  const page = await browser.newPage({ viewport: VIEWPORT });
+  const pageErrors: string[] = [];
+  page.on('pageerror', (e) => pageErrors.push(e.message));
+  const response = await page.goto(`${base}styleguide.html`);
+  check(response?.ok() === true, 'the style guide is built and served');
+  await page.getByRole('heading', { name: 'Style guide' }).waitFor();
+  const missing: string[] = [];
+  for (const name of GUIDE_SECTIONS) {
+    if ((await page.getByRole('region', { name, exact: true }).count()) !== 1) missing.push(name);
+  }
+  check(
+    missing.length === 0,
+    `the style guide shows every section${missing.length ? ` (missing ${missing.join(', ')})` : ''}`,
+  );
+  const tokens = await page.locator('code', { hasText: /^--/ }).count();
+  check(tokens > 100, `the style guide lists the tokens (${tokens})`);
+  await sleep(300); // fonts
+  await page.screenshot({ path: path.join(OUT, '10-style-guide.png'), fullPage: true });
+  check(
+    pageErrors.length === 0,
+    `style guide: no page errors${pageErrors.length ? ` (${pageErrors.join('; ')})` : ''}`,
+  );
+  await page.close();
+}
+
 /** Cards you may click now. */
 const PLAYABLE = '.hand .hand-present:not([inert]) button.card:not([aria-disabled])';
 
@@ -961,6 +1005,7 @@ async function main(): Promise<void> {
     await fullHand(browser, base);
     await reducedMotion(browser, base);
     await soloGame(browser, base);
+    await styleGuide(browser, base);
   } finally {
     await browser.close();
     server.kill();
