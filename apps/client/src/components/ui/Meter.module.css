@@ -1,0 +1,34 @@
+/* A bar that fills from the left. The track's colour comes from the surface (--track). */
+@layer ui {
+  .meter {
+    overflow: hidden;
+    border-radius: var(--radius-pill);
+    background: var(--track);
+  }
+  .sm {
+    height: 4px;
+  }
+  .md {
+    height: 6px;
+  }
+  .fill {
+    display: block;
+    height: 100%;
+    transition: width var(--dur-slower) var(--ease-out);
+  }
+  .us {
+    background: var(--team-us);
+  }
+  .them {
+    background: var(--team-them);
+  }
+  .accent {
+    background: var(--accent);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .fill {
+      transition: none;
+    }
+  }
+}

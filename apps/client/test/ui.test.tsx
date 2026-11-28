@@ -1,5 +1,14 @@
-import { createGame, observe, type TableView, tableView } from '@mam/engine';
-import type { RoomView, ServerMessage } from '@mam/protocol';
+import {
+  type Action,
+  createGame,
+  DECK,
+  observe,
+  type Rank,
+  type Suit,
+  type TableView,
+  tableView,
+} from '@mam/engine';
+import type { MoveLabel, ReviewedMove, RoomView, ServerMessage } from '@mam/protocol';
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { useEffect } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -55,6 +64,7 @@ function room(phase: RoomView['phase']): RoomView {
     analysis: 'off',
     canUndo: false,
     canRedo: false,
+    gameReview: null,
   };
 }
 
@@ -274,8 +284,8 @@ describe('score sheet', () => {
     expect(within(hands[0] as HTMLElement).getByText('Bot 2 deals.')).toBeVisible();
     // Then hand 1: who bid what, how it went for us (they made it: red), the bar, the totals.
     const done = hands[1] as HTMLElement;
-    expect(done.querySelector('.sheet-chip')).toHaveTextContent('Made');
-    expect(done.querySelector('.sheet-chip')).toHaveClass('bad');
+    const outcome = within(done).getByText('Made');
+    expect(outcome).toHaveAttribute('data-tone', 'bad');
     expect(done).toHaveTextContent('Bot 2 bid $185k in Red');
     expect(within(done).getByRole('img', { name: /made by \$25k/ })).toBeInTheDocument();
     expect(done.querySelector('.sheet-hand-sides')).toHaveTextContent(
@@ -990,7 +1000,7 @@ describe('table status', () => {
     const { unmount } = renderWith(auction([]));
     for (const spot of ['bottom', 'left', 'top', 'right']) {
       expect(chip(spot)).toHaveTextContent('No bid');
-      expect(chip(spot)).toHaveClass('bid-chip-none');
+      expect(chip(spot)).toHaveAttribute('data-tone', 'quiet');
     }
     unmount();
     renderWith(
@@ -1001,9 +1011,10 @@ describe('table status', () => {
       ]),
     );
     expect(chip('bottom')).toHaveTextContent('$175k');
-    expect(chip('bottom')).not.toHaveClass('bid-chip-high');
+    expect(chip('bottom')).toHaveAttribute('data-tone', 'shade');
     expect(chip('left')).toHaveTextContent('$180k');
-    expect(chip('left')).toHaveClass('bid-chip-high');
+    // The high bid is drawn as the contract badge it becomes.
+    expect(chip('left')).toHaveAttribute('data-tone', 'contract');
     expect(chip('left')).not.toHaveTextContent(/high/i);
     expect(document.querySelector('.bid-spot-top')).toBeNull();
     expect(chip('right')).toHaveTextContent('No bid');
@@ -1297,6 +1308,58 @@ describe('Game over', () => {
     // Ann is the host: she can deal a new game, or leave.
     expect(within(dialog).getByRole('button', { name: 'Play again' })).toHaveFocus();
     expect(within(dialog).getByRole('button', { name: 'Leave room' })).toBeInTheDocument();
+  });
+
+  it('reviews a solo game played with the analysis on', () => {
+    const cardIdOf = (suit: Suit, rank: Rank) =>
+      DECK.findIndex((c) => c.kind === 'suit' && c.suit === suit && c.rank === rank);
+    const red2 = cardIdOf('red', '2');
+    const green9 = cardIdOf('green', '9');
+    const graded = (
+      ply: number,
+      hand: number,
+      trick: number | null,
+      played: Action,
+      label: MoveLabel,
+      lossK: number,
+      best: Action,
+    ): ReviewedMove => ({ ply, hand, trick, played, label, lossK, best });
+    const play = (cardId: number): Action => ({ type: 'playCard', cardId });
+    const gameReview: ReviewedMove[] = [
+      graded(0, 1, null, { type: 'pass' }, 'mistake', 30, { type: 'bid', amount: 120_000 }),
+      graded(9, 1, 2, play(green9), 'best', 0, play(green9)),
+      graded(14, 1, 3, play(red2), 'forced', 0, play(red2)),
+      graded(60, 2, 5, play(red2), 'blunder', 65, play(green9)),
+      graded(70, 2, 7, play(green9), 'good', 2, play(red2)),
+      graded(75, 2, 8, play(green9), 'inaccuracy', 9, play(red2)),
+    ];
+    renderWith([
+      welcome,
+      { type: 'room', room: { ...room('finished'), solo: true, analysis: 'hints', gameReview } },
+      { type: 'view', view: over(0) },
+    ]);
+    act(() => vi.advanceTimersByTime(RESULT_PAUSE_MS));
+    const panel = within(screen.getByRole('dialog')).getByRole('region', { name: 'Game review' });
+    const grades = within(panel).getByRole('list', { name: 'Your decisions by grade' });
+    expect(grades).toHaveTextContent(
+      /Best\s*1\s*Good\s*1\s*Inaccuracy\s*1\s*Mistake\s*1\s*Blunder\s*1/,
+    );
+    expect(panel).toHaveTextContent(
+      '2 of 5 decisions best or good (and 1 forced). Given up against the best: $106k, most in hand 2 ($76k).',
+    );
+    // The costliest three, in the order played.
+    const moments = within(panel).getAllByRole('listitem').slice(5);
+    expect(moments.map((m) => m.textContent)).toEqual([
+      'MistakeHand 1, bidding: you passed; best was bidding $120k (−$30k)',
+      'BlunderHand 2, trick 5: you played Red 2; best was Green 9 (−$65k)',
+      'InaccuracyHand 2, trick 8: you played Green 9; best was Red 2 (−$9k)',
+    ]);
+  });
+
+  it('has no review outside a solo game', () => {
+    renderWith(messages(over(0)));
+    act(() => vi.advanceTimersByTime(RESULT_PAUSE_MS));
+    expect(screen.queryByRole('region', { name: 'Game review' })).toBeNull();
   });
 
   it('tells a loss plainly: no confetti, no fanfare', async () => {

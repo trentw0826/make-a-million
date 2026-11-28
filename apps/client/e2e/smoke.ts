@@ -2,7 +2,8 @@
  * Browser smoke test. Starts the built server, then in headless Chromium plays one hand
  * against three bots (one Hard, two Normal), checking the table's signals, the hand order
  * and the motion along the way; a second pass checks that reduced motion switches the
- * animations off; a third plays solo with hints on, then undoes and redoes a card.
+ * animations off; a third plays solo with hints on, then undoes and redoes a card. Last, the
+ * style guide (built in by `pnpm e2e`, which sets STYLEGUIDE=1) is photographed whole.
  *
  *   pnpm e2e                         # builds first
  *   CHROMIUM_PATH=/path/to/chrome pnpm e2e
@@ -291,11 +292,44 @@ async function pressScale(
   return scale;
 }
 
+/**
+ * A point on `target` that nothing covers, relative to the top left of its bounding box. In
+ * the fan each card covers the right part of the one before it, and the cards towards the
+ * ends are tilted, so a fixed offset can land on a neighbour; a person points at a part in
+ * view, and so does the test. Null if no part of it is in view.
+ */
+async function inView(target: Locator): Promise<{ x: number; y: number } | null> {
+  return target.evaluate((el) => {
+    const r = el.getBoundingClientRect();
+    for (const fy of [0.5, 0.4, 0.6, 0.3, 0.7]) {
+      for (let fx = 0.06; fx < 0.95; fx += 0.04) {
+        const x = r.left + fx * r.width;
+        const y = r.top + fy * r.height;
+        // The point and a little to its right and below, so that a click a few pixels off
+        // (Playwright measures from inside the border) still lands on the card.
+        const hits = [
+          document.elementFromPoint(x, y),
+          document.elementFromPoint(x + 4, y),
+          document.elementFromPoint(x, y + 4),
+          document.elementFromPoint(x + 4, y + 4),
+        ];
+        if (hits.every((h) => h !== null && el.contains(h))) {
+          return { x: Math.round(x - r.left), y: Math.round(y - r.top) };
+        }
+      }
+    }
+    return null;
+  });
+}
+
 async function act(page: Page, shoot: Shoot): Promise<boolean> {
   const quick = { timeout: 2_000 };
-  // In the fan each card covers the right part of the one before it, so its middle can lie
-  // under its neighbour; a person points at the edge left in view, and so does the test.
+  // Where to point at a card when no better point is found (see inView).
   const onCard = { ...quick, position: { x: 10, y: 40 } };
+  const pointAt = async (card: Locator) => ({
+    ...quick,
+    position: (await inView(card)) ?? onCard.position,
+  });
   try {
     // The gold ring round your seat says the table is waiting on you.
     if (!(await page.locator('.me.me-turn').isVisible())) return false;
@@ -402,7 +436,7 @@ async function act(page: Page, shoot: Shoot): Promise<boolean> {
         .locator('.hand .hand-present:not([inert]) button.card:not([aria-disabled])')
         .first();
       if (!trumpChecked && (await colored.count()) > 0) {
-        await colored.hover(onCard);
+        await colored.hover(await pointAt(colored));
         await sleep(350);
         const raised = await page.locator('.hand-fan-hovered').count();
         const lit = (await picker.locator('.trump-pick-lit').getAttribute('aria-label')) ?? '';
@@ -435,8 +469,8 @@ async function act(page: Page, shoot: Shoot): Promise<boolean> {
         const reason = await blocked.getAttribute('title', quick);
         check(Boolean(reason), 'a greyed-out card carries a tooltip saying why');
         const pressed = {
-          blocked: await pressScale(page, blocked, onCard.position),
-          playable: await pressScale(page, card, onCard.position),
+          blocked: await pressScale(page, blocked, (await pointAt(blocked)).position),
+          playable: await pressScale(page, card, (await pointAt(card)).position),
         };
         check(
           pressed.blocked === 'none' && pressed.playable === '0.97',
@@ -453,6 +487,7 @@ async function act(page: Page, shoot: Shoot): Promise<boolean> {
         );
         blockedCardChecked = true;
       }
+      const at = await pointAt(card);
       if (!cursorChecked) {
         const box = await card.boundingBox();
         const cursor =
@@ -462,12 +497,12 @@ async function act(page: Page, shoot: Shoot): Promise<boolean> {
               const el = document.elementFromPoint(x, y);
               return el ? getComputedStyle(el).cursor : null;
             },
-            [box.x + onCard.position.x, box.y + onCard.position.y] as const,
+            [box.x + at.position.x, box.y + at.position.y] as const,
           ));
         check(cursor === 'pointer', 'the pointer turns to a hand over a card you can play');
         cursorChecked = true;
       }
-      await card.click(onCard);
+      await card.click(at);
       return true;
     }
   } catch (e) {
@@ -756,6 +791,49 @@ async function reducedMotion(browser: Browser, base: string): Promise<void> {
   await context.close();
 }
 
+/** Every section the style guide shows. */
+const GUIDE_SECTIONS = [
+  'Button',
+  'Badge',
+  'Meter',
+  'Heading',
+  'Text',
+  'Panel',
+  'Game pieces',
+  'Tokens',
+  'Motion presets (theme/motion.ts)',
+];
+
+/**
+ * The style guide: every token and shared component on one page, photographed whole so a
+ * change to the design system can be looked over in one place.
+ */
+async function styleGuide(browser: Browser, base: string): Promise<void> {
+  const page = await browser.newPage({ viewport: VIEWPORT });
+  const pageErrors: string[] = [];
+  page.on('pageerror', (e) => pageErrors.push(e.message));
+  const response = await page.goto(`${base}styleguide.html`);
+  check(response?.ok() === true, 'the style guide is built and served');
+  await page.getByRole('heading', { name: 'Style guide' }).waitFor();
+  const missing: string[] = [];
+  for (const name of GUIDE_SECTIONS) {
+    if ((await page.getByRole('region', { name, exact: true }).count()) !== 1) missing.push(name);
+  }
+  check(
+    missing.length === 0,
+    `the style guide shows every section${missing.length ? ` (missing ${missing.join(', ')})` : ''}`,
+  );
+  const tokens = await page.locator('code', { hasText: /^--/ }).count();
+  check(tokens > 100, `the style guide lists the tokens (${tokens})`);
+  await sleep(300); // fonts
+  await page.screenshot({ path: path.join(OUT, '10-style-guide.png'), fullPage: true });
+  check(
+    pageErrors.length === 0,
+    `style guide: no page errors${pageErrors.length ? ` (${pageErrors.join('; ')})` : ''}`,
+  );
+  await page.close();
+}
+
 /** Cards you may click now. */
 const PLAYABLE = '.hand .hand-present:not([inert]) button.card:not([aria-disabled])';
 
@@ -927,6 +1005,7 @@ async function main(): Promise<void> {
     await fullHand(browser, base);
     await reducedMotion(browser, base);
     await soloGame(browser, base);
+    await styleGuide(browser, base);
   } finally {
     await browser.close();
     server.kill();

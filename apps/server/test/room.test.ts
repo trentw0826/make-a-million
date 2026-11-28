@@ -1,4 +1,10 @@
-import { ANALYSIS_DEFAULTS, type AnalysisOptions, analyze, fallbackAction } from '@mam/bots';
+import {
+  ANALYSIS_DEFAULTS,
+  type Analysis,
+  type AnalysisOptions,
+  analyze,
+  fallbackAction,
+} from '@mam/bots';
 import { type Action, legalMoves, Rng } from '@mam/engine';
 import type { AnalysisMode, ServerMessage } from '@mam/protocol';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -216,19 +222,40 @@ describe('play', () => {
     expect(h.room.game?.hand?.turn).toBe(0);
   });
 
-  it("waits each level's own reply time, Expert's included", async () => {
-    const h = harness({ botDelayMs: { easy: 1, normal: 1, hard: 1, expert: 5_000 } });
+  it("waits each level's own reply time, Expert's by the kind of decision", async () => {
+    const expert = { bid: 3_000, play: 1, discard: 1, trump: 1, continue: 1 };
+    const h = harness({ botDelayMs: { easy: 1, normal: 1, hard: 1, expert } });
     readyRoom(h);
     h.room.setBot('ann', 1, 'expert');
     h.room.start('ann');
     // Seat 1 opens the auction; as an Expert it answers (a bid, a pass or a misdeal) only
-    // after its 5 s.
+    // after its time for a bid.
     expect(h.room.game?.hand?.turn).toBe(1);
     const dealt = h.room.game;
-    await vi.advanceTimersByTimeAsync(4_900);
+    await vi.advanceTimersByTimeAsync(2_900);
     expect(h.room.game).toBe(dealt);
     await vi.advanceTimersByTimeAsync(200);
     expect(h.room.game).not.toBe(dealt);
+  });
+
+  it('times a card differently from a bid when the level says so', async () => {
+    const quick = { bid: 1, play: 700, discard: 1, trump: 1, continue: 1 };
+    const h = harness({ botDelayMs: { easy: quick, normal: quick, hard: 1, expert: 1 } });
+    readyRoom(h);
+    h.room.start('ann');
+    // On to the first card a bot is to play (Ann's own turns taken at once).
+    for (let i = 0; i < 2_000; i++) {
+      const game = h.room.game;
+      if (game?.phase === 'playing' && game.hand?.turn !== 0) break;
+      if (game?.hand?.turn === 0) humanActs(h, 'ann');
+      await vi.advanceTimersByTimeAsync(1);
+    }
+    expect(h.room.game?.phase).toBe('playing');
+    const before = h.room.game;
+    await vi.advanceTimersByTimeAsync(690);
+    expect(h.room.game).toBe(before);
+    await vi.advanceTimersByTimeAsync(20);
+    expect(h.room.game).not.toBe(before);
   });
 
   it('plays a whole game with one human and three bots', async () => {
@@ -699,6 +726,65 @@ describe('solo', () => {
       const [review] = sentOf(h, 'moveReview');
       expect(review).toMatchObject({ type: 'moveReview', ply: expect.any(Number) });
       expect(h.room.reviews).toHaveLength(1);
+    });
+
+    it('sends the game review once the game is over', async () => {
+      // Values every legal choice (the first best, each next 1k worse), a little late, so
+      // the last move's review can land after the game has ended.
+      const flat: AnalyzeSeat = (obs, _seed, _deadline, include) => {
+        const l = obs.legal;
+        const actions: Action[] =
+          l.kind === 'play'
+            ? l.cardIds.map((cardId) => ({ type: 'playCard', cardId }))
+            : l.kind === 'bid'
+              ? [
+                  { type: 'bid', amount: l.minBid },
+                  ...(l.canPass ? [{ type: 'pass' as const }] : []),
+                ]
+              : l.kind === 'trump'
+                ? l.suits.map((suit) => ({ type: 'nameTrump', suit }))
+                : l.kind === 'discard' && include
+                  ? [{ type: 'discard', cardIds: [...include] }]
+                  : [];
+        const kind =
+          l.kind === 'play' || l.kind === 'bid' || l.kind === 'discard' ? l.kind : 'trump';
+        const options = actions.map((action, i) => ({ action, points: -i, winChance: 0.5 }));
+        const analysis: Analysis = {
+          winChance: 0.5,
+          decision: options.length > 0 ? { kind, options, best: 0 } : null,
+        };
+        return new Promise((resolve) => setTimeout(() => resolve(analysis), 50));
+      };
+      const h = begun('feedback', flat);
+      const act = vi.spyOn(h.room, 'action');
+      for (let i = 0; i < 20_000 && h.room.phase === 'playing'; i++) {
+        await vi.advanceTimersByTimeAsync(5);
+        if (h.room.phase === 'playing') humanActs(h, 'ann');
+        if (i === 100) {
+          expect(h.last('ann', 'room')).toMatchObject({ room: { gameReview: null } });
+        }
+      }
+      expect(h.room.phase).toBe('finished');
+      await vi.advanceTimersByTimeAsync(500);
+      const room = h.last('ann', 'room');
+      if (room?.type !== 'room') throw new Error('no room');
+      const review = room.room.gameReview ?? [];
+      expect(review.length).toBeGreaterThan(20);
+      expect(review).toHaveLength(sentOf(h, 'moveReview').length);
+      // Each review is of one of Ann's own actions, in the order she made them.
+      const anns = act.mock.calls.filter(([id]) => id === 'ann').map(([, a]) => a);
+      let j = 0;
+      review.forEach((m, i) => {
+        if (i > 0) expect(m.ply).toBeGreaterThan((review[i - 1] as { ply: number }).ply);
+        while (j < anns.length && JSON.stringify(anns[j]) !== JSON.stringify(m.played)) j++;
+        expect(j).toBeLessThan(anns.length);
+        j++;
+        expect(m.hand).toBeGreaterThanOrEqual(1);
+        if (m.played.type === 'playCard') {
+          expect(m.trick).toBeGreaterThanOrEqual(1);
+          expect(m.trick).toBeLessThanOrEqual(13);
+        } else expect(m.trick).toBeNull();
+      });
     });
 
     it('sends no review for a move taken back first', async () => {

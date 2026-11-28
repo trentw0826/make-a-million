@@ -1,0 +1,109 @@
+/*
+ * Badges: one pill shape, one weight, even-width figures, and a tone that eases from one state
+ * to the next (a bid chip going from "No bid" to the high bid).
+ */
+@layer ui {
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    border-radius: var(--radius-pill);
+    /* The body face, even inside a heading (the score sheet's "Hand 2 · In play"). */
+    font-family: var(--font-body);
+    font-weight: var(--weight-bold);
+    line-height: var(--leading-tight);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    transition:
+      background-color var(--dur-base) var(--ease-out),
+      color var(--dur-base) var(--ease-out),
+      box-shadow var(--dur-base) var(--ease-out);
+  }
+
+  /* Sizes ------------------------------------------------------------------- */
+  .sm {
+    padding: var(--space-1) var(--space-3);
+    font-size: var(--text-xs);
+  }
+  .md {
+    padding: var(--space-1) var(--space-4);
+    font-size: var(--text-sm);
+  }
+  .lg {
+    padding: var(--space-2) var(--space-5);
+    font-size: var(--text-md);
+  }
+
+  /* Tones ------------------------------------------------------------------- */
+  .neutral {
+    background: var(--shade-1);
+    color: inherit;
+  }
+  .quiet {
+    background: var(--shade-1);
+    color: var(--text-muted);
+    font-weight: var(--weight-regular);
+  }
+  .shade {
+    background: var(--shade-2);
+    color: var(--paper);
+  }
+  .paper {
+    background: var(--paper);
+    color: var(--ink);
+  }
+  .contract {
+    background: var(--paper);
+    color: var(--ink);
+    box-shadow: inset 0 0 0 2px var(--accent);
+  }
+  .accent {
+    background: var(--accent);
+    color: var(--on-accent);
+  }
+  .good {
+    background: var(--good-bg);
+    color: var(--good-ink);
+  }
+  .bad {
+    background: var(--bad-bg);
+    color: var(--danger);
+  }
+  .warn {
+    background: var(--warn-bg);
+    color: var(--warn-ink);
+  }
+
+  /* The analysis's grades, each with the ink that reads on it. */
+  .grade-best {
+    background: var(--label-best);
+    color: var(--on-label);
+  }
+  .grade-good {
+    background: var(--label-good);
+    color: var(--on-label);
+  }
+  .grade-inaccuracy {
+    background: var(--label-inaccuracy);
+    color: var(--on-label-light);
+  }
+  .grade-mistake {
+    background: var(--label-mistake);
+    color: var(--on-label);
+  }
+  .grade-blunder {
+    background: var(--label-blunder);
+    color: var(--on-label);
+  }
+  .grade-forced {
+    background: var(--label-forced);
+    color: var(--on-label);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .badge {
+      transition: none;
+    }
+  }
+}

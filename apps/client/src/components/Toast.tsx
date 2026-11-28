@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { useGame } from '../store';
+import { Panel } from './ui/Panel';
 
 export function Toast() {
   const { state, dispatch } = useGame();
@@ -13,8 +14,14 @@ export function Toast() {
 
   if (!toast) return null;
   return (
-    <output className={`toast toast-${toast.kind}`} aria-live="polite">
+    <Panel
+      as="output"
+      tone="paper"
+      pad="sm"
+      className={`toast toast-${toast.kind}`}
+      aria-live="polite"
+    >
       {toast.text}
-    </output>
+    </Panel>
   );
 }

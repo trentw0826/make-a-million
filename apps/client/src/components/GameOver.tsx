@@ -6,17 +6,21 @@ import { money, teamLabel } from '../format';
 import { sound } from '../sound/player';
 import { useGame } from '../store';
 import { AFTER_MODAL_MS, POP_IN, POP_SPRING } from '../theme/motion';
+import { GameReview } from './analysis/GameReview';
 import { Confetti } from './Confetti';
 import styles from './GameOver.module.css';
 import { Modal } from './Modal';
+import { Badge } from './ui/Badge';
 import { Button } from './ui/Button';
+import { Meter } from './ui/Meter';
 import { Panel } from './ui/Panel';
 import { Text } from './ui/Text';
 
 /**
  * The end of the game, told from the viewer's side: who made the million, then each side's
  * final total on the race to the target, the winner's in gold. A win throws confetti and
- * plays a fanfare. The host can deal a new game; anyone can leave.
+ * plays a fanfare. A solo game played with the analysis on adds its review. The host can
+ * deal a new game; anyone can leave.
  */
 export function GameOver({ view, room }: { view: TableView; room: RoomView }) {
   const { state, send } = useGame();
@@ -78,7 +82,11 @@ export function GameOver({ view, room }: { view: TableView; room: RoomView }) {
                 <span className={styles.name}>
                   <span className="side-dot" aria-hidden="true" />
                   {side === 'us' ? 'Us' : 'Them'}
-                  {isWinner && <span className={styles.chip}>Winner</span>}
+                  {isWinner && (
+                    <Badge tone="accent" className={styles.badge}>
+                      Winner
+                    </Badge>
+                  )}
                 </span>
                 <Text size="sm" tone="muted">
                   {teamLabel(room, team)}
@@ -86,11 +94,7 @@ export function GameOver({ view, room }: { view: TableView; room: RoomView }) {
                 <Text size="2xl" weight="bold" numeric tone={score < 0 ? 'bad' : undefined}>
                   {money(score)}
                 </Text>
-                <div className={`progress ${styles.progress}`} aria-hidden="true">
-                  <span
-                    style={{ width: `${Math.max(0, Math.min(100, (score / target) * 100))}%` }}
-                  />
-                </div>
+                <Meter value={score / target} fill={side} size="md" className={styles.meter} />
               </Panel>
             );
           })}
@@ -98,6 +102,7 @@ export function GameOver({ view, room }: { view: TableView; room: RoomView }) {
         <Text as="p" size="xs" tone="muted" className={styles.target}>
           First to {money(target)}
         </Text>
+        {room.gameReview && <GameReview moves={room.gameReview} />}
         <div className={`result-foot ${styles.foot}`}>
           <Button variant="ghost" onClick={() => send({ type: 'leaveRoom' })}>
             Leave room

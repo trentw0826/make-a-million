@@ -4,6 +4,7 @@ import { SUIT_NAMES } from '../format';
 import { useGame } from '../store';
 import { MoveValue } from './analysis/Analysis';
 import { PRESSABLE } from './ui/pressable';
+import { Text } from './ui/Text';
 
 /**
  * Naming trump, in the middle of the felt: a token for each color. A click on a token names
@@ -32,7 +33,9 @@ export function TrumpPicker({
     }).length;
   return (
     <section className="trump-picker" aria-label="Choose trump">
-      <p className="felt-label">Choose trump</p>
+      <Text as="p" size="sm" tone="muted" caps className="felt-label">
+        Choose trump
+      </Text>
       <div className="trump-picks">
         {legal.suits.map((suit) => {
           const n = held(suit);

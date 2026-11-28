@@ -1,10 +1,12 @@
-/* Surfaces. Each paper tone resets the text colours to their paper versions, and the felt
-   tone to its on-felt versions, so Text tones read right on whatever they sit on. */
+/* Surfaces. Each paper tone resets the text and track colours to their paper versions, and
+   the felt tone to its on-felt versions, so Text tones and Meters read right on whatever
+   they sit on. */
 @layer ui {
   .panel {
     --text-muted: var(--muted);
     --text-good: var(--good-ink);
     --text-bad: var(--danger);
+    --track: var(--line);
 
     color: var(--ink);
   }
@@ -27,6 +29,7 @@
     --text-muted: var(--on-felt-muted);
     --text-good: var(--good-on-felt);
     --text-bad: var(--bad-on-felt);
+    --track: var(--line-on-felt-faint);
 
     border-radius: var(--radius-l);
     background: var(--shade-2);

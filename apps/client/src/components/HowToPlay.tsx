@@ -12,6 +12,7 @@ import { money } from '../format';
 import { CardFace } from './CardFace';
 import { Modal } from './Modal';
 import { Button } from './ui/Button';
+import { Heading } from './ui/Heading';
 import { PRESSABLE } from './ui/pressable';
 
 /** "$40k · $30k · $15k · 11 · $10k · …", highest first, straight from the engine's table. */
@@ -299,7 +300,9 @@ export function HowToPlay({
               hidden={i !== at}
               className="guide-panel"
             >
-              <h3>{t.title}</h3>
+              <Heading level={3} className="guide-title">
+                {t.title}
+              </Heading>
               {t.body(ruleset)}
             </section>
           ))}

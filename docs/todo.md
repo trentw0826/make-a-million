@@ -14,7 +14,6 @@ A scratchpad for future fixes, features, and updates
   - [x] Clickable elements share one response to hover, press, focus and disabled (the `Button` variants)
   - [ ] Move the rest of `styles.css` into per-component CSS Modules, a component at a time, switching tests and e2e from class hooks to roles or data attributes as each moves
   - [x] Everything clickable presses the same way: `Button` and the game pieces (cards, trump tokens, bid plaque, guide tabs, bot level) share `PRESSABLE`
-  - [ ] A dev-only style guide page of every token and component, screenshotted by `pnpm e2e`
 - [ ] Test UI across different browsers and screen sizes
 - [ ] Create a phone-friendly UI
 - [ ] 'play along mode' that accompanies a real-life game; You play along with the events of a real game and the board offers you analyses of the current game, including your best moves

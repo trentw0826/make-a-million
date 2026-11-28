@@ -27,6 +27,7 @@ const room: RoomView = {
   analysis: 'off',
   canUndo: false,
   canRedo: false,
+  gameReview: null,
 };
 
 // Card ids: each color holds 13 ids in rank order (1 2 3 4 $5k 7 8 9 $10k 11 $15k $30k $40k).

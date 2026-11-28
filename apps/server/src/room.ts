@@ -1,4 +1,4 @@
-import { type Analysis, fallbackAction, type MoveReview, reviewMove } from '@mam/bots';
+import { type Analysis, fallbackAction, reviewMove } from '@mam/bots';
 import {
   type Action,
   applyAction,
@@ -18,13 +18,14 @@ import type {
   AnalysisMode,
   Difficulty,
   ErrorCode,
+  ReviewedMove,
   RoomPhase,
   RoomView,
   SeatView,
   ServerMessage,
 } from '@mam/protocol';
 import type { AnalyzeSeat, DecideBot } from './botPool';
-import type { ServerConfig } from './config';
+import { replyMs, type ServerConfig } from './config';
 import { newGameSeed } from './ids';
 import type { Logger } from './log';
 
@@ -108,8 +109,8 @@ export class Room {
   private analyses = new Map<number, { game: GameState; result: Promise<Analysis | null> }>();
   /** Plies whose move review is still to be sent; their analyses are kept until it is. */
   private reviewing = new Set<number>();
-  /** Every move review sent this game, for a later game review. */
-  readonly reviews: (MoveReview & { readonly ply: number; readonly hand: number })[] = [];
+  /** Every move review sent this game, for the game review once it is over. */
+  readonly reviews: ReviewedMove[] = [];
 
   constructor(
     readonly code: string,
@@ -554,8 +555,11 @@ export class Room {
       .then((graded) => {
         this.reviewing.delete(ply);
         if (!graded || !stillPlayed()) return;
-        this.reviews.push({ ...graded, ply, hand });
+        const trick = action.type === 'playCard' ? (before.hand?.tricks.length ?? 0) + 1 : null;
+        this.reviews.push({ ply, hand, trick, played: action, ...graded });
         this.deps.send(playerId, { type: 'moveReview', ply, ...graded });
+        // The last move's review can land after the game is over: re-send the game review.
+        if (this.phase === 'finished') this.broadcastRoom();
       });
   }
 
@@ -613,7 +617,7 @@ export class Room {
       for (const seat of game.hand.continuePending) {
         if (!this.isBotControlled(seat)) continue;
         const delay = watched
-          ? this.deps.config.botDelayMs[this.botDifficulty(seat)]
+          ? replyMs(this.deps.config, this.botDifficulty(seat), 'continue')
           : this.deps.config.botContinueDelayMs;
         this.scheduleBot(seat, delay);
       }
@@ -622,8 +626,10 @@ export class Room {
 
     for (const seat of SEATS) {
       if (!this.isBotControlled(seat)) continue;
-      if (legalMoves(game, seat).kind === 'none') continue;
-      this.scheduleBot(seat, this.deps.config.botDelayMs[this.botDifficulty(seat)]);
+      const kind = legalMoves(game, seat).kind;
+      if (kind === 'none') continue;
+      // By the kind of decision only, which the whole table can see.
+      this.scheduleBot(seat, replyMs(this.deps.config, this.botDifficulty(seat), kind));
     }
   }
 
@@ -845,7 +851,14 @@ export class Room {
       solo: this.solo,
       analysis: this.analysis,
       ...this.undoState(forPlayerId),
+      gameReview: this.gameReview(),
     };
+  }
+
+  /** Solo, once the game is over: the player's graded decisions, in the order made. */
+  private gameReview(): ReviewedMove[] | null {
+    if (!this.solo || this.phase !== 'finished') return null;
+    return [...this.reviews].sort((a, b) => a.ply - b.ply);
   }
 
   private undoState(playerId: string): { canUndo: boolean; canRedo: boolean } {

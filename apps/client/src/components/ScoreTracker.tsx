@@ -2,6 +2,7 @@ import { otherTeam, type TableView } from '@mam/engine';
 import type { RoomView } from '@mam/protocol';
 import { type ReactNode, useState } from 'react';
 import { money, signedShortMoney, teamLabel } from '../format';
+import { Meter } from './ui/Meter';
 import { Panel } from './ui/Panel';
 import { Text } from './ui/Text';
 
@@ -25,7 +26,6 @@ export function ScoreTracker({
   const target = view.ruleset.targetScore;
   const team = side === 'us' ? view.team : otherTeam(view.team);
   const score = view.scores[team];
-  const progress = Math.max(0, Math.min(100, (score / target) * 100));
 
   // Hands already on the sheet when the table opened (a reload) don't float.
   const [seenAtMount] = useState(() => view.handHistory.at(-1)?.handNumber ?? 0);
@@ -46,9 +46,7 @@ export function ScoreTracker({
             {money(score)}
           </Text>
         </div>
-        <div className="progress" aria-hidden="true">
-          <span style={{ width: `${progress}%` }} />
-        </div>
+        <Meter value={score / target} fill={side} />
         {side === 'them' && (
           <Text as="div" size="xs" tone="muted" className="total-caption">
             {view.handNumber > 0 && `Hand ${view.handNumber} · `}to {money(target)}
