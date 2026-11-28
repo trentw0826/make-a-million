@@ -48,8 +48,11 @@ the spec.
 - Build from the shared components in `apps/client/src/components/ui`: `Button` for every
   ordinary button (a plain `<button>` is only for game pieces such as cards, and takes the
   `PRESSABLE` class so it presses like everything else), `Panel` for a
-  surface, `Text` for a size or tone. Their styles are CSS Modules in the `ui` cascade layer;
-  `styles.css` is unlayered, so a class passed in through `className` can adjust layout.
+  surface, `Text` for a size or tone, `Heading` for a heading, `Badge` for any pill-shaped
+  label or status, `Meter` for a progress bar. Their styles are CSS Modules in the `ui` cascade
+  layer; `styles.css` is unlayered, so a class passed in through `className` can adjust layout.
+- The style guide (`/styleguide.html` under `pnpm dev`, `10-style-guide.png` from `pnpm e2e`)
+  shows every token and shared component. Add a new component or variant to it.
 
 ## Docs are the spec
 
