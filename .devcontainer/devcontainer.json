@@ -1,0 +1,60 @@
+// A fully isolated development container. See .devcontainer/README.md for what it can reach.
+{
+  "name": "make-a-million",
+  "build": { "dockerfile": "Dockerfile" },
+
+  // Runs on the host: refuse to start without the token file, before anything is built.
+  "initializeCommand": "sh .devcontainer/check-token.sh",
+
+  // The workspace is a container volume, not the host checkout. The container clones the
+  // repository into it on first start, so nothing it writes ever reaches the host's files.
+  "workspaceMount": "source=mam-${devcontainerId}-workspace,target=/workspace,type=volume",
+  "workspaceFolder": "/workspace",
+
+  "mounts": [
+    "source=mam-${devcontainerId}-pnpm-store,target=/home/node/.local/share/pnpm,type=volume",
+    // Claude Code's login and settings, kept apart from the host's ~/.claude.
+    "source=mam-${devcontainerId}-claude-config,target=/home/node/.claude,type=volume",
+    // The fine-grained GitHub token: one file, read-only.
+    "source=${localEnv:HOME}/.config/make-a-million/github-token,target=/run/secrets/github-token,type=bind,readonly"
+  ],
+
+  "containerUser": "node",
+  "remoteUser": "node",
+  "updateRemoteUserUID": true,
+
+  "runArgs": [
+    "--cap-drop=ALL",
+    "--security-opt=no-new-privileges",
+    "--pids-limit=4096",
+    // Chromium needs more shared memory than Docker's 64 MB default.
+    "--shm-size=1g"
+  ],
+
+  "containerEnv": {
+    "CLAUDE_CONFIG_DIR": "/home/node/.claude",
+    "GITHUB_TOKEN_FILE": "/run/secrets/github-token",
+    "MAM_REPO_URL": "https://github.com/trentw0826/make-a-million.git"
+  },
+  // Hide a forwarded host SSH agent from terminals and tools in the container.
+  "remoteEnv": {
+    "SSH_AUTH_SOCK": ""
+  },
+
+  "forwardPorts": [5173, 3000],
+  "portsAttributes": {
+    "5173": { "label": "Vite client" },
+    "3000": { "label": "Game server" }
+  },
+
+  "postCreateCommand": "/usr/local/lib/mam/post-create.sh",
+
+  "customizations": {
+    "vscode": {
+      "extensions": ["biomejs.biome", "stylelint.vscode-stylelint", "vitest.explorer"],
+      "settings": {
+        "editor.defaultFormatter": "biomejs.biome"
+      }
+    }
+  }
+}

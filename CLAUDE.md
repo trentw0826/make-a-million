@@ -6,7 +6,8 @@ the spec.
 ## Toolchain
 
 - The system Node is too old. Prefix shell commands with `source ~/.nvm/nvm.sh && nvm use 24`.
-  In a worktree, put the nvm Node `bin` directory on `PATH` instead.
+  In a worktree, put the nvm Node `bin` directory on `PATH` instead. In the dev container
+  (`.devcontainer/`), Node 24 is the system Node and the prefix does nothing.
 - pnpm workspaces; Biome for lint and format; Vitest for tests.
 
 ## Before merging
