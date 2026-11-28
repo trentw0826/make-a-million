@@ -25,6 +25,7 @@ import { BidTrack, bidCaption } from './BidTrack';
 import { CardFace } from './CardFace';
 import { CountUp } from './CountUp';
 import { Modal } from './Modal';
+import { Badge } from './ui/Badge';
 import { Button } from './ui/Button';
 import { Panel } from './ui/Panel';
 import { Text } from './ui/Text';
@@ -133,13 +134,19 @@ export function HandResult({
           {SEATS.map((s) => {
             const ready = !pending.includes(s);
             return (
-              <li key={s} className={ready ? 'is-ready' : 'is-reading'}>
+              <Badge
+                as="li"
+                key={s}
+                tone={ready ? 'good' : 'quiet'}
+                size="md"
+                className={ready ? 'is-ready' : 'is-reading'}
+              >
                 <span className="ready-mark" aria-hidden="true">
                   {ready ? '✓' : '…'}
                 </span>
                 {s === seat ? 'You' : nameOf(room, s)}
                 <span className="visually-hidden">{ready ? ': ready' : ': still reading'}</span>
-              </li>
+              </Badge>
             );
           })}
         </ul>

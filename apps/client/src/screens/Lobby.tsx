@@ -3,6 +3,7 @@ import type { Difficulty, RoomView, SeatView } from '@mam/protocol';
 import { AnalysisPicker, MODE_TEXT, useAnalysisMode } from '../components/analysis/Analysis';
 import { SeatName } from '../components/SeatName';
 import { Segmented } from '../components/Segmented';
+import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
 import { Text } from '../components/ui/Text';
 import { DIFFICULTY_LABELS, DIFFICULTY_ORDER } from '../format';
@@ -104,10 +105,10 @@ function Chair(p: ChairProps) {
   if (bot) classes.push('chair-bot');
   return (
     <fieldset className={classes.join(' ')} aria-label={`Seat ${p.seat + 1}`}>
-      <span className="chair-seat" aria-hidden="true">
+      <Text size="xs" tone="muted" caps aria-hidden="true">
         Seat {p.seat + 1}{' '}
         <span className="chair-partner">· partner Seat {partnerOf(p.seat) + 1}</span>
-      </span>
+      </Text>
       <div className="chair-avatar" aria-hidden="true">
         {bot ? <BotFace /> : (v?.name.slice(0, 1).toUpperCase() ?? '')}
       </div>
@@ -116,8 +117,12 @@ function Chair(p: ChairProps) {
           {/* The host's level picker already says how strong the bot is. */}
           {bot && p.isHost ? bot.name : <SeatName seat={v} />}
           {p.isMine && <Text tone="muted"> (you)</Text>}
-          {p.isHostSeat && !p.solo && <span className="tag">host</span>}
-          {v.kind === 'human' && !v.connected && <span className="tag warn">away</span>}
+          {p.isHostSeat && !p.solo && <Badge className="tag">host</Badge>}
+          {v.kind === 'human' && !v.connected && (
+            <Badge tone="warn" className="tag">
+              away
+            </Badge>
+          )}
         </strong>
       )}
       {bot && p.isHost && (
@@ -154,7 +159,9 @@ function SoloOptions(p: { onStart: () => void }) {
   const mode = useAnalysisMode();
   return (
     <>
-      <p className="felt-label">Analysis</p>
+      <Text as="p" size="sm" tone="muted" caps className="felt-label">
+        Analysis
+      </Text>
       <AnalysisPicker />
       <Text as="p" tone="muted" size="sm">
         {MODE_TEXT[mode].about}

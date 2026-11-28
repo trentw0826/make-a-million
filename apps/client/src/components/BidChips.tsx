@@ -8,6 +8,7 @@ import { useGame } from '../store';
 import { POP_IN, SETTLE_SPRING } from '../theme/motion';
 import { useGameKeys } from '../useHotkeys';
 import { MoveValue } from './analysis/Analysis';
+import { Badge } from './ui/Badge';
 import { Button } from './ui/Button';
 import { Panel } from './ui/Panel';
 import { Text } from './ui/Text';
@@ -57,11 +58,13 @@ export function BidChips({ view, me }: { view: TableView; me: Seat }) {
 }
 
 function BidChip({ spot, amount, high }: { spot: Spot; amount: number | null; high: boolean }) {
-  const state = amount === null ? 'bid-chip-none' : high ? 'bid-chip-high' : 'bid-chip-topped';
+  // Nobody has heard from this player yet; a bid since topped; or the standing high bid,
+  // drawn as the contract badge it becomes if nobody tops it.
+  const tone = amount === null ? 'quiet' : high ? 'contract' : 'shade';
   return (
-    <span className={`bid-chip ${state}`} data-spot={spot} aria-hidden="true">
+    <Badge tone={tone} size="lg" className="bid-chip" data-spot={spot} aria-hidden="true">
       {amount === null ? 'No bid' : shortMoney(amount)}
-    </span>
+    </Badge>
   );
 }
 

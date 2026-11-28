@@ -1,0 +1,27 @@
+@layer ui {
+  .heading {
+    margin: 0;
+    font-family: var(--font-display);
+    font-weight: var(--weight-semibold);
+    line-height: var(--leading-tight);
+    letter-spacing: var(--tracking-display);
+  }
+  .size-sm {
+    font-size: var(--text-sm);
+  }
+  .size-md {
+    font-size: var(--text-md);
+  }
+  .size-lg {
+    font-size: var(--text-lg);
+  }
+  .size-xl {
+    font-size: var(--text-xl);
+  }
+  .size-2xl {
+    font-size: var(--text-2xl);
+  }
+  .size-3xl {
+    font-size: var(--text-3xl);
+  }
+}

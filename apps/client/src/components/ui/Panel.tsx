@@ -1,4 +1,4 @@
-import type { HTMLAttributes, ReactNode } from 'react';
+import type { HTMLAttributes, ReactNode, Ref } from 'react';
 import styles from './Panel.module.css';
 
 export interface PanelProps extends HTMLAttributes<HTMLElement> {
@@ -10,8 +10,9 @@ export interface PanelProps extends HTMLAttributes<HTMLElement> {
    */
   readonly tone?: 'paper' | 'raised' | 'outlined' | 'felt' | undefined;
   readonly pad?: 'sm' | 'md' | 'lg' | undefined;
-  readonly as?: 'div' | 'section' | 'li' | 'aside' | undefined;
+  readonly as?: 'div' | 'section' | 'li' | 'aside' | 'span' | 'output' | undefined;
   readonly children?: ReactNode;
+  readonly ref?: Ref<HTMLElement> | undefined;
 }
 
 /**
@@ -23,8 +24,16 @@ export function Panel({
   pad = 'md',
   as: Tag = 'div',
   className,
+  ref,
   ...rest
 }: PanelProps) {
   const classes = [styles.panel, styles[tone], styles[`pad-${pad}`], className];
-  return <Tag className={classes.filter(Boolean).join(' ')} {...rest} />;
+  // Each element takes a ref to its own type; the caller holds a ref to any HTMLElement.
+  return (
+    <Tag
+      ref={ref as Ref<never> | undefined}
+      className={classes.filter(Boolean).join(' ')}
+      {...rest}
+    />
+  );
 }

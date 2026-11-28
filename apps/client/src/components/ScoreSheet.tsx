@@ -5,6 +5,9 @@ import { SuitGlyph } from '../art/CardArt';
 import { money, nameOf, SUIT_NAMES, shortMoney, signedShortMoney } from '../format';
 import type { LogEntry } from '../state';
 import { BidTrack } from './BidTrack';
+import { Badge } from './ui/Badge';
+import { Heading } from './ui/Heading';
+import { Meter } from './ui/Meter';
 import { Panel } from './ui/Panel';
 import { Text } from './ui/Text';
 
@@ -34,7 +37,9 @@ export function ScoreSheet({
 
   return (
     <section className="score-sheet" aria-label="Score sheet">
-      <h2>Score sheet</h2>
+      <Heading level={2} size="lg" className="score-sheet-title">
+        Score sheet
+      </Heading>
       <Panel as="section" tone="raised" pad="sm" className="sheet-race" aria-label="The race">
         {(['us', 'them'] as const).map((side) => {
           const team = side === 'us' ? us : otherTeam(us);
@@ -48,9 +53,7 @@ export function ScoreSheet({
               <Text as="strong" numeric tone={score < 0 ? 'bad' : undefined}>
                 {money(score)}
               </Text>
-              <div className="progress" aria-hidden="true">
-                <span style={{ width: `${Math.max(0, Math.min(100, (score / target) * 100))}%` }} />
-              </div>
+              <Meter value={score / target} fill={side} size="md" className="sheet-race-meter" />
             </div>
           );
         })}
@@ -68,10 +71,10 @@ export function ScoreSheet({
             key={`live-${hand}`}
             className="sheet-hand sheet-hand-live"
           >
-            <h3 className="sheet-hand-head">
+            <Heading level={3} size="sm" className="sheet-hand-head">
               <span>Hand {hand}</span>
-              <span className="sheet-chip sheet-chip-live">In play</span>
-            </h3>
+              <Badge tone="accent">In play</Badge>
+            </Heading>
             <Lines entries={linesOf(hand)} />
           </Panel>
         ))}
@@ -113,12 +116,10 @@ function FinishedHand({
   const them = otherTeam(team);
   return (
     <Panel as="li" tone="outlined" pad="sm" className="sheet-hand">
-      <h3 className="sheet-hand-head">
+      <Heading level={3} size="sm" className="sheet-hand-head">
         <span>Hand {result.handNumber}</span>
-        <span className={`sheet-chip ${good ? 'good' : 'bad'}`}>
-          {result.made ? 'Made' : 'Set'}
-        </span>
-      </h3>
+        <Badge tone={good ? 'good' : 'bad'}>{result.made ? 'Made' : 'Set'}</Badge>
+      </Heading>
       <p className="sheet-hand-bid">
         {bidder} bid <strong>{shortMoney(result.bid)}</strong> in{' '}
         <span className={`sheet-trump suit-${result.trump}`}>

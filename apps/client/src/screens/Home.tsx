@@ -3,6 +3,7 @@ import { type CSSProperties, type FormEvent, useState } from 'react';
 import { CardFace } from '../components/CardFace';
 import { HelpButton, SoundToggle } from '../components/TopBar';
 import { Button } from '../components/ui/Button';
+import { Heading } from '../components/ui/Heading';
 import { Panel } from '../components/ui/Panel';
 import { Text } from '../components/ui/Text';
 import { Wordmark } from '../components/Wordmark';
@@ -82,7 +83,9 @@ export function Home() {
         </form>
         <div className="home-ways">
           <form className="home-way" onSubmit={submit('create')}>
-            <h2>Start a table</h2>
+            <Heading level={2} size="md">
+              Start a table
+            </Heading>
             <Text as="p" size="sm">
               Get a room code to share, and fill empty seats with bots.
             </Text>
@@ -91,7 +94,9 @@ export function Home() {
             </Button>
           </form>
           <form className="home-way" onSubmit={submit('join')}>
-            <h2>Join a table</h2>
+            <Heading level={2} size="md">
+              Join a table
+            </Heading>
             <label>
               Room code
               <input
@@ -110,7 +115,9 @@ export function Home() {
         {/* On your own: three bots of the levels you choose, and the analysis if you want it. */}
         <form className="home-way home-solo" onSubmit={submit('solo')}>
           <div className="home-solo-text">
-            <h2>Play solo</h2>
+            <Heading level={2} size="md">
+              Play solo
+            </Heading>
             <Text as="p" size="sm">
               Practise against bots of your choosing, with an optional analysis of every move.
             </Text>
